@@ -3,7 +3,7 @@ import { ChevronLeft, BookOpen, Search, X, Calendar, ChevronDown } from 'lucide-
 import { useLocation } from 'wouter';
 import { useUserSetting } from '@/hooks/use-user-setting';
 
-type Era = 'seerah' | 'rashidun' | 'umayyad' | 'abbasid' | 'ottoman';
+type Era = 'seerah' | 'rashidun' | 'umayyad' | 'abbasid' | 'ayyubid' | 'mamluk' | 'ottoman';
 
 type HistoryItem = {
   id: number;
@@ -14,19 +14,23 @@ type HistoryItem = {
 };
 
 const ERA_CONFIG: Record<Era, { chunks: number; total: number }> = {
-  seerah:   { chunks: 1,  total: 142  },
-  rashidun: { chunks: 1,  total: 118  },
-  umayyad:  { chunks: 1,  total: 217  },
-  abbasid:  { chunks: 5,  total: 2160 },
-  ottoman:  { chunks: 7,  total: 3491 },
+  seerah:   { chunks: 1, total: 142  },
+  rashidun: { chunks: 1, total: 118  },
+  umayyad:  { chunks: 1, total: 217  },
+  abbasid:  { chunks: 4, total: 1932 },
+  ayyubid:  { chunks: 1, total: 207  },
+  mamluk:   { chunks: 2, total: 870  },
+  ottoman:  { chunks: 3, total: 1489 },
 };
 
 const ERAS: { id: Era; label: string; sub: string; grad: string }[] = [
-  { id: 'seerah',   label: 'السيرة النبوية',    sub: 'من المولد الشريف حتى الوفاة الشريفة',      grad: 'linear-gradient(135deg,#1b4332,#0d2b1e)' },
-  { id: 'rashidun', label: 'الخلفاء الراشدون', sub: 'من 11 إلى 40 هـ',                           grad: 'linear-gradient(135deg,#1e3a6e,#0f2040)'  },
-  { id: 'umayyad',  label: 'الدولة الأموية',    sub: 'من 41 إلى 132 هـ',                          grad: 'linear-gradient(135deg,#6b3a0f,#3d2008)'  },
-  { id: 'abbasid',  label: 'الدولة العباسية',   sub: 'من 132 إلى 656 هـ',                         grad: 'linear-gradient(135deg,#3a1a5c,#1e0d30)'  },
-  { id: 'ottoman',  label: 'الدولة العثمانية',  sub: 'من 657 إلى 1342 هـ',                        grad: 'linear-gradient(135deg,#0f3d2e,#072218)'  },
+  { id: 'seerah',   label: 'السيرة النبوية',    sub: 'من المولد الشريف حتى الوفاة الشريفة', grad: 'linear-gradient(135deg,#1b4332,#0d2b1e)' },
+  { id: 'rashidun', label: 'الخلفاء الراشدون', sub: 'من 11 إلى 40 هـ',                       grad: 'linear-gradient(135deg,#1e3a6e,#0f2040)' },
+  { id: 'umayyad',  label: 'الدولة الأموية',    sub: 'من 41 إلى 132 هـ',                      grad: 'linear-gradient(135deg,#6b3a0f,#3d2008)' },
+  { id: 'abbasid',  label: 'الدولة العباسية',   sub: 'من 132 إلى 656 هـ',                     grad: 'linear-gradient(135deg,#3a1a5c,#1e0d30)' },
+  { id: 'ayyubid',  label: 'الدولة الأيوبية',    sub: 'من 567 إلى 648 هـ',                     grad: 'linear-gradient(135deg,#5c2a0f,#2e1408)' },
+  { id: 'mamluk',   label: 'دولة المماليك',      sub: 'من 648 إلى 923 هـ',                     grad: 'linear-gradient(135deg,#4a3010,#241608)' },
+  { id: 'ottoman',  label: 'الدولة العثمانية',  sub: 'من 699 إلى 1342 هـ',                    grad: 'linear-gradient(135deg,#0f3d2e,#072218)' },
 ];
 
 const PAGE_SIZE = 50;
