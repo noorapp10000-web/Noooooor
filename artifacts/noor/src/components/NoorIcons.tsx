@@ -374,25 +374,6 @@ export function IslamicStarIcon({ className = '', size = 24 }: P) {
   );
 }
 
-/* ── Bell / Adhan notification ───────────────────────────── */
-export function BellIcon({ className = '', size = 24 }: P) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      {/* Bell body shadow */}
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
-        fill="currentColor" fillOpacity="0.2" transform="translate(0.3,0.3)" />
-      {/* Bell body */}
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
-        fill="currentColor" fillOpacity="0.7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Bell highlight */}
-      <path d="M9 8 Q9 5 12 4.5" stroke="white" strokeWidth="0.9" strokeOpacity="0.4" strokeLinecap="round" fill="none" />
-      <path d="M6 14 Q5 11 6 8" stroke="white" strokeWidth="0.8" strokeOpacity="0.25" strokeLinecap="round" fill="none" />
-      {/* Clapper */}
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /* ── Moon (dark mode) ─────────────────────────────────────── */
 export function MoonIcon({ className = '', size = 24 }: P) {
   return (

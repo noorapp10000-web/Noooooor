@@ -44,7 +44,9 @@ document.addEventListener('selectstart', (e: Event) => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => reg.unregister().catch(() => {}));
+    }).catch(() => {});
   });
 }
 
