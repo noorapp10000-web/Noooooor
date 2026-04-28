@@ -6,10 +6,11 @@ import {
   syncUserLeaderboard,
   fetchLeaderboard,
   fetchGovernorateLeaderboard,
+  incrementGovernorateCounter,
   type LeaderboardEntry,
   type GovernorateRanking,
 } from '@/lib/firestore';
-import { getCacheValue, getProfileCache, getSettingCache, queueSettingSync, getCurrentUid } from '@/lib/rtdb';
+import { getCacheValue, getProfileCache, getSettingCache, queueSettingSync, getCurrentUid, getGovSyncedCount, queueGovSyncedCountUpdate } from '@/lib/rtdb';
 import { auth } from '@/lib/firebase';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 
@@ -128,6 +129,23 @@ function UsersLeaderboardTab({ isDark }: { isDark: boolean }) {
       if (stableUid && userProfile) {
         try {
           await syncUserLeaderboard(buildSyncPayload(userVisible));
+
+          // مزامنة ترتيب المحافظة: نبعت الفرق بين الإجمالي الكلي وإيه اللي بُعت من قبل
+          if (userProfile.governorateId && userProfile.governorateName) {
+            const totalTasbeeh = Object.values(
+              getCacheValue<Record<string, number>>('tasbih_totals', {}),
+            ).reduce((a, b) => a + b, 0);
+            const govSyncedCount = getGovSyncedCount();
+            const delta = totalTasbeeh - govSyncedCount;
+            if (delta > 0) {
+              await incrementGovernorateCounter(
+                userProfile.governorateId,
+                userProfile.governorateName,
+                delta,
+              );
+              queueGovSyncedCountUpdate(stableUid as string, totalTasbeeh);
+            }
+          }
         } catch (err: unknown) {
           const code = (err as { code?: string })?.code ?? '';
           if (code === 'permission-denied') setSyncError('permission-denied');

@@ -240,6 +240,16 @@ export function getCurrentUid(): string | null {
   return _currentUid;
 }
 
+/** كم تسبيحة اتبعتت بالفعل لعداد المحافظة في Firestore */
+export function getGovSyncedCount(): number {
+  return getCacheValue<number>('gov_synced_count', 0);
+}
+
+/** احفظ الرقم المبعوت للمحافظة عشان نحسب الفرق المرة الجاية */
+export function queueGovSyncedCountUpdate(uid: string, count: number): void {
+  queueRTDBUpdate(uid, { gov_synced_count: count });
+}
+
 /* ══════════════════════════════════════════════════════════════
    SETTINGS — تفضيلات المستخدم
 ══════════════════════════════════════════════════════════════ */

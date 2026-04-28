@@ -13,6 +13,8 @@ import {
   getCurrentUid,
   getProfileCache,
   getSettingCache,
+  getGovSyncedCount,
+  queueGovSyncedCountUpdate,
   todayKey,
 } from '@/lib/rtdb';
 import { auth } from '@/lib/firebase';
@@ -24,24 +26,30 @@ import { useUserSetting } from '@/hooks/use-user-setting';
 const SESSION_FLUSH_INTERVAL_MS = 5 * 60 * 1000; // 5 دقائق
 
 /* جمع كل التسبيح في الذاكرة وبعتها مرة واحدة لـ Firestore:
-   - مرة لتحديث ترتيب المستخدم (sohbaLeaderboard)
-   - مرة لزيادة عداد المحافظة (governorateLeaderboard)
-   = كتابتين بس لكل جلسة، مش لكل ضغطة */
+   - مرة لتحديث ترتيب المستخدم (sohbaLeaderboard) بالإجمالي الكلي
+   - مرة لزيادة عداد المحافظة بالفرق فقط (الجديد منذ آخر مزامنة)
+   = يشمل التسبيح القديم تلقائياً في أول مزامنة */
 async function flushSessionToFirestore(
   totalsRef: { current: Record<string, number> },
 ): Promise<void> {
-  const pending = getPendingGovernorateCount();
-  if (pending <= 0) return;
-
   const profile = getProfileCache();
   const uid = auth.currentUser?.uid;
   if (!uid || !profile) return;
+
+  const totalTasbeeh = Object.values(totalsRef.current).reduce((a, b) => a + b, 0);
+
+  // لو مفيش تسبيح خالص ما نبعتش
+  const govSyncedCount = getGovSyncedCount();
+  const hasPending = getPendingGovernorateCount() > 0;
+  if (totalTasbeeh <= 0 && !hasPending) return;
+
+  // الفرق بين الإجمالي الكلي وإيه اللي بُعت للمحافظة من قبل
+  const delta = totalTasbeeh - govSyncedCount;
 
   // امسح الـ pending فوراً عشان لو المستخدم ضغط في النص ما يضيعش
   clearPendingGovernorateCount();
 
   try {
-    const totalTasbeeh = Object.values(totalsRef.current).reduce((a, b) => a + b, 0);
     const isPublic = getSettingCache<boolean>('noor_leaderboard_visible', false);
 
     await syncUserLeaderboard({
@@ -57,16 +65,18 @@ async function flushSessionToFirestore(
       earnedBadges: [],
     });
 
-    if (profile.governorateId && profile.governorateName) {
+    if (delta > 0 && profile.governorateId && profile.governorateName) {
       await incrementGovernorateCounter(
         profile.governorateId,
         profile.governorateName,
-        pending,
+        delta,
       );
+      // احفظ الرقم الجديد عشان نحسب الفرق صح المرة الجاية
+      queueGovSyncedCountUpdate(uid, totalTasbeeh);
     }
   } catch {
     // لو فشلت، رجّع الـ pending عشان نحاول تاني المرة الجاية
-    addPendingGovernorateCount(pending);
+    addPendingGovernorateCount(delta > 0 ? delta : 1);
   }
 }
 
