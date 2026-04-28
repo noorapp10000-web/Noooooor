@@ -110,34 +110,85 @@ export async function deleteLeaderboardEntry(userId: string): Promise<void> {
   } catch { /* ignore */ }
 }
 
-/* ─── Governorate Leaderboard ───────────────────────────── */
+/* ─── Governorate Leaderboard (single-document architecture) */
+// كل المحافظات في document واحد → 1 read بدل 27
+// governorateLeaderboard/all: { cairo: { name, totalCount }, alex: {...}, ... }
+
+const GOV_ALL_REF = () => doc(db, 'governorateLeaderboard', 'all');
+
 export async function incrementGovernorateCounter(
   governorateId: string,
   governorateName: string,
   amount: number,
 ): Promise<void> {
   if (!governorateId || amount <= 0) return;
-  await setDoc(
-    doc(db, 'governorateLeaderboard', governorateId),
-    {
-      id: governorateId,
-      name: governorateName,
-      totalCount: increment(amount),
+  try {
+    // updateDoc بيعمل atomic increment على الـ nested field
+    await updateDoc(GOV_ALL_REF(), {
+      [`${governorateId}.totalCount`]: increment(amount),
+      [`${governorateId}.name`]: governorateName,
       updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
+    });
+  } catch (e: unknown) {
+    // لو الـ document لسه مش موجود، ابدأه
+    if ((e as { code?: string })?.code === 'not-found') {
+      await setDoc(GOV_ALL_REF(), {
+        [governorateId]: { name: governorateName, totalCount: amount },
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      throw e;
+    }
+  }
+}
+
+function parseGovAllDoc(raw: Record<string, unknown>): GovernorateRanking[] {
+  return Object.entries(raw)
+    .filter(([key, val]) =>
+      key !== 'updatedAt' &&
+      val !== null &&
+      typeof val === 'object' &&
+      'totalCount' in (val as object),
+    )
+    .map(([id, val]) => {
+      const v = val as { name: string; totalCount: number };
+      return { id, name: v.name, totalCount: v.totalCount ?? 0 };
+    })
+    .filter((g) => g.totalCount > 0)
+    .sort((a, b) => b.totalCount - a.totalCount);
 }
 
 export async function fetchGovernorateLeaderboard(forceRefresh = false): Promise<GovernorateRanking[]> {
   if (!forceRefresh && _govCache && Date.now() - _govCache.at < CACHE_TTL_MS) {
     return _govCache.data;
   }
-  const snap = await getDocs(collection(db, 'governorateLeaderboard'));
-  const data = snap.docs
-    .map((d) => d.data() as GovernorateRanking)
-    .filter((g) => (g.totalCount ?? 0) > 0)
-    .sort((a, b) => (b.totalCount ?? 0) - (a.totalCount ?? 0));
+
+  const allSnap = await getDoc(GOV_ALL_REF());
+
+  let data: GovernorateRanking[];
+
+  if (allSnap.exists()) {
+    // ✅ الحالة الجديدة: قراءة واحدة فقط
+    data = parseGovAllDoc(allSnap.data() as Record<string, unknown>);
+  } else {
+    // هجرة تلقائية من الـ 27 document القديمة → all
+    const oldSnap = await getDocs(collection(db, 'governorateLeaderboard'));
+    const oldDocs = oldSnap.docs
+      .filter((d) => d.id !== 'all')
+      .map((d) => d.data() as GovernorateRanking)
+      .filter((g) => (g.totalCount ?? 0) > 0);
+
+    if (oldDocs.length > 0) {
+      const allData: Record<string, unknown> = { updatedAt: serverTimestamp() };
+      for (const gov of oldDocs) {
+        allData[gov.id] = { name: gov.name, totalCount: gov.totalCount };
+      }
+      await setDoc(GOV_ALL_REF(), allData);
+    }
+
+    data = oldDocs.sort((a, b) => (b.totalCount ?? 0) - (a.totalCount ?? 0));
+  }
+
   _govCache = { data, at: Date.now() };
   return data;
 }
@@ -169,20 +220,20 @@ export async function rebuildGovernorateLeaderboard(
     }
   }
 
-  // 3. اكتب كل محافظة فيها تسبيح في Firestore
+  // 3. اكتب كل المحافظات في document واحد
   let governoratesUpdated = 0;
   let totalTasbeeh = 0;
+  const allData: Record<string, unknown> = { updatedAt: serverTimestamp() };
   for (const gov of governorates) {
     const govTotal = totalsByName[gov.name] ?? 0;
     if (govTotal > 0) {
-      await setDoc(
-        doc(db, 'governorateLeaderboard', gov.id),
-        { id: gov.id, name: gov.name, totalCount: govTotal, updatedAt: serverTimestamp() },
-      );
+      allData[gov.id] = { name: gov.name, totalCount: govTotal };
       governoratesUpdated++;
       totalTasbeeh += govTotal;
     }
   }
+  await setDoc(GOV_ALL_REF(), allData);
+  _govCache = null;
 
   // 4. احفظ metadata الإعادة عشان نمنع الازدواجية للمستخدمين اللي اتحسبوا
   await setDoc(doc(db, 'meta', 'lastRebuild'), {
