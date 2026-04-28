@@ -64,18 +64,33 @@ export async function syncUserLeaderboard(data: SohbaUserData): Promise<number> 
   return noorScore;
 }
 
-export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
-  // نقرأ أعلى 100 بس بدل ما نقرأ كل الـ collection — يوفر reads بشكل كبير
+/* ─── In-memory cache (5 دقائق TTL) ─────────────────────── */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let _usersCache:  { data: LeaderboardEntry[];  at: number } | null = null;
+let _govCache:    { data: GovernorateRanking[]; at: number } | null = null;
+
+/** امسح الكاش عشان الـ refresh الإجباري يجيب بيانات جديدة */
+export function invalidateLeaderboardCache(): void {
+  _usersCache = null;
+  _govCache   = null;
+}
+
+export async function fetchLeaderboard(forceRefresh = false): Promise<LeaderboardEntry[]> {
+  if (!forceRefresh && _usersCache && Date.now() - _usersCache.at < CACHE_TTL_MS) {
+    return _usersCache.data;
+  }
   const q = query(
     collection(db, 'sohbaLeaderboard'),
     orderBy('tasbeehCount', 'desc'),
     limit(100),
   );
   const snap = await getDocs(q);
-  return snap.docs
+  const data = snap.docs
     .map((d) => d.data() as LeaderboardEntry)
     .filter((e) => e.isPublic === true)
     .slice(0, 50);
+  _usersCache = { data, at: Date.now() };
+  return data;
 }
 
 export async function fetchUserEntry(userId: string): Promise<LeaderboardEntry | null> {
@@ -114,12 +129,17 @@ export async function incrementGovernorateCounter(
   );
 }
 
-export async function fetchGovernorateLeaderboard(): Promise<GovernorateRanking[]> {
+export async function fetchGovernorateLeaderboard(forceRefresh = false): Promise<GovernorateRanking[]> {
+  if (!forceRefresh && _govCache && Date.now() - _govCache.at < CACHE_TTL_MS) {
+    return _govCache.data;
+  }
   const snap = await getDocs(collection(db, 'governorateLeaderboard'));
-  return snap.docs
+  const data = snap.docs
     .map((d) => d.data() as GovernorateRanking)
     .filter((g) => (g.totalCount ?? 0) > 0)
     .sort((a, b) => (b.totalCount ?? 0) - (a.totalCount ?? 0));
+  _govCache = { data, at: Date.now() };
+  return data;
 }
 
 /* ─── Rebuild governorate leaderboard from scratch ──────── */

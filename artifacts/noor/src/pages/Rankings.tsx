@@ -105,11 +105,11 @@ function UsersLeaderboardTab({ isDark }: { isDark: boolean }) {
     earnedBadges: [] as string[],
   });
 
-  const loadLeaderboard = useCallback(async () => {
+  const loadLeaderboard = useCallback(async (force = false) => {
     setLoading(true);
     setFetchError(null);
     try {
-      const list = await fetchLeaderboard();
+      const list = await fetchLeaderboard(force);
       setEntries(list);
       setFetchError(null);
       if (stableUid) {
@@ -214,7 +214,7 @@ function UsersLeaderboardTab({ isDark }: { isDark: boolean }) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={loadLeaderboard}
+              onClick={() => loadLeaderboard(true)}
               className="p-2 rounded-full"
               style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}
               data-testid="button-refresh-users"
@@ -370,11 +370,11 @@ function GovernoratesLeaderboardTab({ isDark }: { isDark: boolean }) {
   const userProfile = getProfileCache();
   const myGovernorateId = userProfile?.governorateId ?? null;
 
-  const loadGovernorates = useCallback(async () => {
+  const loadGovernorates = useCallback(async (force = false) => {
     setLoading(true);
     setFetchError(null);
     try {
-      const list = await fetchGovernorateLeaderboard();
+      const list = await fetchGovernorateLeaderboard(force);
       setEntries(list);
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
@@ -415,7 +415,7 @@ function GovernoratesLeaderboardTab({ isDark }: { isDark: boolean }) {
             </div>
           </div>
           <button
-            onClick={loadGovernorates}
+            onClick={() => loadGovernorates(true)}
             className="p-2 rounded-full flex-shrink-0"
             style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}
             data-testid="button-refresh-governorates"
