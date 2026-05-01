@@ -1,6 +1,6 @@
 # Noor App (نور)
 
-A cross-platform Islamic companion app built with React, Vite, and Express, supporting web and Android (via Capacitor).
+A cross-platform Islamic companion app built with React, Vite, and Express.
 
 ## Features (v2.2+)
 - **القرآن الكريم** — Quran reader with tafsir, word-by-word audio, bookmarks, and Moshaf PDF downloader (8 types)
@@ -26,26 +26,23 @@ All large content is in `public/data/` and lazy-fetched on page visit:
 - `public/data/moshaf.json` — 3.3KB, moshaf PDF links
 - `public/data/quran-search.json` — 1.4MB, 6236 ayahs in quran-simple (for text search, no tashkeel)
 - `public/data/tafsir-muyassar.json` — 2.5MB, Tafsir Muyassar keyed by "surah:ayah"
-**Data generation**: Run `node scripts/fetch-quran-json.mjs` to regenerate/update the quran JSON files.
 
 ## Project Structure
 
 This is a pnpm monorepo workspace.
 
-### Root (`/`)
+### `artifacts/noor/`
 - **React + Vite frontend** — the main web application
-- Capacitor config for Android builds
-- Entry: `src/main.tsx`, `index.html`
+- Entry: `artifacts/noor/src/main.tsx`
+- Built to `artifacts/noor/dist/public/`
 
 ### `artifacts/api-server/`
-- **Express backend** — handles `/api/*` routes
+- **Express backend** — handles `/api/*` routes (also `/api-server/api/*` for artifact routing)
 - Uses Drizzle ORM with PostgreSQL
-- Registered as Replit artifact at path `/`
 - Built to `artifacts/api-server/dist/index.cjs` for production
 
 ### `artifacts/mockup-sandbox/`
 - Isolated Vite dev environment for UI component prototyping
-- Registered at path `/__mockup`
 
 ### `lib/`
 - `lib/db` — Drizzle ORM schema and database client
@@ -54,43 +51,43 @@ This is a pnpm monorepo workspace.
 - `lib/api-zod` — Generated Zod schemas from OpenAPI spec
 
 ### `scripts/`
-- `dev-artifact.sh` — Artifact dev script: starts Vite on PORT + API server on API_SERVER_PORT (3001) using pnpm workspace executables
-- `dev.sh` — Primary workflow script: starts Vite on Replit's web port + API server on 3001 using pnpm workspace executables
-- `replit-dev.sh` — Launches the Replit artifact router which manages all services
+- `replit-dev.sh` — Main workflow script: starts Vite on port 5000, API server on port 19382, and a proxy on port 8080 → 5000 for the artifact router
+- `dev-artifact.sh` — Legacy artifact dev script
 - `proxy.js` — HTTP reverse proxy (forwards PROXY_PORT → TARGET_PORT)
 
 ## Development on Replit
 
 ### How It Works
-The app runs through Replit's artifact system:
+The app uses Replit's artifact routing system:
 
-1. The **"artifacts/api-server: API Server"** workflow runs `dev-artifact.sh` with `PORT=19382`
-2. This starts Vite on port 19382 (the artifact's registered port) and the API server on port 3001
-3. Replit routes external traffic: port 80 → port 19382 → Vite dev server
-4. The Vite dev server proxies `/api/*` requests to `localhost:3001`
+1. **pid1** reads `[[artifacts]]` in `.replit` and starts its own artifact router on port 18080
+2. The artifact router reads each artifact's `.replit-artifact/artifact.toml`:
+   - `artifacts/noor` → routes `/` → port 8080 (proxy.js forwards to Vite on port 5000)
+   - `artifacts/api-server` → routes `/api-server/` → port 19382
+3. The **"Start application"** workflow (`scripts/replit-dev.sh`) starts:
+   - API server on port 19382 (tsx live-reload)
+   - Proxy on port 8080 → Vite port 5000
+   - Vite dev server on port 5000 (waitForPort target)
 
 ### Port Architecture
-- External port 80 → `localhost:19382` → Vite dev server (via Replit artifact routing)
-- `localhost:19382` — Vite dev server (React frontend with HMR)
-- `localhost:3001` — Express API server (tsx live-reload for backend development)
+- External traffic → pid1 (port 80) → artifact router (port 18080)
+- `/` → artifact router → port 8080 (proxy) → port 5000 (Vite)
+- `/api-server/` → artifact router → port 19382 (Express API)
+- Port 5000 also mapped to external port 80 via `[[ports]]` (used as waitForPort signal)
+
+### API Routes
+The Express server handles both path prefixes:
+- `/api/...` — direct access (from Vite proxy in dev)
+- `/api-server/api/...` — via artifact router (from external traffic)
 
 ### Running in Development
-The primary workflow is **"artifacts/api-server: API Server"** — this is what keeps the app running. The "Start application" workflow uses `npm run dev` (Vite on port 5000) as a standalone alternative.
-
-### Migration Notes
-- The Replit migration preserves the existing React/Vite frontend, Express API server, pnpm workspace structure, and database schema.
-- Startup scripts now invoke Vite and tsx through pnpm instead of hard-coded `node_modules/.bin` paths, which is more reliable in Replit's workspace layout.
-- Vite dev proxies now read `API_SERVER_PORT`, allowing standalone artifact workflows to use separate backend ports safely.
-- Database initialization now completes before the global counter loads, preventing first-run errors when tables do not exist yet.
-- Hadith reading/search no longer depends on the invalid hadithapi.com key; it uses the public Arabic hadith dataset for the six books and keeps the old local Sunnah search as a final fallback.
-- The duplicated root and artifact Hadith pages are kept in sync so the preview cannot show an older version without the working search tab.
+The primary workflow is **"Start application"** which uses `scripts/replit-dev.sh`.
 
 ## Firebase
 
 Single Firebase project: **noooooor-app** (projectId: `noooooor-app`)
 - Config stored in `.replit` as `VITE_FIREBASE_*` environment variables
 - Used for: Firebase Auth (Google sign-in), Firestore (global counter, leaderboard, sessions)
-- Email signup now collects email and password first, then asks for an Egyptian governorate only. Country and non-Egypt city selection were removed from the primary signup flow.
 
 ### Firestore Collections
 - `globalCounter/main` — total tasbeeh count
@@ -100,8 +97,8 @@ Single Firebase project: **noooooor-app** (projectId: `noooooor-app`)
 ## Key Configuration
 
 - **Vite proxy**: `/api` → `http://localhost:${API_SERVER_PORT:-3001}`
-- **Vite host**: `true` (binds to all interfaces including IPv6)
-- **Firebase**: Configured via `VITE_FIREBASE_*` environment variables in Replit secrets
+- **Vite host**: `true` (binds to all interfaces)
+- **Firebase**: Configured via `VITE_FIREBASE_*` environment variables
 
 ## Database
 
@@ -117,18 +114,10 @@ Single Firebase project: **noooooor-app** (projectId: `noooooor-app`)
 bash build.sh
 ```
 
-Builds the web artifact, bundles api-server to `artifacts/api-server/dist/index.cjs`, and copies the web build to `dist/public` for production static serving.
+Builds the web artifact, bundles api-server to `artifacts/api-server/dist/index.cjs`.
 
 ## UI Design System
 
 - **Primary color**: `#C19A6B` / `hsl(var(--primary))` — gold/amber
 - **Fonts**: `"Tajawal"` for UI text, `"Amiri"/"Scheherazade New"` for Arabic calligraphy
-- **NoorIcons**: Custom 3D-style SVG icon library at `src/components/NoorIcons.tsx` using `currentColor` for theming
-
-## Artifact Configuration
-
-The app uses Replit's artifact system with:
-- `artifacts/api-server/.replit-artifact/artifact.toml` — registers the API server at path `/`, localPort 19382
-- `artifacts/mockup-sandbox/.replit-artifact/artifact.toml` — registers the mockup sandbox at path `/__mockup`, localPort 8081
-- Development service: `bash scripts/dev-artifact.sh` (Vite + API in one process)
-- Production service: `node artifacts/api-server/dist/index.cjs`
+- **NoorIcons**: Custom 3D-style SVG icon library at `src/components/NoorIcons.tsx`

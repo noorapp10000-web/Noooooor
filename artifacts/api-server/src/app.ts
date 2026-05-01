@@ -10,6 +10,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+app.use("/api-server/api", router);
 
 /* Serve the frontend static build only in production */
 if (process.env.NODE_ENV === "production") {
