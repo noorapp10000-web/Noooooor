@@ -433,24 +433,6 @@ export function Login({ onComplete }: LoginProps) {
 
               {error && <ErrorBadge msg={error} />}
 
-              {/* دخول بدون بيانات */}
-              <button
-                onClick={onComplete}
-                className="w-full py-3 rounded-2xl transition-all active:scale-[0.97] text-sm"
-                style={{
-                  fontFamily: '"Tajawal", sans-serif',
-                  color: 'rgba(93,48,16,0.45)',
-                  border: '1.5px dashed rgba(139,99,64,0.25)',
-                  background: 'transparent',
-                }}
-                data-testid="button-guest-login"
-              >
-                تصفح بدون تسجيل
-              </button>
-
-              <p className="text-center text-[11px] mt-1" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(93,48,16,0.35)' }}>
-                يمكنك تغيير هذه المعلومات لاحقاً من صفحة المزيد
-              </p>
             </motion.div>
           )}
 
