@@ -25,7 +25,6 @@ import {
   HadithIcon,
   QiblaCompassIcon,
   HifzIcon,
-  QuranVideoIcon,
 } from '@/components/NoorIcons';
 
 function IslamicPattern() {
@@ -699,7 +698,6 @@ export function MoreMenu() {
   const userProfile = getProfileCache();
 
   const MENU_ITEMS = [
-    { Icon: QuranVideoIcon,    label: 'إنشاء فيديو قرآني',  path: '/quran-video',  desc: '15 خلفية متحركة • رفع صورة أو فيديو من جهازك', grad: 'linear-gradient(145deg, #5c2a0f, #8B4513)' },
     { Icon: HifzIcon,          label: 'اختبار الحفظ',        path: '/hifz-test',    desc: 'اختبر حفظك لكل آيات القرآن الكريم • 6236 آية', grad: 'linear-gradient(145deg, #1e4d2b, #0d2b16)' },
     { Icon: HadithIcon,        label: 'الأحاديث الشريفة',   path: '/hadith',       desc: 'أحاديث النبي ﷺ من كبار المصادر',                grad: 'linear-gradient(145deg, #2d6a4f, #1b4332)' },
     { Icon: ScrollIcon,        label: 'التاريخ الإسلامي',   path: '/history',      desc: 'من السيرة النبوية حتى الدولة العثمانية',         grad: 'linear-gradient(145deg, #6b3a0f, #3d2008)' },

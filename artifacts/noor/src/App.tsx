@@ -34,7 +34,6 @@ import { Sunnah } from "@/pages/Sunnah";
 import { IslamicTV } from "@/pages/IslamicTV";
 import { VoiceComparison } from "@/pages/VoiceComparison";
 import { HifzTest } from "@/pages/HifzTest";
-import { QuranVideo } from "@/pages/QuranVideo";
 
 import { onAuthStateChanged } from "firebase/auth";
 import { get, ref } from "firebase/database";
@@ -156,9 +155,6 @@ function Router() {
       </Route>
       <Route path="/hifz-test">
         <FullScreenShell><HifzTest /></FullScreenShell>
-      </Route>
-      <Route path="/quran-video">
-        <FullScreenShell><QuranVideo /></FullScreenShell>
       </Route>
       <Route component={NotFound} />
     </Switch>
