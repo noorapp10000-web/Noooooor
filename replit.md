@@ -12,12 +12,10 @@ A cross-platform Islamic companion app built with React, Vite, and Express.
 - **سنن النبي ﷺ** — Prophetic Sunnah browser across 5 categories with hadith sources
 - **الأذكار** — Morning/evening and daily adhkar with progress tracking
 - **التسبيح** — Digital tasbih counter
-- **الأذان** — Prayer times with notifications
 - **القبلة** — Smart Qibla compass
 - **الصحبة** — Community leaderboard and global dhikr tracker
 - **الإذاعات الإسلامية** — Live Islamic radio (Quran + Sunnah channels)
 - **القنوات الإسلامية** — Live Islamic TV channels (HLS streams) with hls.js support
-- **إنشاء فيديو قرآني** — Quranic Media Creator: select Surah/Ayah range, choose from 15 animated CSS gradient backgrounds, upload custom image/video from device, live 9:16 portrait preview with verse overlay + Noor app watermark (bottom-right), download as high-res PNG via Canvas API. Zero Firebase/Firestore usage, fully client-side.
 
 ## Static Data Strategy
 All large content is in `public/data/` and lazy-fetched on page visit:

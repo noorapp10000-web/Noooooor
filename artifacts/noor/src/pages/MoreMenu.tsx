@@ -15,7 +15,6 @@ import {
   IslamicStarIcon,
   HeadphonesIcon,
   SmartReaderIcon,
-  MosqueIcon,
   QuranBookIcon,
   TasbihIcon,
   MoonIcon,
@@ -941,7 +940,6 @@ export function MoreMenu() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { Icon: MosqueIcon,       text: 'مواقيت الصلاة',       grad: 'linear-gradient(145deg,#1e4d7b,#0f2d4d)' },
                 { Icon: QuranBookIcon,    text: 'القرآن الكريم',        grad: 'linear-gradient(145deg,#2d6a4f,#1b4332)' },
                 { Icon: HeadphonesIcon,   text: '+50 قارئاً',           grad: 'linear-gradient(145deg,#1a5c5c,#0d3b3b)' },
                 { Icon: TasbihIcon,       text: 'السبحة الإلكترونية',   grad: 'linear-gradient(145deg,#8B6340,#5c3e1e)' },
@@ -970,7 +968,6 @@ export function MoreMenu() {
             <p className="text-[10px] font-bold text-primary/60 mb-1 uppercase tracking-widest"
               style={{ fontFamily: '"Tajawal", sans-serif' }}>مصادر البيانات</p>
             {[
-              { label: 'مواقيت الصلاة', val: 'aladhan.com' },
               { label: 'القرآن الكريم', val: 'alquran.cloud' },
               { label: 'القراء والتلاوات', val: 'mp3quran.net' },
             ].map((src, i) => (

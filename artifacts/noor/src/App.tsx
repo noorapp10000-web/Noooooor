@@ -22,10 +22,8 @@ import { Settings } from "@/pages/Settings";
 import { Asma } from "@/pages/Asma";
 import { Reciters } from "@/pages/Reciters";
 import { SpeedReader } from "@/pages/SpeedReader";
-import { Adhan } from "@/pages/Adhan";
 import { EgyptianRadio } from "@/pages/EgyptianRadio";
 import { Qibla } from "@/pages/Qibla";
-import { MosquesFinder } from "@/pages/MosquesFinder";
 import { Hadith } from "@/pages/Hadith";
 import { IslamicHistory } from "@/pages/IslamicHistory";
 import { ProphetStories } from "@/pages/ProphetStories";
@@ -120,17 +118,11 @@ function Router() {
       <Route path="/speed-reader">
         <FullScreenShell><SpeedReader /></FullScreenShell>
       </Route>
-      <Route path="/adhan">
-        <FullScreenShell><Adhan /></FullScreenShell>
-      </Route>
       <Route path="/radio">
         <FullScreenShell><EgyptianRadio /></FullScreenShell>
       </Route>
       <Route path="/qibla">
         <FullScreenShell><Qibla /></FullScreenShell>
-      </Route>
-      <Route path="/mosques">
-        <FullScreenShell><MosquesFinder /></FullScreenShell>
       </Route>
       <Route path="/hadith">
         <FullScreenShell><Hadith /></FullScreenShell>
