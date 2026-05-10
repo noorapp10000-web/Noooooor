@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+// PORT is only required in dev mode; during `vite build` it is ignored
 const rawPort = process.env.PORT;
 const port = rawPort ? Number(rawPort) : 3000;
 if (rawPort && (Number.isNaN(port) || port <= 0)) throw new Error(`Invalid PORT: "${rawPort}"`);
@@ -38,33 +39,6 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // Firebase — large, rarely changes
-          if (id.includes("node_modules/firebase") || id.includes("node_modules/@firebase")) {
-            return "vendor-firebase";
-          }
-          // Framer Motion — animation library
-          if (id.includes("node_modules/framer-motion")) {
-            return "vendor-framer";
-          }
-          // React core
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") ||
-              id.includes("node_modules/scheduler")) {
-            return "vendor-react";
-          }
-          // TanStack Query
-          if (id.includes("node_modules/@tanstack")) {
-            return "vendor-query";
-          }
-          // Remaining node_modules
-          if (id.includes("node_modules")) {
-            return "vendor-misc";
-          }
-        },
-      },
-    },
   },
   server: {
     port,
