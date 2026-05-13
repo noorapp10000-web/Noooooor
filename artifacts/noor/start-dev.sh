@@ -19,9 +19,9 @@ export BASE_PATH=/
 # Start API server
 echo "Starting API server on port $API_PORT..."
 (cd "$ROOT_DIR/artifacts/api-server" && PORT=$API_PORT NODE_ENV=development \
-  pnpm exec tsx ./src/index.ts 2>&1) &
+  "$ROOT_DIR/artifacts/api-server/node_modules/.bin/tsx" ./src/index.ts 2>&1) &
 
 # Start Vite on port 5000
 echo "Starting Vite on port $TARGET_PORT..."
 cd "$ARTIFACT_DIR" && exec env PORT=$TARGET_PORT API_SERVER_PORT=$API_PORT \
-  pnpm exec vite --config vite.config.ts
+  "$ROOT_DIR/artifacts/noor/node_modules/.bin/vite" --config vite.config.ts
