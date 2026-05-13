@@ -37,6 +37,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { get, ref } from "firebase/database";
 import { auth, rtdb } from "@/lib/firebase";
 import { initUserSync, clearSyncState, getSettingCache } from "@/lib/rtdb";
+import { requestAllPermissionsOnce } from "@/lib/permissions";
 
 const queryClient = new QueryClient();
 
@@ -191,6 +192,8 @@ function App() {
             const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
             document.documentElement.classList.toggle('dark', theme === 'dark');
             setIsLoggedIn(true);
+            // طلب كل أذونات التطبيق بعد تأكيد تسجيل الدخول
+            requestAllPermissionsOnce();
           } else {
             // authenticated but no profile yet (incomplete registration)
             setIsLoggedIn(false);

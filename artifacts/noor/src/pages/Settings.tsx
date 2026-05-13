@@ -1,9 +1,77 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
+import {
+  getNotificationSettings,
+  saveNotificationSettings,
+  cancelAllPrayerNotifications,
+  type NotificationSettings,
+  type PrayerKey,
+} from '@/lib/notifications';
+import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
+import { Capacitor } from '@capacitor/core';
+
+const PRAYER_LIST: { key: PrayerKey; name: string; emoji: string }[] = [
+  { key: 'Fajr',    name: 'الفجر',  emoji: '🌙' },
+  { key: 'Sunrise', name: 'الشروق', emoji: '🌅' },
+  { key: 'Dhuhr',   name: 'الظهر',  emoji: '☀️' },
+  { key: 'Asr',     name: 'العصر',  emoji: '🌤️' },
+  { key: 'Maghrib', name: 'المغرب', emoji: '🌆' },
+  { key: 'Isha',    name: 'العشاء', emoji: '🌙' },
+];
+
+const MINUTES_OPTIONS = [
+  { value: 0,  label: 'عند الأذان' },
+  { value: 5,  label: 'قبل 5 دق'  },
+  { value: 10, label: 'قبل 10 دق' },
+  { value: 15, label: 'قبل 15 دق' },
+  { value: 20, label: 'قبل 20 دق' },
+];
+
+function NativeOnlyNote({ subText }: { subText: string }) {
+  return (
+    <p className="text-xs text-center py-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+      ⚠️ الإشعارات متاحة في تطبيق الموبايل فقط
+    </p>
+  );
+}
+
+function ToggleSwitch({
+  enabled,
+  onToggle,
+  accentColor = '#C19A6B',
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  accentColor?: string;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className="relative flex-shrink-0 transition-all"
+      style={{
+        width: 44,
+        height: 24,
+        borderRadius: 12,
+        background: enabled ? accentColor : 'rgba(120,120,120,0.3)',
+        transition: 'background 0.25s',
+      }}
+    >
+      <span
+        className="absolute top-[3px] rounded-full bg-white shadow-sm"
+        style={{
+          width: 18,
+          height: 18,
+          left: enabled ? 23 : 3,
+          transition: 'left 0.25s',
+        }}
+      />
+    </button>
+  );
+}
 
 export function Settings() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
@@ -18,6 +86,35 @@ export function Settings() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Notification settings state ──────────────────────────────────────────
+  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(getNotificationSettings);
+  const isNative = Capacitor.isNativePlatform();
+
+  // Persist + reschedule whenever settings change
+  useEffect(() => {
+    saveNotificationSettings(notifSettings);
+    // Trigger reschedule on next Home mount (which holds the timings)
+    // We dispatch a custom event so Home.tsx can pick it up
+    window.dispatchEvent(new CustomEvent('noor:notif-settings-changed'));
+  }, [notifSettings]);
+
+  function setEnabled(val: boolean) {
+    setNotifSettings(s => ({ ...s, enabled: val }));
+    if (!val) cancelAllPrayerNotifications();
+  }
+
+  function setMinutesBefore(val: number) {
+    setNotifSettings(s => ({ ...s, minutesBefore: val }));
+  }
+
+  function togglePrayer(key: PrayerKey) {
+    setNotifSettings(s => ({
+      ...s,
+      prayers: { ...s.prayers, [key]: !s.prayers[key] },
+    }));
+  }
+
+  // ── File picker ───────────────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -30,6 +127,7 @@ export function Settings() {
     reader.readAsDataURL(file);
   };
 
+  // ── Styling tokens ────────────────────────────────────────────────────────
   const sectionBg = hasBg
     ? (dark ? 'rgba(10,8,4,0.88)' : 'rgba(253,251,245,0.92)')
     : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(193,154,107,0.06)');
@@ -201,11 +299,142 @@ export function Settings() {
           </div>
         </motion.div>
 
-        {/* ── Background Section ── */}
+        {/* ── Prayer Notifications Section ── */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
+          className="rounded-2xl p-4"
+          style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
+        >
+          {/* Header row */}
+          <div className="flex items-center gap-2.5 mb-4">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(145deg, #2ecc71, #1a7a44)' }}
+            >
+              {notifSettings.enabled ? (
+                <Bell className="w-4 h-4 text-white" />
+              ) : (
+                <BellOff className="w-4 h-4 text-white" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>إشعارات الصلاة</p>
+              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>تنبيه قبل كل صلاة بدون نت</p>
+            </div>
+            <ToggleSwitch
+              enabled={notifSettings.enabled}
+              onToggle={() => setEnabled(!notifSettings.enabled)}
+              accentColor="#2ecc71"
+            />
+          </div>
+
+          {!isNative && (
+            <NativeOnlyNote subText={subText} />
+          )}
+
+          {notifSettings.enabled && (
+            <div className="space-y-4">
+              {/* Minutes before selector */}
+              <div>
+                <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+                  وقت الإشعار
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {MINUTES_OPTIONS.map(opt => {
+                    const selected = notifSettings.minutesBefore === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => setMinutesBefore(opt.value)}
+                        className="text-xs px-3 py-1.5 rounded-xl transition-all font-bold"
+                        style={{
+                          fontFamily: '"Tajawal", sans-serif',
+                          background: selected ? '#2ecc71' : 'rgba(46,204,113,0.1)',
+                          color: selected ? '#fff' : subText,
+                          border: `1.5px solid ${selected ? '#2ecc71' : 'transparent'}`,
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: 1, background: borderColor }} />
+
+              {/* Per-prayer toggles */}
+              <div>
+                <p className="text-xs font-bold mb-3" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+                  اختر الصلوات التي تريد تنبيهها
+                </p>
+                <div className="space-y-2.5">
+                  {PRAYER_LIST.map(prayer => {
+                    const enabled = notifSettings.prayers[prayer.key];
+                    return (
+                      <div
+                        key={prayer.key}
+                        className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all"
+                        style={{
+                          background: enabled
+                            ? 'rgba(46,204,113,0.08)'
+                            : (dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'),
+                          border: `1px solid ${enabled ? 'rgba(46,204,113,0.3)' : borderColor}`,
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{prayer.emoji}</span>
+                          <span
+                            className="font-bold text-sm"
+                            style={{
+                              fontFamily: '"Tajawal", sans-serif',
+                              color: enabled ? textColor : subText,
+                            }}
+                          >
+                            {prayer.name}
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          enabled={enabled}
+                          onToggle={() => togglePrayer(prayer.key)}
+                          accentColor="#2ecc71"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Re-request permissions button (native only) */}
+              {isNative && (
+                <button
+                  onClick={() => {
+                    resetPermissionsFlag();
+                    requestAllPermissionsOnce();
+                  }}
+                  className="w-full py-2.5 rounded-xl text-xs font-bold transition-all"
+                  style={{
+                    fontFamily: '"Tajawal", sans-serif',
+                    background: 'rgba(46,204,113,0.1)',
+                    color: '#2ecc71',
+                    border: '1px solid rgba(46,204,113,0.3)',
+                  }}
+                >
+                  🔔 طلب إذن الإشعارات مجدداً
+                </button>
+              )}
+            </div>
+          )}
+        </motion.div>
+
+        {/* ── Background Section ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className="rounded-2xl p-4"
           style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
         >
@@ -357,7 +586,7 @@ export function Settings() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="rounded-xl p-3 text-center"
           style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}
         >

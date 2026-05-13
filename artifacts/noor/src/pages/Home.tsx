@@ -3,6 +3,7 @@ import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache } from '@/lib/rtdb';
+import { syncPrayerNotifications, getNotificationSettings } from '@/lib/notifications';
 
 const PRAYERS = [
   { id: 'Fajr',    name: 'الفجر'  },
@@ -97,8 +98,28 @@ export function Home() {
   const times = prayerResult?.timings;
   const hijri = prayerResult?.hijri;
 
+  const { data: tomorrowResult } = usePrayerTimes(lat, lng, 1);
+
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time24: string } | null>(null);
   const [countdown, setCountdown] = useState('');
+
+  // ── Schedule prayer notifications whenever timings load or settings change ──
+  useEffect(() => {
+    if (!times) return;
+    const settings = getNotificationSettings();
+    if (!settings.enabled) return;
+    syncPrayerNotifications(times, tomorrowResult?.timings);
+  }, [times, tomorrowResult]);
+
+  // Re-schedule when notification settings change from the Settings page
+  useEffect(() => {
+    const handler = () => {
+      if (!times) return;
+      syncPrayerNotifications(times, tomorrowResult?.timings);
+    };
+    window.addEventListener('noor:notif-settings-changed', handler);
+    return () => window.removeEventListener('noor:notif-settings-changed', handler);
+  }, [times, tomorrowResult]);
 
   useEffect(() => {
     if (!times || dateOffset !== 0) return;
