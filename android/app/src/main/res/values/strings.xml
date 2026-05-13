@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">نور</string>
-    <string name="title_activity_main">نور</string>
+    <string name="app_name">Noor app</string>
+    <string name="title_activity_main">Noor app</string>
     <string name="package_name">com.noor.app</string>
     <string name="custom_url_scheme">com.noor.app</string>
 </resources>
