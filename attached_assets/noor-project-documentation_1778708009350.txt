@@ -1,0 +1,523 @@
+================================================================================
+             توثيق مشروع نُور (NOOR) — الدليل الشامل من الألف إلى الياء
+             تاريخ التوثيق: 11 مايو 2026
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+١. نظرة عامة على المشروع
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+الاسم: نُور (Noor)
+الاسم التقني: @workspace/noor-app
+النوع: تطبيق ويب إسلامي شامل (Web App + PWA + Android via Capacitor)
+نوع المستودع: Monorepo بـ pnpm workspace
+بيئة التطوير: Replit
+بيئة الإنتاج: Vercel
+رابط الإنتاج: https://noooooor-api-server.vercel.app/
+Firebase Project: noooooor-app
+قواعد البيانات: PostgreSQL (Replit) + Firebase Firestore + Firebase RTDB
+إصدار Node.js: 20
+مدير الحزم: pnpm v10.26.1
+TypeScript: 6.0.2
+React: 19.1.0
+Vite: 7.3.2
+Express: 5.x
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+الميزات الرئيسية (22 ميزة)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.  القرآن الكريم       → قراءة + تفسير + تلاوة + بحث + كلمة بكلمة + مصاحف
+2.  الأحاديث الشريفة   → 6 كتب + بحث عربي + pagination
+3.  التاريخ الإسلامي   → 7 حقب + آلاف الأحداث (20MB بيانات)
+4.  قصص الأنبياء       → 24 نبي (25 ملف JSON)
+5.  الاختبارات         → 5820 سؤال MCQ × 6 تصنيفات × 3 مستويات
+6.  سنن النبي ﷺ        → 5 تصنيفات مع مصادر
+7.  الأذكار            → صباح + مساء + نوم + بعد صلاة + حصن المسلم
+8.  التسبيح الرقمي     → عداد + مزامنة عالمية SSE
+9.  القبلة             → بوصلة ذكية بمستشعرات الجهاز
+10. مواقيت الصلاة      → 27 محافظة مصرية (method=5)
+11. الصحبة / المجتمع  → leaderboard + شارات + نقاط نُور
+12. القراء             → mp3quran.net + تشغيل + تحميل
+13. الإذاعات           → radiojar + zeno.fm + mp3islam
+14. التلفزيون          → HLS streams بـ hls.js
+15. أسماء الله الحسنى  → 99 اسم مع الشرح
+16. القراءة السريعة    → Speed Reader للآيات
+17. مقارنة الأصوات    → قراء مختلفون لنفس الآية
+18. اختبار الحفظ       → أكمل الآية، اختر الصحيح
+19. المصاحف PDF        → 8 أنواع للتحميل
+20. الإعدادات          → ثيم + خلفيات + حجم خط + شفافية
+21. الترتيب والشارات   → Rankings محلية وعالمية
+22. التسجيل والدخول    → Firebase Auth
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٢. اللغات والتقنيات
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TypeScript v6.0.2      → الواجهة (React) + الخادم (Express) + libs
+JavaScript             → Vercel serverless functions في api/
+HTML5                  → artifacts/noor/index.html
+CSS3 / Tailwind v4.2.1 → التصميم الكامل
+Bash                   → سكريبتات التطوير والبناء
+SQL / PostgreSQL        → قاعدة البيانات عبر Drizzle ORM
+JSON                   → ملفات البيانات (20MB+)
+YAML                   → OpenAPI spec
+
+المكتبات الرئيسية:
+React 19.1.0 | Vite 7.3.2 | Express 5.x | Tailwind CSS 4.2.1
+Drizzle ORM 0.45.2 | Firebase SDK 12.11.0 | TanStack Query 5.90.21
+Wouter 3.9.0 | Radix UI | Framer Motion 12.35.1 | hls.js 1.6.15
+Leaflet 1.9.4 | Capacitor 5.7.8 | Helmet 8.1.0 | tsx 4.21.0
+esbuild 0.27.3 | Zod 3.25.76 | Lucide React 0.545.0
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٣. هيكل المشروع الكامل
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+workspace/
+├── artifacts/
+│   ├── noor/              ← الواجهة (React+Vite) PORT 5000
+│   │   ├── index.html     ← نقطة الدخول (~4KB)
+│   │   ├── vite.config.ts ← إعدادات Vite (~2KB)
+│   │   ├── package.json   ← dependencies (~3KB)
+│   │   ├── start-dev.sh   ← سكريبت التشغيل (~700B)
+│   │   ├── components.json ← إعدادات shadcn/ui
+│   │   ├── tsconfig.json
+│   │   ├── public/
+│   │   │   ├── logo.png           (64 KB)
+│   │   │   ├── opengraph.jpg      (27 KB)
+│   │   │   ├── basmala.jpg        (31 KB)
+│   │   │   ├── favicon.svg        (163 bytes)
+│   │   │   ├── robots.txt         (100 bytes)
+│   │   │   ├── sitemap.xml        (2.1 KB)
+│   │   │   ├── progressier.js     (68 bytes)
+│   │   │   ├── images/
+│   │   │   │   └── islamic-pattern.png (1.6 MB)
+│   │   │   └── data/              (20 MB إجمالي)
+│   │   │       ├── quizzes.json           (4.4 MB)
+│   │   │       ├── tafsir-muyassar.json   (2.5 MB)
+│   │   │       ├── quran-uthmani.json     (1.5 MB)
+│   │   │       ├── quran-search.json      (1.4 MB)
+│   │   │       ├── history-abbasid-1.json (824 KB)
+│   │   │       ├── history-abbasid-2.json (960 KB)
+│   │   │       ├── history-abbasid-3.json (1.2 MB)
+│   │   │       ├── history-abbasid-4.json (965 KB)
+│   │   │       ├── history-mamluk-1.json  (1.2 MB)
+│   │   │       ├── history-mamluk-2.json  (897 KB)
+│   │   │       ├── history-ottoman-1.json (857 KB)
+│   │   │       ├── history-ottoman-2.json (782 KB)
+│   │   │       ├── history-ottoman-3.json (962 KB)
+│   │   │       ├── history-ayyubid.json   (580 KB)
+│   │   │       ├── history-umayyad.json   (393 KB)
+│   │   │       ├── history-seerah.json    (343 KB) ← السيرة النبوية
+│   │   │       ├── history-rashidun.json  (243 KB)
+│   │   │       ├── history-pre.json       (2 bytes)
+│   │   │       ├── history-abbasid-meta.json (41 bytes)
+│   │   │       ├── history-ottoman-meta.json (41 bytes)
+│   │   │       ├── history-mamluk-meta.json  (40 bytes)
+│   │   │       ├── sunnah.json            (40 KB)
+│   │   │       ├── moshaf.json            (3.3 KB)
+│   │   │       ├── prophets-meta.json     (3.5 KB)
+│   │   │       ├── prophet-adam.json      (6.8 KB)
+│   │   │       ├── prophet-musa.json      (6.1 KB)
+│   │   │       ├── prophet-ibrahim.json   (6.6 KB)
+│   │   │       ├── prophet-nuh.json       (5.8 KB)
+│   │   │       ├── prophet-isa.json       (4.9 KB)
+│   │   │       ├── prophet-yusuf.json     (4.9 KB)
+│   │   │       ├── prophet-dawud.json     (4.2 KB)
+│   │   │       ├── prophet-sulayman.json  (4.1 KB)
+│   │   │       ├── prophet-lut.json       (4.1 KB)
+│   │   │       ├── prophet-harun.json     (4.0 KB)
+│   │   │       ├── prophet-saleh.json     (4.2 KB)
+│   │   │       ├── prophet-hud.json       (4.3 KB)
+│   │   │       ├── prophet-ismail.json    (3.8 KB)
+│   │   │       ├── prophet-idris.json     (3.5 KB)
+│   │   │       ├── prophet-zakariyya.json (3.7 KB)
+│   │   │       ├── prophet-yahya.json     (3.3 KB)
+│   │   │       ├── prophet-yaqub.json     (3.2 KB)
+│   │   │       ├── prophet-yunus.json     (3.7 KB)
+│   │   │       ├── prophet-shuayb.json    (3.2 KB)
+│   │   │       ├── prophet-ishaq.json     (2.7 KB)
+│   │   │       ├── prophet-ayyub.json     (3.4 KB)
+│   │   │       ├── prophet-ilyas.json     (2.5 KB)
+│   │   │       ├── prophet-alyasa.json    (1.9 KB)
+│   │   │       └── prophet-dhulkifl.json  (2.0 KB)
+│   │   └── src/
+│   │       ├── main.tsx           (1.5 KB) ← نقطة دخول React
+│   │       ├── App.tsx            (9.2 KB) ← Router + Auth + Providers
+│   │       ├── index.css          (~5 KB)  ← Tailwind + CSS Variables
+│   │       ├── pages/
+│   │       │   ├── Home.tsx               (13 KB)
+│   │       │   ├── Login.tsx              (29 KB)
+│   │       │   ├── Quran.tsx              (43 KB) ← أضخم صفحة
+│   │       │   ├── Azkar.tsx              (18 KB)
+│   │       │   ├── Tasbih.tsx             (18 KB)
+│   │       │   ├── Rankings.tsx           (25 KB)
+│   │       │   ├── MoreMenu.tsx           (50 KB)
+│   │       │   ├── Settings.tsx           (17 KB)
+│   │       │   ├── Hadith.tsx             (15 KB)
+│   │       │   ├── IslamicHistory.tsx     (15 KB)
+│   │       │   ├── ProphetStories.tsx     (12 KB)
+│   │       │   ├── IslamicQuizzes.tsx     (19 KB)
+│   │       │   ├── Sunnah.tsx             (9.6 KB)
+│   │       │   ├── Qibla.tsx              (20 KB)
+│   │       │   ├── EgyptianRadio.tsx      (28 KB)
+│   │       │   ├── IslamicTV.tsx          (12 KB)
+│   │       │   ├── Reciters.tsx           (36 KB)
+│   │       │   ├── SpeedReader.tsx        (17 KB)
+│   │       │   ├── VoiceComparison.tsx    (59 KB)
+│   │       │   ├── HifzTest.tsx           (57 KB)
+│   │       │   ├── Asma.tsx               (3.9 KB)
+│   │       │   └── not-found.tsx          (711 bytes)
+│   │       ├── components/
+│   │       │   ├── NoorIcons.tsx          (44 KB) ← مكتبة أيقونات 3D
+│   │       │   ├── HomeTracker.tsx        (41 KB)
+│   │       │   ├── MiniPlayer.tsx         (4 KB)
+│   │       │   ├── SplashScreen.tsx       (5.9 KB)
+│   │       │   ├── layout/
+│   │       │   │   └── BottomNav.tsx      (12 KB)
+│   │       │   └── ui/ (54 مكون shadcn/ui)
+│   │       ├── hooks/
+│   │       │   ├── use-api.ts             (3.7 KB)
+│   │       │   ├── use-compass.ts         (5.5 KB)
+│   │       │   ├── use-geolocation.ts     (3.1 KB)
+│   │       │   ├── use-local-storage.ts   (1.7 KB)
+│   │       │   ├── use-mobile.tsx         (565 bytes)
+│   │       │   ├── use-toast.ts           (3.9 KB)
+│   │       │   └── use-user-setting.ts    (867 bytes)
+│   │       ├── lib/
+│   │       │   ├── firebase.ts            (1.6 KB)
+│   │       │   ├── firestore.ts           (9.2 KB)
+│   │       │   ├── rtdb.ts                (11 KB)
+│   │       │   ├── constants.ts           (71 KB) ← أكبر ملف ثوابت
+│   │       │   ├── hisnData.ts            (131 KB) ← حصن المسلم
+│   │       │   └── utils.ts               (437 bytes)
+│   │       └── contexts/
+│   │           ├── AppSettingsContext.tsx  (4.2 KB)
+│   │           └── AudioContext.tsx        (3.3 KB)
+│   ├── api-server/             ← الخادم (Express) PORT 3001
+│   │   ├── src/
+│   │   │   ├── index.ts        (968 bytes)
+│   │   │   ├── app.ts          (2 KB)
+│   │   │   ├── db-init.ts      (1.8 KB)
+│   │   │   └── routes/
+│   │   │       ├── index.ts    (505 bytes)
+│   │   │       ├── health.ts   (288 bytes)
+│   │   │       ├── counter.ts  (4 KB)
+│   │   │       ├── sohba.ts    (2.8 KB)
+│   │   │       ├── hadith.ts   (11 KB) ← أضخم route
+│   │   │       ├── audio-proxy.ts (1.7 KB)
+│   │   │       └── download.ts    (2.8 KB)
+│   │   ├── build.ts            (2 KB)
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── mockup-sandbox/         ← بيئة تجريب UI PORT 8081
+├── lib/
+│   ├── db/                     ← Drizzle ORM
+│   │   └── src/
+│   │       ├── index.ts        (416 bytes)
+│   │       └── schema/
+│   │           ├── globalCounter.ts
+│   │           ├── sohba.ts
+│   │           └── index.ts
+│   ├── api-spec/
+│   │   └── openapi.yaml        (778 bytes)
+│   ├── api-client-react/
+│   │   └── src/
+│   │       ├── custom-fetch.ts (8.9 KB)
+│   │       ├── index.ts        (74 bytes)
+│   │       └── generated/
+│   └── api-zod/
+│       └── src/
+│           ├── index.ts        (68 bytes)
+│           └── generated/
+├── api/                        ← Vercel Serverless Functions
+│   ├── download.js             (2.4 KB)
+│   ├── package.json            (25 bytes)
+│   └── hadith/
+│       ├── books.js
+│       ├── hadiths.js
+│       └── chapters/[book].js
+├── scripts/
+│   └── dev.sh
+├── package.json
+├── pnpm-workspace.yaml
+├── pnpm-lock.yaml
+├── vercel.json                 (~3 KB)
+├── vite.config.ts              (~2 KB)
+├── tsconfig.json
+├── tsconfig.base.json
+├── build.sh                    (~400 bytes)
+├── capacitor.config.ts         (~500 bytes)
+├── replit.md                   (~5 KB)
+└── replit.nix
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٤. قاعدة البيانات PostgreSQL — Schema كامل
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+جدول global_counter:
+  id          SERIAL PRIMARY KEY
+  total_count BIGINT NOT NULL DEFAULT 0    ← العدد الإجمالي للتسبيح
+  updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+  (دائماً صف واحد: id=1)
+
+جدول sohba_leaderboard:
+  id                SERIAL PRIMARY KEY
+  user_id           TEXT NOT NULL UNIQUE    ← Firebase UID
+  display_name      TEXT NOT NULL
+  governorate       TEXT                    ← nullable
+  is_public         BOOLEAN NOT NULL DEFAULT FALSE
+  tasbeeh_count     INTEGER NOT NULL DEFAULT 0
+  quran_completions INTEGER NOT NULL DEFAULT 0
+  current_surah     INTEGER NOT NULL DEFAULT 1
+  azkar_streak      INTEGER NOT NULL DEFAULT 0
+  tadabbur_streak   INTEGER NOT NULL DEFAULT 0
+  noor_score        INTEGER NOT NULL DEFAULT 0
+  earned_badges     TEXT[] NOT NULL DEFAULT '{}'
+  updated_at        TIMESTAMP NOT NULL DEFAULT NOW()
+
+حساب نقاط نُور:
+  noorScore = floor(tasbeehCount × 0.5)
+            + quranCompletions × 1000
+            + azkarStreak × 50
+            + tadabburStreak × 20
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٥. Firebase — تفاصيل كاملة
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Project ID:            noooooor-app
+Auth Domain:           noooooor-app.firebaseapp.com
+Database URL:          https://noooooor-app-default-rtdb.firebaseio.com
+Storage Bucket:        noooooor-app.firebasestorage.app
+Messaging Sender ID:   230599694330
+App ID:                1:230599694330:web:8780636368d1469591f643
+Measurement ID:        G-P96TYMPZQF
+
+Firestore Collections:
+  sohbaLeaderboard/{userId}         ← بيانات المستخدم والترتيب
+  governorateLeaderboard/all        ← ترتيب المحافظات (document واحد)
+  meta/lastRebuild                  ← metadata آخر إعادة بناء
+
+Realtime Database Structure:
+  users/{uid}/
+    profile/    ← uid, name, email, photo, governorateId, lat, lng, joinedAt
+    settings/   ← app_bg_type, app_bg_preset, app_font_scale, app_card_opacity, theme
+    quran/      ← current_surah, current_ayah, bookmarks[]
+    azkar/{date}/ ← morning_done, evening_done
+    daily_tracker/{YYYY-MM-DD}/ ← azkar_done, tadabbur_done
+    tasbih_totals/ ← total, today_{date}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٦. الـ APIs الخارجية — كل التفاصيل
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. alquran.cloud (مجاني، بلا مفتاح):
+   GET https://api.alquran.cloud/v1/meta                              ← metadata السور
+   GET https://api.alquran.cloud/v1/surah/{n}/quran-uthmani           ← نص سورة
+   GET https://api.alquran.cloud/v1/quran/ar.muyassar                 ← تفسير كامل
+   GET https://api.alquran.cloud/v1/quran/quran-simple                ← للبحث
+
+2. quran.com API v4 (مجاني، بلا مفتاح):
+   GET https://api.quran.com/api/v4/tafsirs/16/by_ayah/{s}:{a}?language=ar  ← تفسير آية
+   GET https://api.quran.com/api/v4/verses/by_key/{s}:{a}?words=true        ← كلمة بكلمة
+   GET https://api.quran.com/api/v4/quran/verses/uthmani                     ← القرآن كامل
+
+3. everyayah.com (مجاني):
+   URL: https://www.everyayah.com/data/{folder}/{surah3}{ayah3}.mp3
+   القراء المتاحون (14):
+   - Husary_64kbps
+   - Abdul_Basit_Murattal_64kbps
+   - Maher_AlMuaiqly_64kbps
+   - Alafasy_64kbps
+   - Nasser_Alqatami_128kbps
+   - Yasser_Ad-Dussary_128kbps
+   - Abu_Bakr_Ash-Shaatree_64kbps
+   - Hudhaify_64kbps
+   - Minshawy_Murattal_128kbps
+   - Abdullah_Basfar_64kbps
+   - Ibrahim_Akhdar_32kbps
+   - ahmed_ibn_ali_al_ajamy_128kbps
+   - Saood_ash-Shuraym_64kbps
+   - Mahmoud_Ali_Al_Banna_32kbps
+
+4. audio.qurancdn.com — صوت كلمة بكلمة:
+   GET https://audio.qurancdn.com/wbw/{surah3}/{ayah3}/{word3}.mp3
+
+5. aladhan.com — مواقيت الصلاة (مجاني):
+   GET https://api.aladhan.com/v1/timings/{DD-MM-YYYY}?latitude={lat}&longitude={lng}&method=5
+   method=5 = هيئة المساحة المصرية العامة
+   يُعيد: Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha + التاريخ الهجري
+
+6. mp3quran.net — القراء (مجاني):
+   GET https://mp3quran.net/api/v3/reciters?language=ar
+   يُعيد: id, name, country, moshaf[{id, name, server, surah_total, moshaf_type}]
+
+7. hadithapi.com — الأحاديث (يحتاج API Key):
+   API Key: $2y$10$zSijdF10JGzOS8ZyQDf5xO1rYuVOiEWV71IogIVeivmQXGjGxkS
+   GET https://hadithapi.com/api/books?apiKey=...
+   GET https://hadithapi.com/api/hadiths?apiKey=...&book=...&paginate=...&page=...
+   GET https://hadithapi.com/api/{book}/chapters?apiKey=...
+
+8. jsDelivr CDN — الأحاديث Fallback (مجاني تماماً):
+   GET https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.json
+   GET https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-muslim.json
+   GET https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-tirmidhi.json
+   GET https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-abudawud.json
+   GET https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-ibnmajah.json
+   GET https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-nasai.json
+   الأحجام: البخاري 7589 | مسلم 7563 | الترمذي 3998 | أبو داود 5274 | ابن ماجه 4343 | النسائي 5765
+
+9. الإذاعات الإسلامية:
+   radiojar.com:
+     https://stream.radiojar.com/0tpy1h0kxtzuv
+     https://stream.radiojar.com/8s5u5tpdtwzuv
+     https://n01.radiojar.com/mishary
+     https://n01.radiojar.com/maher
+     https://n01.radiojar.com/minshawi
+     https://n01.radiojar.com/yasser
+   zeno.fm:
+     https://stream.zeno.fm/0r0xa792kwzuv
+     https://stream.zeno.fm/2uvzm99qf08uv
+     https://stream.zeno.fm/4d6rdunvgn8uv
+     https://stream.zeno.fm/ud3z16g0hkquv
+     https://stream.zeno.fm/xqcd0h4fp9zuv
+     https://stream.zeno.fm/yn60hqkp6yzuv
+   mp3islam.com:
+     https://radio.mp3islam.com/listen/quran_radio/radio.mp3
+     https://radio.mp3islam.com/listen/minshawi/radio.mp3
+     https://radio.mp3islam.com/listen/yaser/radio.mp3
+   mixlr.com:
+     https://edge.mixlr.com/channel/rwumx
+
+10. holol.com — التلفزيون الإسلامي (HLS):
+    https://win.holol.com/live/quran/playlist.m3u8    ← قناة القرآن
+    https://win.holol.com/live/sunnah/playlist.m3u8   ← قناة السنة
+
+11. flagcdn.com — أعلام المحافظات:
+    https://flagcdn.com/w40/{code}.png   ← صغير
+    https://flagcdn.com/w80/{code}.png   ← متوسط
+    https://flagcdn.com/w160/{code}.png  ← كبير
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٧. مسارات API الخادم — كاملة
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GET  /api/healthz                        ← {"status":"ok"}
+GET  /api/counter                        ← {count, activeUsers}
+GET  /api/counter/stream?sid=            ← SSE stream للعدد الحي
+POST /api/counter/increment              ← {amount} → {count}
+GET  /api/counter/leaderboard            ← أفضل 50 مستخدم
+POST /api/sohba/sync                     ← مزامنة بيانات المستخدم
+GET  /api/sohba/leaderboard              ← ترتيب noorScore
+GET  /api/sohba/user/:userId             ← بيانات مستخدم
+GET  /api/hadith/books                   ← قائمة الكتب
+GET  /api/hadith/hadiths?book=&page=&paginate= ← أحاديث mع pagination
+GET  /api/hadith/search?book=&q=         ← بحث في الأحاديث
+GET  /api/hadith/chapters?book=          ← أبواب كتاب
+GET  /api/audio-proxy?url=               ← proxy صوتي مع allowlist
+GET  /api/download?url=&filename=        ← تحميل MP3 مع Content-Disposition
+
+البريدان يعملان على:
+  /api/*           ← من Vite proxy في التطوير
+  /api-server/api/* ← من Artifact Router في Replit
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٨. متغيرات البيئة
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DATABASE_URL                        ← PostgreSQL connection string
+PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
+PORT                                ← 5000 (Vite) | 3001 (Express)
+API_SERVER_PORT                     ← 3001
+BASE_PATH                           ← /
+NODE_ENV                            ← development | production
+VITE_FIREBASE_API_KEY               ← AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074
+VITE_FIREBASE_AUTH_DOMAIN           ← noooooor-app.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID            ← noooooor-app
+VITE_FIREBASE_STORAGE_BUCKET        ← noooooor-app.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID   ← 230599694330
+VITE_FIREBASE_APP_ID                ← 1:230599694330:web:8780636368d1469591f643
+VITE_FIREBASE_MEASUREMENT_ID        ← G-P96TYMPZQF
+HADITH_API_KEY                      ← $2y$10$zSijdF10JGzOS8ZyQDf5xO1rYuVOiEWV71IogIVeivmQXGjGxkS
+REPL_ID                             ← تلقائي من Replit (لتفعيل Replit plugins)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+٩. المنافذ والتوجيه
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PORT 5000  ← Vite Dev Server (الواجهة الأمامية)
+PORT 3001  ← Express API Server
+PORT 8080  ← Proxy (8080 → 5000)
+PORT 8081  ← Mockup Sandbox
+PORT 18080 ← Replit Artifact Router
+PORT 19382 ← Express عبر Artifact Router
+
+توجيه Vercel:
+  /api/(*) → /api/$1 (rewrite)
+  /(غير api/) → /index.html (SPA rewrite)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+١٠. Security Headers
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' [Firebase/Google domains]...
+Cross-Origin-Opener-Policy: same-origin
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Permissions-Policy: camera=(), geolocation=(self), accelerometer=(self)...
+X-DNS-Prefetch-Control: on
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+١١. نظام الألوان والخطوط
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+اللون الأساسي: #C19A6B (ذهبي/عنبري) = hsl(33 42% 59%)
+خط الواجهة: Tajawal (Google Fonts)
+خط القرآن: Amiri Quran + Scheherazade New + Lateef + Noto Naskh Arabic
+          + Reem Kufi + Cairo + Harmattan + Markazi Text + Lalezar + Aref Ruqaa Ink
+الاتجاه: RTL (يمين إلى يسار)
+
+الثيم الفاتح (Light):
+  background: hsl(51 71% 97%)  = #FDFBF0
+  foreground:  hsl(20 28% 13%) = #2C1E16
+  primary:     hsl(33 42% 59%) = #C19A6B
+
+الثيم الداكن (Dark):
+  background: hsl(20 18% 8%)   = #16120F
+  foreground:  hsl(51 71% 97%) = #FDFBF0
+  primary:     hsl(33 42% 59%) = #C19A6B
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+١٢. الـ Routes الكاملة للتطبيق
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/                → Home.tsx        (الصفحة الرئيسية)
+/quran           → Quran.tsx       (القرآن الكريم)
+/azkar           → Azkar.tsx       (الأذكار)
+/tasbih          → Tasbih.tsx      (التسبيح)
+/ranking         → Rankings.tsx    (الترتيب)
+/more            → MoreMenu.tsx    (المزيد)
+/settings        → Settings.tsx    (الإعدادات)
+/asma            → Asma.tsx        (أسماء الله)
+/reciters        → Reciters.tsx    (القراء)
+/speed-reader    → SpeedReader.tsx (قراءة سريعة)
+/radio           → EgyptianRadio.tsx (الإذاعات)
+/qibla           → Qibla.tsx       (القبلة)
+/hadith          → Hadith.tsx      (الأحاديث)
+/history         → IslamicHistory.tsx (التاريخ)
+/prophets        → ProphetStories.tsx (الأنبياء)
+/quizzes         → IslamicQuizzes.tsx (الاختبارات)
+/sunnah          → Sunnah.tsx      (السنة)
+/tv              → IslamicTV.tsx   (التلفزيون)
+/voice-comparison → VoiceComparison.tsx
+/hifz-test       → HifzTest.tsx    (اختبار الحفظ)
+*                → not-found.tsx   (404)
+
+================================================================================
+                            نهاية التوثيق
+             مشروع نُور — الدليل الشامل — 11 مايو 2026
+================================================================================
