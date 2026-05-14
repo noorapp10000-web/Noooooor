@@ -52,7 +52,7 @@ export function useGeolocation(autoRequest = true) {
       try {
         // 1. Request permission — shows Android permission dialog
         const perm = await Geo.requestPermissions({ permissions: ['location'] });
-        const granted = perm.location === 'granted' || perm.location === 'limited';
+        const granted = perm.location === 'granted' || (perm.location as string) === 'limited';
         if (!granted) {
           setError('الرجاء السماح للتطبيق بالوصول للموقع من الإعدادات');
           setIsLoading(false);

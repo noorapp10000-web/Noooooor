@@ -254,7 +254,7 @@ function CompassNeedle({ isAligned, isSearching }: { isAligned: boolean; isSearc
 
 /* ── Main Qibla Page ────────────────────────────────────────── */
 export function Qibla() {
-  const { heading, isSupported, requestPermission } = useCompass();
+  const { heading, isSupported, mode, requestPermission } = useCompass();
   const { coords, error: geoError, isLoading: geoLoading, requestLocation } = useGeolocation(true);
 
   const qiblaAngle  = coords ? calculateQibla(coords.lat, coords.lng) : 0;
@@ -432,6 +432,19 @@ export function Qibla() {
             <CompassNeedle isAligned={isAligned} isSearching={isSearching}/>
           </div>
         </div>
+
+        {/* تحذير وضع النسبي — يظهر لما الـ magnetometer يحتاج معايرة */}
+        {mode === 'relative' && (
+          <div className="px-4 py-2.5 rounded-2xl text-center w-full max-w-xs"
+            style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.35)' }}>
+            <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#FACC15' }}>
+              ⚠️ البوصلة تحتاج معايرة
+            </p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#CA8A04' }}>
+              حرّك هاتفك على شكل 8 في الهواء لتحسين الدقة
+            </p>
+          </div>
+        )}
 
         {coords && (
           <div className="flex items-center gap-1.5">

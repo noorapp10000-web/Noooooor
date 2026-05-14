@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useReciters } from '@/hooks/use-api';
-import { ArrowLeft, Search, ChevronRight, Download, Heart, Star } from 'lucide-react';
+import { ArrowLeft, Search, ChevronRight, Download, Heart, Star, Loader2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { useAudio } from '@/contexts/AudioContext';
 import { SURAH_NAMES } from '@/lib/constants';
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
 import { getSettingCache, queueRTDBUpdate, getCurrentUid } from '@/lib/rtdb';
 import { useToast } from '@/hooks/use-toast';
+import { Capacitor } from '@capacitor/core';
 
 type FavoriteReciter = {
   key: string;
@@ -335,6 +336,7 @@ export function Reciters() {
 
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<Phase>('reciters');
+  const [isDownloading, setIsDownloading] = useState(false);
   const [selectedReciter, setSelectedReciter] = useState<{
     id: string; name: string; server: string; moshafName: string; country?: string;
   } | null>(null);
@@ -404,46 +406,54 @@ export function Reciters() {
     ? `${audio.surahName} - ${audio.reciterName}.mp3`
     : 'surah.mp3';
 
-  const openDownloadInBrowser = () => {
-    if (!directMp3) return;
-    const origin =
-      typeof window !== 'undefined' && window.location?.origin
-        ? window.location.origin
-        : '';
-    const downloadUrl = `${origin}/api/download?url=${encodeURIComponent(directMp3)}&filename=${encodeURIComponent(mp3Filename)}`;
+  const handleDownload = async () => {
+    if (!directMp3 || isDownloading) return;
 
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-    // Detect Android WebView wrappers (App Creator 24, WebToApp, etc.)
-    const isAndroid = /Android/i.test(ua);
-    const isWebView =
-      /\bwv\b|; wv\)/.test(ua) ||
-      /AppCreator|WebToApp|Median|MobiLoud/i.test(ua) ||
-      // Heuristic: Android Chrome WebView usually lacks the standalone Chrome
-      // browser's "Chrome/x Safari/x" without the wv marker, but to be safe
-      // for known wrappers we treat all Android non-standard UAs as WebView.
-      (isAndroid && !/Chrome\/[\d.]+ (?:Mobile )?Safari\/[\d.]+$/i.test(ua));
-
-    if (isWebView) {
-      // Hidden iframe approach: the WebView's DownloadListener intercepts
-      // the navigation when the response has Content-Disposition: attachment,
-      // and no blank page is shown to the user.
+    if (Capacitor.isNativePlatform()) {
+      // ── Capacitor Android/iOS: تحميل مباشر إلى الجهاز ──────────────────
+      setIsDownloading(true);
+      toast({ title: 'جاري التحميل...', description: `سورة ${audio.surahName || ''} - ${audio.reciterName}` });
       try {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = downloadUrl;
-        document.body.appendChild(iframe);
-        // Clean up after 60s to release memory.
-        setTimeout(() => {
-          try { document.body.removeChild(iframe); } catch { /* noop */ }
-        }, 60000);
-      } catch {
-        // Fall back to direct navigation if iframe fails.
-        try { window.location.href = downloadUrl; } catch { /* noop */ }
+        const response = await fetch(directMp3);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+
+        // تحويل Blob إلى base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload  = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        // حفظ في مجلد المستندات (لا يحتاج إذن على Android 10+)
+        const savedPath = `نور/${mp3Filename}`;
+        await Filesystem.writeFile({
+          path: savedPath,
+          data: base64,
+          directory: Directory.Documents,
+          recursive: true,
+        });
+
+        toast({
+          title: '✅ تم التحميل بنجاح',
+          description: `حُفظت في المستندات / نور / ${mp3Filename}`,
+        });
+      } catch (err) {
+        console.error('[Download]', err);
+        toast({
+          title: 'خطأ في التحميل',
+          description: 'تأكد من الاتصال بالإنترنت وحاول مجدداً',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsDownloading(false);
       }
     } else {
-      // Regular browsers and Capacitor: anchor with download attribute,
-      // then `_system` for Capacitor, then a new tab as last resort.
-      let triggered = false;
+      // ── متصفح الويب: استخدام endpoint التحميل ───────────────────────────
+      const origin = window.location?.origin ?? '';
+      const downloadUrl = `${origin}/api/download?url=${encodeURIComponent(directMp3)}&filename=${encodeURIComponent(mp3Filename)}`;
       try {
         const a = document.createElement('a');
         a.href = downloadUrl;
@@ -453,24 +463,14 @@ export function Reciters() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        triggered = true;
       } catch {
-        /* fall through */
+        window.open(downloadUrl, '_blank', 'noopener,noreferrer');
       }
-      if (!triggered) {
-        try {
-          const win = window.open(downloadUrl, '_system');
-          if (!win) window.open(downloadUrl, '_blank', 'noopener,noreferrer');
-        } catch {
-          window.open(downloadUrl, '_blank', 'noopener,noreferrer');
-        }
-      }
+      toast({
+        title: 'بدأ التحميل',
+        description: `جاري تحميل سورة ${audio.surahName || ''}...`,
+      });
     }
-
-    toast({
-      title: 'بدأ التحميل',
-      description: `جاري تحميل ${audio.surahName ? `سورة ${audio.surahName}` : 'السورة'}...`,
-    });
   };
 
   // ── PHASE: Reciters ──────────────────────────────────────────────────────
@@ -696,13 +696,17 @@ export function Reciters() {
         <p className="text-sm font-bold" style={{ color: 'rgba(193,154,107,0.7)', fontFamily: '"Tajawal", sans-serif' }}>قيد التشغيل</p>
         {directMp3 ? (
           <button
-            onClick={openDownloadInBrowser}
+            onClick={handleDownload}
+            disabled={isDownloading}
             className="p-2 rounded-full transition-all flex items-center justify-center"
-            style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.25)' }}
+            style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.25)', opacity: isDownloading ? 0.6 : 1 }}
             title="تحميل السورة"
             data-testid="button-download-surah"
           >
-            <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />
+            {isDownloading
+              ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} />
+              : <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />
+            }
           </button>
         ) : (
           <div
