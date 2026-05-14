@@ -28,7 +28,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "bash artifacts/noor/start-dev.sh"
+args = "npm run dev"
 waitForPort = 5000
 
 [[workflows.workflow]]
