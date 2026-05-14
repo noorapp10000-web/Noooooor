@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import {
   initializeFirestore,
   persistentLocalCache,
-  persistentMultipleTabManager,
+  persistentSingleTabManager,
   getFirestore,
 } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
@@ -25,7 +25,7 @@ if (getApps().length === 0) {
   try {
     initializeFirestore(app, {
       localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
+        tabManager: persistentSingleTabManager({ forceOwnership: true }),
       }),
     });
   } catch {
