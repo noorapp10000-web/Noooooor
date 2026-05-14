@@ -129,7 +129,7 @@ jobs:
       - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: نور-v${{ github.event.inputs.version || '2.2' }}-${{ github.event.inputs.build_type || 'debug' }}
+          name: نور-v${{ github.event.inputs.version || '2.3' }}-${{ github.event.inputs.build_type || 'debug' }}
           path: ${{ steps.find_apk.outputs.apk_path }}
           retention-days: 30
           if-no-files-found: error

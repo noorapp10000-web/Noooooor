@@ -643,6 +643,9 @@ importers:
       '@capacitor/local-notifications':
         specifier: ^5.0.8
         version: 5.0.8(@capacitor/core@5.7.8)
+      '@capacitor/share':
+        specifier: ^5.0.8
+        version: 5.0.8(@capacitor/core@5.7.8)
       adhan:
         specifier: ^4.4.3
         version: 4.4.3
@@ -1021,6 +1024,11 @@ packages:
 
   '@capacitor/local-notifications@5.0.8':
     resolution: {integrity: sha512-rNmEF1OntokzcKtb4H9hAF//4Z6svWxRlzlNHP3Am7Q9WdNScmq/KjolX4Z9tLGHapF6JfBytdADih5KHjB45A==}
+    peerDependencies:
+      '@capacitor/core': ^5.0.0
+
+  '@capacitor/share@5.0.8':
+    resolution: {integrity: sha512-Gj7z5Umf9blsROY+XzOdxepPQnbyn9AHEB9W1tVfl3QsYt6qEwoi+cgfE7ZOSAjcF/iERSnPlDNvK1tt6L5gcQ==}
     peerDependencies:
       '@capacitor/core': ^5.0.0
 
@@ -4487,6 +4495,10 @@ snapshots:
       '@capacitor/core': 5.7.8
 
   '@capacitor/local-notifications@5.0.8(@capacitor/core@5.7.8)':
+    dependencies:
+      '@capacitor/core': 5.7.8
+
+  '@capacitor/share@5.0.8(@capacitor/core@5.7.8)':
     dependencies:
       '@capacitor/core': 5.7.8
 

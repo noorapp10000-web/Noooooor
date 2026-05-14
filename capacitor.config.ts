@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.noor.app',
-  appName: 'نور',
+  appName: 'Noor',
   webDir: 'artifacts/noor/dist/public',
   server: {
     androidScheme: 'https',

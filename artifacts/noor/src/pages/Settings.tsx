@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -11,6 +11,7 @@ import {
 import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { flushRTDB, exportAllData, importAllData } from '@/lib/rtdb';
 
 const PRAYER_LIST: { key: PrayerKey; name: string }[] = [
@@ -48,44 +49,87 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveDone, setSaveDone] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
-  /* ── Local export ── */
-  async function handleExport() {
-    setSaving(true);
+  /* ── Build backup JSON ── */
+  async function buildBackup(): Promise<{ json: string; fileName: string }> {
     await flushRTDB();
     const json = exportAllData();
     const fileName = `noor-backup-${new Date().toISOString().split('T')[0]}.json`;
+    return { json, fileName };
+  }
 
-    if (Capacitor.isNativePlatform()) {
-      try {
+  /* ── Local export (save to storage) ── */
+  async function handleExport() {
+    setSaving(true);
+    try {
+      const { json, fileName } = await buildBackup();
+
+      if (Capacitor.isNativePlatform()) {
         await Filesystem.writeFile({
           path: fileName,
           data: json,
           directory: Directory.External,
           encoding: Encoding.UTF8,
         });
-        setSaving(false);
-        setSaveDone(true);
-        setTimeout(() => setSaveDone(false), 4000);
-        return;
-      } catch {
-        // fall through to web approach
+      } else {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
-    }
 
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setSaving(false);
-    setSaveDone(true);
-    setTimeout(() => setSaveDone(false), 3000);
+      setSaveDone(true);
+      setTimeout(() => setSaveDone(false), 4000);
+    } catch {
+      setSaveDone(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /* ── Share backup via native share sheet ── */
+  async function handleShare() {
+    setSharing(true);
+    try {
+      const { json, fileName } = await buildBackup();
+
+      if (Capacitor.isNativePlatform()) {
+        // Write to cache dir then share via native sheet
+        const writeResult = await Filesystem.writeFile({
+          path: fileName,
+          data: json,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        await Share.share({
+          title: 'نسخة احتياطية - Noor',
+          text: 'ملف النسخة الاحتياطية لتطبيق نور',
+          url: writeResult.uri,
+          dialogTitle: 'مشاركة النسخة الاحتياطية',
+        });
+      } else if (typeof navigator.share === 'function') {
+        const blob = new Blob([json], { type: 'application/json' });
+        const file = new File([blob], fileName, { type: 'application/json' });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'نسخة احتياطية - Noor' });
+        } else {
+          // Fallback: download
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = fileName;
+          document.body.appendChild(a); a.click();
+          document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+      }
+    } catch { /* user cancelled share or error */ }
+    finally { setSharing(false); }
   }
 
   /* ── Local import ── */
@@ -125,6 +169,7 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
       </div>
 
       <div className="space-y-2">
+        {/* Save to storage */}
         <button onClick={handleExport} disabled={saving}
           className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
           style={{ background: saveDone ? 'rgba(34,197,94,0.1)' : 'rgba(193,154,107,0.08)', border: `1.5px solid ${saveDone ? 'rgba(34,197,94,0.35)' : 'rgba(193,154,107,0.25)'}` }}>
@@ -138,6 +183,24 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             </p>
             <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
               {Capacitor.isNativePlatform() ? 'حفظ noor-backup.json في التخزين الخارجي' : 'تنزيل ملف noor-backup.json'}
+            </p>
+          </div>
+        </button>
+
+        {/* Share via native share sheet */}
+        <button onClick={handleShare} disabled={sharing}
+          className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
+          style={{ background: 'rgba(193,154,107,0.08)', border: '1.5px solid rgba(193,154,107,0.25)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(193,154,107,0.12)' }}>
+            {sharing ? <RefreshCw className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} /> : <Share2 className="w-5 h-5" style={{ color: '#C19A6B' }} />}
+          </div>
+          <div className="text-right flex-1">
+            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
+              {sharing ? 'جاري التحضير...' : 'مشاركة النسخة الاحتياطية'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+              إرسال عبر واتساب أو البريد أو السحابة
             </p>
           </div>
         </button>
