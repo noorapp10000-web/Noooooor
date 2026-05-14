@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "UZTEXrYzWt5P9P7SddU_5"
+uri = "file://noor-website-prompt.md"
+type = "text"
+title = "برومت موقع نور — Export/Import + Google Drive"

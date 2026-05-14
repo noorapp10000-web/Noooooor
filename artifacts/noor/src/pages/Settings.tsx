@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Cloud, CloudUpload, CloudDownload, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import {
@@ -11,6 +11,9 @@ import {
 import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
 import { flushRTDB, exportAllData, importAllData } from '@/lib/rtdb';
+import {
+  uploadToDrive, downloadFromDrive, getDriveEmail, clearDriveToken,
+} from '@/lib/google-drive';
 
 const PRAYER_LIST: { key: PrayerKey; name: string }[] = [
   { key: 'Fajr', name: 'الفجر' }, { key: 'Sunrise', name: 'الشروق' },
@@ -42,6 +45,8 @@ function ToggleSwitch({ enabled, onToggle, accentColor = '#C19A6B' }: { enabled:
   );
 }
 
+type DriveStatus = 'idle' | 'loading' | 'done' | 'error';
+
 function BackupSection({ sectionBg, borderColor, textColor, subText }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -49,6 +54,12 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   const [saveDone, setSaveDone] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
+  const [driveEmail, setDriveEmail] = useState<string | null>(() => getDriveEmail());
+  const [driveUpload, setDriveUpload] = useState<DriveStatus>('idle');
+  const [driveDownload, setDriveDownload] = useState<DriveStatus>('idle');
+  const [driveMsg, setDriveMsg] = useState('');
+
+  /* ── Local export ── */
   async function handleExport() {
     setSaving(true);
     await flushRTDB();
@@ -56,9 +67,8 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const date = new Date().toISOString().split('T')[0];
     a.href = url;
-    a.download = `noor-backup-${date}.json`;
+    a.download = `noor-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setSaving(false);
@@ -66,6 +76,7 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
     setTimeout(() => setSaveDone(false), 3000);
   }
 
+  /* ── Local import ── */
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -75,15 +86,82 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       const result = importAllData(text);
-      setImportResult({ ok: result.success, msg: result.success ? 'تم استعادة البيانات — أعد تشغيل التطبيق' : (result.error ?? 'خطأ غير معروف') });
+      setImportResult({ ok: result.success, msg: result.success ? 'تم استعادة البيانات — جاري التحديث...' : (result.error ?? 'خطأ غير معروف') });
       setImporting(false);
-      if (result.success) {
-        setTimeout(() => window.location.reload(), 2000);
-      }
+      if (result.success) setTimeout(() => window.location.reload(), 1800);
     };
     reader.readAsText(file);
     e.target.value = '';
   }
+
+  /* ── Drive upload ── */
+  async function handleDriveUpload() {
+    setDriveUpload('loading');
+    setDriveMsg('');
+    try {
+      await flushRTDB();
+      const json = exportAllData();
+      const { isNew } = await uploadToDrive(json);
+      setDriveEmail(getDriveEmail());
+      setDriveMsg(isNew ? 'تم رفع النسخة الاحتياطية على Google Drive ✓' : 'تم تحديث النسخة الاحتياطية على Google Drive ✓');
+      setDriveUpload('done');
+      setTimeout(() => setDriveUpload('idle'), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg === 'drive_api_not_enabled') {
+        setDriveMsg('يجب تفعيل Google Drive API أولاً — اضغط هنا لتفعيله');
+      } else if (msg.includes('popup') || msg.includes('closed')) {
+        setDriveMsg('أُغلقت نافذة تسجيل الدخول');
+      } else {
+        setDriveMsg('فشل رفع البيانات: ' + msg);
+      }
+      setDriveUpload('error');
+      setTimeout(() => setDriveUpload('idle'), 5000);
+    }
+  }
+
+  /* ── Drive download ── */
+  async function handleDriveDownload() {
+    setDriveDownload('loading');
+    setDriveMsg('');
+    try {
+      const json = await downloadFromDrive();
+      if (!json) {
+        setDriveMsg('لا توجد نسخة احتياطية على Google Drive بعد');
+        setDriveDownload('error');
+        setTimeout(() => setDriveDownload('idle'), 4000);
+        return;
+      }
+      setDriveEmail(getDriveEmail());
+      const result = importAllData(json);
+      if (result.success) {
+        setDriveMsg('تم استعادة البيانات من Google Drive ✓ — جاري التحديث...');
+        setDriveDownload('done');
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setDriveMsg('الملف تالف: ' + (result.error ?? 'خطأ'));
+        setDriveDownload('error');
+        setTimeout(() => setDriveDownload('idle'), 5000);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDriveMsg(msg.includes('popup') ? 'أُغلقت نافذة تسجيل الدخول' : 'فشل التنزيل: ' + msg);
+      setDriveDownload('error');
+      setTimeout(() => setDriveDownload('idle'), 5000);
+    }
+  }
+
+  function handleDriveSignOut() {
+    clearDriveToken();
+    setDriveEmail(null);
+    setDriveMsg('');
+    setDriveUpload('idle');
+    setDriveDownload('idle');
+  }
+
+  const driveConnected = !!driveEmail;
+  const driveError = driveMsg && (driveUpload === 'error' || driveDownload === 'error');
+  const driveDone = driveMsg && (driveUpload === 'done' || driveDownload === 'done');
 
   return (
     <motion.div
@@ -91,53 +169,42 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
       className="rounded-2xl p-4"
       style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
     >
+      {/* Header */}
       <div className="flex items-center gap-2.5 mb-4">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(145deg, #3B82F6, #1D4ED8)' }}>
           <HardDrive className="w-4 h-4 text-white" />
         </div>
-        <div>
+        <div className="flex-1">
           <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>النسخة الاحتياطية</p>
           <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>صدّر أو استعِد بياناتك</p>
         </div>
       </div>
 
-      <div className="space-y-2.5">
-        {/* Export */}
-        <button
-          onClick={handleExport}
-          disabled={saving}
+      {/* ─── Local File ─── */}
+      <p className="text-xs font-bold mb-2 mt-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+        📂 حفظ على الجهاز
+      </p>
+      <div className="space-y-2 mb-4">
+        <button onClick={handleExport} disabled={saving}
           className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
-          style={{
-            background: saveDone ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.08)',
-            border: `1.5px solid ${saveDone ? 'rgba(34,197,94,0.35)' : 'rgba(59,130,246,0.25)'}`,
-          }}
-        >
+          style={{ background: saveDone ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.08)', border: `1.5px solid ${saveDone ? 'rgba(34,197,94,0.35)' : 'rgba(59,130,246,0.25)'}` }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: saveDone ? 'rgba(34,197,94,0.15)' : 'rgba(59,130,246,0.12)' }}>
             {saveDone ? <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} /> : <Download className="w-5 h-5" style={{ color: '#3B82F6' }} />}
           </div>
           <div className="text-right flex-1">
             <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone ? '#22c55e' : textColor }}>
-              {saving ? 'جاري التصدير...' : saveDone ? 'تم تصدير البيانات ✓' : 'تصدير البيانات'}
+              {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير ✓' : 'تصدير إلى ملف'}
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              تنزيل ملف JSON يمكن رفعه على Google Drive
-            </p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>تنزيل ملف noor-backup.json</p>
           </div>
         </button>
 
-        {/* Import */}
         <input ref={importRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImportFile} />
-        <button
-          onClick={() => importRef.current?.click()}
-          disabled={importing}
+        <button onClick={() => importRef.current?.click()} disabled={importing}
           className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
-          style={{
-            background: importResult?.ok ? 'rgba(34,197,94,0.1)' : importResult?.ok === false ? 'rgba(239,68,68,0.08)' : 'rgba(193,154,107,0.08)',
-            border: `1.5px solid ${importResult?.ok ? 'rgba(34,197,94,0.35)' : importResult?.ok === false ? 'rgba(239,68,68,0.25)' : 'rgba(193,154,107,0.25)'}`,
-          }}
-        >
+          style={{ background: importResult?.ok ? 'rgba(34,197,94,0.1)' : importResult?.ok === false ? 'rgba(239,68,68,0.08)' : 'rgba(193,154,107,0.08)', border: `1.5px solid ${importResult?.ok ? 'rgba(34,197,94,0.35)' : importResult?.ok === false ? 'rgba(239,68,68,0.25)' : 'rgba(193,154,107,0.25)'}` }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: importResult?.ok ? 'rgba(34,197,94,0.15)' : importResult?.ok === false ? 'rgba(239,68,68,0.1)' : 'rgba(193,154,107,0.12)' }}>
             {importing ? <RefreshCw className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} /> : importResult?.ok ? <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} /> : <FolderOpen className="w-5 h-5" style={{ color: '#C19A6B' }} />}
@@ -146,12 +213,91 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: importResult?.ok ? '#22c55e' : importResult?.ok === false ? '#ef4444' : textColor }}>
               {importing ? 'جاري الاستعادة...' : importResult ? importResult.msg : 'استعادة من ملف'}
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              اختر ملف نسخة احتياطية سابق
-            </p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>اختر ملف نسخة احتياطية سابق</p>
           </div>
         </button>
       </div>
+
+      {/* ─── Google Drive ─── */}
+      <div style={{ height: 1, background: borderColor, marginBottom: 12 }} />
+      <div className="flex items-center gap-2 mb-2">
+        <Cloud className="w-4 h-4" style={{ color: '#4285F4' }} />
+        <p className="text-xs font-bold flex-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+          Google Drive — نسخ سحابية
+        </p>
+        {driveConnected && (
+          <button onClick={handleDriveSignOut} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
+            style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontFamily: '"Tajawal", sans-serif' }}>
+            <LogOut className="w-3 h-3" />
+            تسجيل خروج
+          </button>
+        )}
+      </div>
+
+      {driveConnected && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl"
+          style={{ background: 'rgba(66,133,244,0.08)', border: '1px solid rgba(66,133,244,0.2)' }}>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: '#4285F4' }}>
+            <span className="text-white font-bold" style={{ fontSize: 11 }}>
+              {driveEmail?.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <p className="text-xs font-bold flex-1 truncate" style={{ color: '#4285F4', fontFamily: '"Tajawal", sans-serif', direction: 'ltr' }}>
+            {driveEmail}
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        {/* Upload */}
+        <button onClick={handleDriveUpload} disabled={driveUpload === 'loading' || driveDownload === 'loading'}
+          className="rounded-xl p-3 flex flex-col items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-60"
+          style={{ background: driveUpload === 'done' ? 'rgba(34,197,94,0.1)' : 'rgba(66,133,244,0.08)', border: `1.5px solid ${driveUpload === 'done' ? 'rgba(34,197,94,0.35)' : 'rgba(66,133,244,0.25)'}` }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: driveUpload === 'done' ? 'rgba(34,197,94,0.15)' : 'rgba(66,133,244,0.12)' }}>
+            {driveUpload === 'loading' ? <RefreshCw className="w-4 h-4 animate-spin" style={{ color: '#4285F4' }} /> : driveUpload === 'done' ? <CheckCircle className="w-4 h-4" style={{ color: '#22c55e' }} /> : <CloudUpload className="w-4 h-4" style={{ color: '#4285F4' }} />}
+          </div>
+          <p className="text-xs font-bold text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: driveUpload === 'done' ? '#22c55e' : textColor }}>
+            {driveUpload === 'loading' ? 'جاري الرفع...' : 'رفع نسخة'}
+          </p>
+        </button>
+
+        {/* Download */}
+        <button onClick={handleDriveDownload} disabled={driveUpload === 'loading' || driveDownload === 'loading'}
+          className="rounded-xl p-3 flex flex-col items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-60"
+          style={{ background: driveDownload === 'done' ? 'rgba(34,197,94,0.1)' : 'rgba(66,133,244,0.08)', border: `1.5px solid ${driveDownload === 'done' ? 'rgba(34,197,94,0.35)' : 'rgba(66,133,244,0.25)'}` }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: driveDownload === 'done' ? 'rgba(34,197,94,0.15)' : 'rgba(66,133,244,0.12)' }}>
+            {driveDownload === 'loading' ? <RefreshCw className="w-4 h-4 animate-spin" style={{ color: '#4285F4' }} /> : driveDownload === 'done' ? <CheckCircle className="w-4 h-4" style={{ color: '#22c55e' }} /> : <CloudDownload className="w-4 h-4" style={{ color: '#4285F4' }} />}
+          </div>
+          <p className="text-xs font-bold text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: driveDownload === 'done' ? '#22c55e' : textColor }}>
+            {driveDownload === 'loading' ? 'جاري التنزيل...' : 'استعادة'}
+          </p>
+        </button>
+      </div>
+
+      {/* Drive message */}
+      <AnimatePresence>
+        {driveMsg && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="mt-2 px-3 py-2 rounded-xl text-xs text-center"
+            style={{ background: driveError ? 'rgba(239,68,68,0.08)' : driveDone ? 'rgba(34,197,94,0.08)' : 'rgba(66,133,244,0.08)', color: driveError ? '#ef4444' : driveDone ? '#22c55e' : '#4285F4', fontFamily: '"Tajawal", sans-serif' }}>
+            {driveMsg.includes('تفعيل Google Drive API') ? (
+              <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=noooooor-app"
+                target="_blank" rel="noopener noreferrer"
+                className="underline font-bold"
+                style={{ color: '#ef4444' }}>
+                {driveMsg}
+              </a>
+            ) : driveMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <p className="text-xs text-center mt-3" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+        📌 عند الضغط سيفتح نافذة تسجيل دخول Google — اختر حسابك
+      </p>
     </motion.div>
   );
 }

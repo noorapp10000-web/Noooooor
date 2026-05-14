@@ -554,7 +554,7 @@ export function HifzTest() {
   }, [ratingsVersion]);
 
   const saveRating = useCallback((surahNum: number, testIdx: number, rating: Rating) => {
-    const uid = getCurrentUid() || getOrCreateLocalUid();
+    const uid = getOrCreateLocalUid();
     if (!uid) return;
     queueRTDBUpdate(uid, { [`hifz_results/${surahNum}_${testIdx}`]: rating });
     setRatingsVersion(v => v + 1);

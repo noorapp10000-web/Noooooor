@@ -89,8 +89,7 @@ export function Login({ onComplete }: LoginProps) {
     initUserSync(uid);
     saveProfileToRTDB(uid, profile);
 
-    const theme = localStorage.getItem(`noor_rtdb_cache_${uid}`) ? 'light' : 'light';
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.remove('dark');
 
     onComplete();
   }
