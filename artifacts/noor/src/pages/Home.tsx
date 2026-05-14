@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache } from '@/lib/rtdb';
 import { syncPrayerNotifications, getNotificationSettings } from '@/lib/notifications';
+import { EGYPT_GOVERNORATES } from '@/lib/constants';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PRAYERS = [
   { id: 'Fajr',    name: 'الفجر'  },
@@ -89,16 +91,20 @@ function Clock3DIcon({ size = 20 }: { size?: number }) {
 
 export function Home() {
   const [dateOffset, setDateOffset] = useState(0);
+  const [tempGov, setTempGov] = useState<{ id: string; name: string; lat: number; lng: number } | null>(null);
+  const [showGovPicker, setShowGovPicker] = useState(false);
 
   const userProfile = getProfileCache();
+  const activeLat = (tempGov?.lat ?? userProfile?.lat) ?? null;
+  const activeLng = (tempGov?.lng ?? userProfile?.lng) ?? null;
   const lat = userProfile?.lat ?? null;
   const lng = userProfile?.lng ?? null;
 
-  const { data: prayerResult } = usePrayerTimes(lat, lng, dateOffset);
+  const { data: prayerResult } = usePrayerTimes(activeLat, activeLng, dateOffset);
   const times = prayerResult?.timings;
   const hijri = prayerResult?.hijri;
 
-  const { data: tomorrowResult } = usePrayerTimes(lat, lng, 1);
+  const { data: tomorrowResult } = usePrayerTimes(activeLat, activeLng, 1);
 
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time24: string } | null>(null);
   const [countdown, setCountdown] = useState('');
@@ -233,10 +239,15 @@ export function Home() {
             مواقيت الصلاة
           </h2>
           {userProfile?.governorateName && (
-            <span className="text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-full flex items-center gap-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <button
+              onClick={() => setShowGovPicker(true)}
+              className="text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-full flex items-center gap-1 active:scale-95 transition-transform"
+              style={{ fontFamily: '"Tajawal", sans-serif' }}
+            >
               <MapPin className="w-3 h-3" />
-              {userProfile.governorateName}
-            </span>
+              {tempGov ? tempGov.name : userProfile.governorateName}
+              {tempGov && <span className="text-[10px] opacity-60 mr-0.5">(مؤقت)</span>}
+            </button>
           )}
         </div>
 
@@ -282,6 +293,88 @@ export function Home() {
           رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ ۝ البقرة: 201
         </p>
       </div>
+
+      {/* ── Temp Governorate Picker Sheet ── */}
+      <AnimatePresence>
+        {showGovPicker && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setShowGovPicker(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
+              style={{ background: 'var(--background)', border: '1px solid rgba(193,154,107,0.2)' }}
+              dir="rtl"
+            >
+              <div className="p-4 pb-2 flex items-center justify-between border-b border-border/40">
+                <h3 className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B' }}>
+                  اختر محافظة مؤقتاً
+                </h3>
+                <div className="flex items-center gap-2">
+                  {tempGov && (
+                    <button
+                      onClick={() => { setTempGov(null); setShowGovPicker(false); }}
+                      className="text-xs px-3 py-1.5 rounded-full"
+                      style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}
+                    >
+                      استعادة الأصلية
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowGovPicker(false)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: 'rgba(193,154,107,0.1)' }}
+                  >
+                    <X className="w-4 h-4 text-primary" />
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-y-auto" style={{ maxHeight: '55vh' }}>
+                <div className="grid grid-cols-3 gap-2 p-3">
+                  {EGYPT_GOVERNORATES.map(gov => {
+                    const active = (tempGov?.id ?? userProfile?.governorateId) === gov.id;
+                    return (
+                      <button
+                        key={gov.id}
+                        onClick={() => {
+                          setTempGov({ id: gov.id, name: gov.name, lat: gov.lat, lng: gov.lng });
+                          setShowGovPicker(false);
+                        }}
+                        className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all active:scale-95"
+                        style={{
+                          background: active ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.05)',
+                          border: `1.5px solid rgba(193,154,107,${active ? '0.6' : '0.15'})`,
+                        }}
+                      >
+                        <div className="w-11 h-7 rounded overflow-hidden flex items-center justify-center" style={{ background: 'rgba(193,154,107,0.08)' }}>
+                          <img src={gov.flag} alt={gov.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        </div>
+                        <span className="text-[10px] font-bold text-center leading-tight" style={{ fontFamily: '"Tajawal", sans-serif', color: active ? '#8B6340' : 'var(--foreground)' }}>
+                          {gov.name}
+                        </span>
+                        {active && (
+                          <div className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#C19A6B' }}>
+                            <Check className="w-2.5 h-2.5 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="h-safe-area-inset-bottom h-6" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

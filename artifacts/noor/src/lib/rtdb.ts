@@ -231,7 +231,33 @@ export function queueRTDBUpdate(uid: string, updates: Record<string, unknown>): 
   // حفظ فوري في localStorage — يضمن عدم الضياع حتى لو أُغلق التطبيق
   saveCache(uid);
   savePending(uid);
-  scheduleFlush();
+  // لا auto-flush — المزامنة يدوية فقط من زرار Sync أو عند إغلاق التطبيق
+}
+
+/**
+ * تحميل سريع من localStorage فوراً — بدون انتظار RTDB
+ * يُستخدم عند بدء التطبيق حتى لا تظهر شاشة التحميل
+ */
+export function initUserSyncFast(uid: string): void {
+  _currentUid = uid;
+  _pendingUpdates = {};
+  if (_flushTimer !== null) { clearTimeout(_flushTimer); _flushTimer = null; }
+
+  loadPending(uid);
+  const hasSavedPending = Object.keys(_pendingUpdates).length > 0;
+
+  const loaded = loadCache(uid);
+  if (!loaded) _cache = {};
+
+  if (hasSavedPending) {
+    for (const [k, v] of Object.entries(_pendingUpdates)) {
+      setCacheValue(k, v);
+    }
+  }
+
+  // مزامنة RTDB في الخلفية بدون انتظار
+  initUserSync(uid).catch(e => console.warn('[RTDB] Background sync failed:', e));
+  attachVisibilityHandler();
 }
 
 function scheduleFlush(delay = FLUSH_INTERVAL_MS): void {

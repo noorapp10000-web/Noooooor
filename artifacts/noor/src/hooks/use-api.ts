@@ -1,4 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
+import { SURAH_NAMES } from '@/lib/constants';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Local Quran Data — quran-uthmani-full.json (offline-first)
+// Format: [{id, verse_key: "surah:ayah", text_uthmani}]
+// ─────────────────────────────────────────────────────────────────────────────
+
+type UthmaniVerse = { id: number; verse_key: string; text_uthmani: string };
+let _uthmaniData: UthmaniVerse[] | null = null;
+let _uthmaniPromise: Promise<UthmaniVerse[]> | null = null;
+
+async function loadUthmaniData(): Promise<UthmaniVerse[]> {
+  if (_uthmaniData) return _uthmaniData;
+  if (_uthmaniPromise) return _uthmaniPromise;
+  _uthmaniPromise = fetch('/data/quran-uthmani-full.json')
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => { _uthmaniData = data; return data as UthmaniVerse[]; });
+  return _uthmaniPromise;
+}
+
+const SURAH_META_KEY = 'noor_quran_surahs_v1';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Prayer Times — persistent localStorage cache (survives app restarts)
@@ -68,16 +89,27 @@ export function useQuranSurahs() {
   return useQuery({
     queryKey: ['quran-surahs'],
     queryFn: async () => {
+      // Try localStorage cache first (works offline after first load)
+      try {
+        const cached = localStorage.getItem(SURAH_META_KEY);
+        if (cached) return JSON.parse(cached) as Array<{
+          number: number; name: string; englishName: string;
+          revelationType: string; numberOfAyahs: number;
+        }>;
+      } catch {}
+
+      // Fetch from API
       const res = await fetch('https://api.alquran.cloud/v1/meta');
       if (!res.ok) throw new Error('Failed to fetch surahs');
       const data = await res.json();
-      return data.data.surahs.references as Array<{
-        number: number;
-        name: string;
-        englishName: string;
-        revelationType: string;
-        numberOfAyahs: number;
+      const surahs = data.data.surahs.references as Array<{
+        number: number; name: string; englishName: string;
+        revelationType: string; numberOfAyahs: number;
       }>;
+
+      // Cache permanently in localStorage
+      try { localStorage.setItem(SURAH_META_KEY, JSON.stringify(surahs)); } catch {}
+      return surahs;
     },
     staleTime: Infinity,
   });
@@ -87,6 +119,23 @@ export function useSurah(number: number) {
   return useQuery({
     queryKey: ['surah', number],
     queryFn: async () => {
+      // Try local file first (offline-first)
+      try {
+        const allVerses = await loadUthmaniData();
+        const prefix = `${number}:`;
+        const ayahs = allVerses
+          .filter(v => v.verse_key.startsWith(prefix))
+          .map(v => ({
+            numberInSurah: parseInt(v.verse_key.split(':')[1], 10),
+            text: v.text_uthmani,
+            number: v.id,
+          }));
+        if (ayahs.length > 0) {
+          return { number, name: SURAH_NAMES[number] ?? '', ayahs };
+        }
+      } catch { /* fall through to API */ }
+
+      // Fallback to API
       const res = await fetch(`https://api.alquran.cloud/v1/surah/${number}/quran-uthmani`);
       if (!res.ok) throw new Error('Failed to fetch surah');
       const data = await res.json();

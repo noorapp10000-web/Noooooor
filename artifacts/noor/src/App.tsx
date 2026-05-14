@@ -36,7 +36,7 @@ import { HifzTest } from "@/pages/HifzTest";
 import { onAuthStateChanged } from "firebase/auth";
 import { get, ref } from "firebase/database";
 import { auth, rtdb } from "@/lib/firebase";
-import { initUserSync, clearSyncState, getSettingCache } from "@/lib/rtdb";
+import { initUserSyncFast, clearSyncState, getSettingCache } from "@/lib/rtdb";
 import { requestAllPermissionsOnce } from "@/lib/permissions";
 
 const queryClient = new QueryClient();
@@ -182,13 +182,13 @@ function App() {
 
   // Firebase Auth state observer — source of truth for login state
   useEffect(() => {
-    // Global fallback: if Firebase auth never fires (extreme offline), unblock UI after 6s
+    // Global fallback: if Firebase auth never fires (extreme offline), unblock UI after 2.5s
     const globalTimer = setTimeout(() => {
       setIsLoggedIn(prev => {
         if (prev === null) return false;
         return prev;
       });
-    }, 6000);
+    }, 2500);
 
     const unsub = onAuthStateChanged(auth, async (user) => {
       clearTimeout(globalTimer);
@@ -215,7 +215,8 @@ function App() {
         })();
 
         if (profileExists) {
-          await initUserSync(user.uid);
+          // تحميل سريع من localStorage — بدون انتظار RTDB حتى لا تظهر شاشة التحميل
+          initUserSyncFast(user.uid);
           const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
           document.documentElement.classList.toggle('dark', theme === 'dark');
           setIsLoggedIn(true);
@@ -236,10 +237,22 @@ function App() {
       {!splashDone && <SplashScreen onDone={handleSplashDone} />}
 
       {splashDone && isLoggedIn === null && (
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-[#C19A6B]/30 border-t-[#C19A6B] rounded-full animate-spin mx-auto mb-4" />
-            <span className="text-[#C19A6B] text-3xl" style={{ fontFamily: '"Amiri", serif' }}>نُور</span>
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}>
+          <div className="text-center flex flex-col items-center gap-4">
+            <div
+              className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(145deg, #F5E6CC, #E8D4A8)',
+                boxShadow: '0 0 32px rgba(193,154,107,0.4)',
+                border: '1.5px solid rgba(193,154,107,0.5)',
+              }}
+            >
+              <img src="/logo.png" alt="نور" className="w-full h-full object-contain" style={{ padding: '4px' }} />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-3xl font-bold" style={{ fontFamily: '"Amiri", serif', background: 'linear-gradient(135deg, #e8c98a, #C19A6B, #a07840)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>نُور</span>
+              <div className="w-8 h-8 border-[3px] border-[#C19A6B]/30 border-t-[#C19A6B] rounded-full animate-spin" />
+            </div>
           </div>
         </div>
       )}

@@ -162,8 +162,6 @@ export async function schedulePrayerNotifications(
       title: '🕌 تطبيق نُور',
       body,
       schedule: { at: triggerDate, allowWhileIdle: true },
-      sound: undefined,
-      smallIcon: 'ic_launcher',
       iconColor: '#C19A6B',
       extra: { prayerKey: meta.key, dayOffset },
     });

@@ -129,35 +129,6 @@ export function SplashScreen({ onDone }: SplashScreenProps) {
             </motion.p>
           </div>
 
-          {/* ── App logo top-center ── */}
-          <motion.div
-            className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: phase === 'full' ? 1 : 0, y: phase === 'full' ? 0 : -12 }}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
-          >
-            <div
-              className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(145deg, rgba(245,230,200,0.95), rgba(232,212,168,0.9))',
-                boxShadow: '0 0 30px rgba(193,154,107,0.5), 0 0 60px rgba(193,154,107,0.25)',
-                border: '1.5px solid rgba(193,154,107,0.6)',
-              }}
-            >
-              <img src="/logo.png" alt="نور" className="w-full h-full object-contain" style={{ padding: '4px' }} />
-            </div>
-            <span
-              style={{
-                fontFamily: '"Amiri", "Scheherazade New", serif',
-                fontSize: '1.8rem',
-                color: '#F5E6C8',
-                textShadow: '0 0 24px rgba(193,154,107,0.9), 0 0 50px rgba(193,154,107,0.4)',
-                lineHeight: 1,
-              }}
-            >
-              نُور
-            </span>
-          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

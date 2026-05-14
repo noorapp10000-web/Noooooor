@@ -164,7 +164,7 @@ function HighlightedText({ text, snippet, isDark }: { text: string; snippet: str
   return (
     <>
       {text.slice(0, origStart)}
-      <mark style={{ background: 'rgba(193,154,107,0.35)', color: isDark ? '#e8c98a' : '#5a3800', borderRadius: 3, padding: '0 2px' }}>
+      <mark style={{ background: 'rgba(193,154,107,0.35)', color: isDark ? '#e8c98a' : '#5a3800', borderRadius: 3, padding: '0 2px', textDecoration: 'underline', textDecorationColor: isDark ? '#e8c98a' : '#C19A6B' }}>
         {text.slice(origStart, origEnd)}
       </mark>
       {text.slice(origEnd)}
@@ -187,31 +187,38 @@ function SearchResults({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return; }
+    if (!query.trim()) { setResults([]); setLoading(false); return; }
     const norm = normalizeArabic(query);
-    if (!norm) { setResults([]); return; }
+    if (!norm) { setResults([]); setLoading(false); return; }
 
     setLoading(true);
+    setResults([]);
     const books = book ? [book] : BOOKS;
-    const collected: Array<{ hadith: LocalHadith; book: Book }> = [];
+    let cancelled = false;
+    let total = 0;
 
-    Promise.allSettled(
-      books.map(b => loadBook(b.slug).then(hadiths => ({ hadiths, b })))
-    ).then(settled => {
-      for (const r of settled) {
-        if (r.status !== 'fulfilled') continue;
-        const { hadiths, b } = r.value;
-        for (const h of hadiths) {
-          if (collected.length >= SEARCH_LIMIT) break;
-          if (normalizeArabic(h.t).includes(norm)) {
-            collected.push({ hadith: h, book: b });
+    (async () => {
+      for (const b of books) {
+        if (cancelled || total >= SEARCH_LIMIT) break;
+        try {
+          const hadiths = await loadBook(b.slug);
+          const found: Array<{ hadith: LocalHadith; book: Book }> = [];
+          for (const h of hadiths) {
+            if (total >= SEARCH_LIMIT) break;
+            if (normalizeArabic(h.t).includes(norm)) {
+              found.push({ hadith: h, book: b });
+              total++;
+            }
           }
-        }
-        if (collected.length >= SEARCH_LIMIT) break;
+          if (found.length > 0 && !cancelled) {
+            setResults(prev => [...prev, ...found]);
+          }
+        } catch {}
       }
-      setResults(collected);
-      setLoading(false);
-    });
+      if (!cancelled) setLoading(false);
+    })();
+
+    return () => { cancelled = true; };
   }, [query, book]);
 
   if (loading) return (
