@@ -2,7 +2,7 @@
 
 A cross-platform Islamic companion app built with React, Vite, and Express.
 
-## Features (v2.2+)
+## Features (v2.3+)
 - **القرآن الكريم** — Quran reader with tafsir, word-by-word audio, bookmarks, and Moshaf PDF downloader (8 types)
   - **بحث في القرآن** — Full-text search across all 6236 ayahs using local JSON (quran-search.json, quran-simple edition), Arabic normalization for user input, tap result to navigate
   - **سبب النزول (تفسير ميسر)** — Tafsir Muyassar per ayah from local JSON (tafsir-muyassar.json, alquran.cloud data), fallback to API
@@ -16,6 +16,12 @@ A cross-platform Islamic companion app built with React, Vite, and Express.
 - **الصحبة** — Community leaderboard and global dhikr tracker
 - **الإذاعات الإسلامية** — Live Islamic radio (Quran + Sunnah channels)
 - **القنوات الإسلامية** — Live Islamic TV channels (HLS streams) with hls.js support
+
+## Backup Strategy
+- **Local export/import only** — no Google Drive integration
+- Export: on Android APK uses `@capacitor/filesystem` to write to external storage; on web uses browser download (`<a>.click()`)
+- Import: available on both Login screen and Settings page
+- `artifacts/noor/src/lib/google-drive.ts` — kept but unused (can be deleted)
 
 ## Static Data Strategy
 All large content is in `public/data/` and lazy-fetched on page visit:

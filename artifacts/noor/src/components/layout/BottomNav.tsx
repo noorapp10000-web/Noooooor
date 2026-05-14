@@ -235,7 +235,7 @@ const NAV_ITEMS: { id: string; path: string; Icon: NavIconComp; label: string }[
   { id: "quran",        path: "/quran",        Icon: QuranNav3D,   label: "القرآن"   },
   { id: "azkar",        path: "/azkar",        Icon: AzkarNav3D,   label: "الأذكار"  },
   { id: "tasbih",       path: "/tasbih",       Icon: TasbihNav3D,  label: "التسبيح"  },
-  { id: "ranking",      path: "/ranking",      Icon: RankingNav3D, label: "الترتيب"  },
+  { id: "ranking",      path: "/ranking",      Icon: RankingNav3D, label: "إحصائياتي" },
   { id: "more",         path: "/more",         Icon: MoreNav3D,    label: "المزيد"   },
 ];
 

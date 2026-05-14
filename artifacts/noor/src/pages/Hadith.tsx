@@ -137,27 +137,56 @@ function HadithCard({
   );
 }
 
-/* Highlight search snippet in text — position-aware normalization mapping */
+/* Highlight search snippet in text — correct position-aware mapping */
 function HighlightedText({ text, snippet, isDark }: { text: string; snippet: string; isDark: boolean }) {
   const normSnippet = normalizeArabic(snippet);
   if (!normSnippet) return <>{text}</>;
 
-  // Build normToOrig: for each index in normalized text, which orig char does it come from?
-  const normToOrig: number[] = [];
-  let ni = 0;
-  for (let oi = 0; oi < text.length; oi++) {
-    const nc = normalizeArabic(text[oi]);
-    for (let k = 0; k < nc.length; k++) normToOrig[ni + k] = oi;
-    ni += nc.length;
-  }
-  normToOrig[ni] = text.length;
-
   const normText = normalizeArabic(text);
-  const idx = normText.indexOf(normSnippet);
-  if (idx === -1) return <>{text}</>;
+  const matchIdx = normText.indexOf(normSnippet);
+  if (matchIdx === -1) return <>{text}</>;
 
-  const origStart = normToOrig[idx] ?? 0;
-  const origEnd = (normToOrig[idx + normSnippet.length] ?? text.length);
+  // Build a position-accurate map from normalized index → original index.
+  // We process each original char and track how it contributes to normalized output,
+  // handling diacritics (removed), character substitutions (1→1), and space collapse.
+  type Pair = [origPos: number, normChar: string];
+  const pairs: Pair[] = [];
+  let prevWasSpace = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    // Remove diacritics (harakat) — they map to 0 normalized chars
+    if (/[\u064B-\u065F\u0670]/.test(ch)) continue;
+    // Collapse whitespace (trim behaviour only applies to leading/trailing)
+    if (/\s/.test(ch)) {
+      if (!prevWasSpace) {
+        pairs.push([i, ' ']);
+        prevWasSpace = true;
+      }
+      continue;
+    }
+    prevWasSpace = false;
+    // Character substitution (same as normalizeArabic, 1→1)
+    let nc = ch;
+    if (/[أإآ]/.test(ch)) nc = 'ا';
+    else if (ch === 'ة') nc = 'ه';
+    else if (ch === 'ى') nc = 'ي';
+    else nc = ch.toLowerCase();
+    pairs.push([i, nc]);
+  }
+
+  // Trim leading/trailing spaces from pairs to match normalizeArabic().trim()
+  let start = 0, end = pairs.length;
+  while (start < end && pairs[start][1] === ' ') start++;
+  while (end > start && pairs[end - 1][1] === ' ') end--;
+  const final = pairs.slice(start, end);
+
+  if (matchIdx >= final.length) return <>{text}</>;
+
+  const origStart = final[matchIdx][0];
+  const origEnd = matchIdx + normSnippet.length < final.length
+    ? final[matchIdx + normSnippet.length][0]
+    : text.length;
 
   if (origStart >= origEnd) return <>{text}</>;
 

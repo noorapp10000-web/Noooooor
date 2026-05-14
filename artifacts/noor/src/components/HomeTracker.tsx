@@ -546,59 +546,63 @@ export function HomeTracker() {
           </div>
         </div>
 
-        {/* Prayer rows */}
-        <div className="px-3 pb-3 space-y-1.5">
-          {PRAYERS.map((prayer) => {
-            const done = state.prayers[prayer.key];
-            const PrayerIcon = PRAYER_ICONS[prayer.key];
-            return (
-              <motion.button
-                key={prayer.key}
-                onClick={() => togglePrayer(prayer.key)}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300"
-                style={
-                  done
-                    ? { background: 'rgba(197,160,89,0.12)', border: '1px solid rgba(197,160,89,0.35)' }
-                    : { background: 'rgba(197,160,89,0.04)', border: '1px solid rgba(197,160,89,0.1)' }
-                }
-              >
-                {/* Icon */}
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300"
-                  style={{
-                    background: done
-                      ? 'linear-gradient(135deg, rgba(197,160,89,0.22), rgba(197,160,89,0.08))'
-                      : 'rgba(197,160,89,0.07)',
-                    boxShadow: done ? '0 2px 8px rgba(197,160,89,0.2)' : 'none',
-                  }}>
-                  <PrayerIcon done={done} />
-                </div>
-
-                {/* Label */}
-                <span
-                  className="flex-1 text-right font-bold text-sm"
-                  style={{
-                    fontFamily: '"Tajawal", sans-serif',
-                    color: done ? '#c5a059' : 'var(--foreground)',
-                  }}
-                >
-                  {prayer.label}
-                </span>
-
-                {/* Check */}
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0"
+        {/* Prayer grid — 5 columns side by side */}
+        <div className="px-3 pb-3">
+          <div className="grid grid-cols-5 gap-2">
+            {PRAYERS.map((prayer) => {
+              const done = state.prayers[prayer.key];
+              const PrayerIcon = PRAYER_ICONS[prayer.key];
+              return (
+                <motion.button
+                  key={prayer.key}
+                  onClick={() => togglePrayer(prayer.key)}
+                  whileTap={{ scale: 0.93 }}
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all duration-300"
                   style={
                     done
-                      ? { background: 'linear-gradient(135deg, #c5a059, #9a7430)', boxShadow: '0 2px 8px rgba(197,160,89,0.4)' }
-                      : { border: '2px solid rgba(197,160,89,0.3)', background: 'transparent' }
+                      ? { background: 'rgba(197,160,89,0.13)', border: '1.5px solid rgba(197,160,89,0.4)' }
+                      : { background: 'rgba(197,160,89,0.04)', border: '1.5px solid rgba(197,160,89,0.1)' }
                   }
                 >
-                  {done && <Check className="w-4 h-4 text-white" />}
-                </div>
-              </motion.button>
-            );
-          })}
+                  {/* Icon */}
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300"
+                    style={{
+                      background: done
+                        ? 'linear-gradient(135deg, rgba(197,160,89,0.25), rgba(197,160,89,0.1))'
+                        : 'rgba(197,160,89,0.08)',
+                      boxShadow: done ? '0 2px 8px rgba(197,160,89,0.25)' : 'none',
+                    }}
+                  >
+                    <PrayerIcon done={done} />
+                  </div>
+
+                  {/* Label */}
+                  <span
+                    className="font-bold text-[11px] leading-tight text-center"
+                    style={{
+                      fontFamily: '"Tajawal", sans-serif',
+                      color: done ? '#c5a059' : 'var(--foreground)',
+                    }}
+                  >
+                    {prayer.label}
+                  </span>
+
+                  {/* Check dot */}
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={
+                      done
+                        ? { background: 'linear-gradient(135deg, #c5a059, #9a7430)', boxShadow: '0 2px 6px rgba(197,160,89,0.4)' }
+                        : { border: '1.5px solid rgba(197,160,89,0.3)', background: 'transparent' }
+                    }
+                  >
+                    {done && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

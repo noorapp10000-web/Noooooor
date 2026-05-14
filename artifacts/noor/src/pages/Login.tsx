@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, User, ChevronRight, MapPin } from 'lucide-react';
-import { initUserSync, saveProfileToRTDB, getOrCreateLocalUid, type UserProfile } from '@/lib/rtdb';
+import { Check, User, ChevronRight, MapPin, FolderOpen, RefreshCw, CheckCircle } from 'lucide-react';
+import { initUserSync, saveProfileToRTDB, getOrCreateLocalUid, importAllData, type UserProfile } from '@/lib/rtdb';
 
 interface LoginProps { onComplete: () => void; }
 type Step = 'name' | 'city';
@@ -51,6 +51,26 @@ export function Login({ onComplete }: LoginProps) {
   const [name, setName] = useState('');
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const result = importAllData(text);
+      setImportResult({ ok: result.success, msg: result.success ? 'تم استعادة البيانات ✓' : (result.error ?? 'خطأ غير معروف') });
+      setImporting(false);
+      if (result.success) setTimeout(() => { onComplete(); }, 1600);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
 
   const slide = {
     initial: { opacity: 0, y: 16 },
@@ -172,6 +192,25 @@ export function Login({ onComplete }: LoginProps) {
               >
                 التالي
                 <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {/* Import backup */}
+              <input ref={importRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImportFile} />
+              <button
+                onClick={() => importRef.current?.click()}
+                disabled={importing}
+                className="w-full py-3 rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{
+                  background: importResult?.ok ? 'rgba(34,197,94,0.1)' : importResult?.ok === false ? 'rgba(239,68,68,0.08)' : 'rgba(193,154,107,0.1)',
+                  border: `1.5px solid ${importResult?.ok ? 'rgba(34,197,94,0.35)' : importResult?.ok === false ? 'rgba(239,68,68,0.3)' : 'rgba(193,154,107,0.3)'}`,
+                  color: importResult?.ok ? '#16a34a' : importResult?.ok === false ? '#ef4444' : '#8B6340',
+                  fontFamily: '"Tajawal", sans-serif',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : importResult?.ok ? <CheckCircle className="w-4 h-4" /> : <FolderOpen className="w-4 h-4" />}
+                {importing ? 'جاري الاستعادة...' : importResult ? importResult.msg : 'استعادة من نسخة احتياطية'}
               </button>
 
               <p className="text-center text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(155,112,67,0.6)' }}>

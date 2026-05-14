@@ -1,20 +1,18 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import domeImg from '@assets/qb_lskhr_1774983189616.jpg';
 
 interface SplashScreenProps {
   onDone: () => void;
 }
 
 export function SplashScreen({ onDone }: SplashScreenProps) {
-  const [phase, setPhase] = useState<'enter' | 'text' | 'full' | 'out'>('enter');
+  const [phase, setPhase] = useState<'enter' | 'glow' | 'out'>('enter');
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('text'), 900);
-    const t2 = setTimeout(() => setPhase('full'), 1800);
-    const t3 = setTimeout(() => setPhase('out'), 4600);
-    const t4 = setTimeout(() => onDone(), 5300);
-    return () => { [t1, t2, t3, t4].forEach(clearTimeout); };
+    const t1 = setTimeout(() => setPhase('glow'), 600);
+    const t2 = setTimeout(() => setPhase('out'), 2800);
+    const t3 = setTimeout(() => onDone(), 3400);
+    return () => { [t1, t2, t3].forEach(clearTimeout); };
   }, [onDone]);
 
   return (
@@ -24,111 +22,65 @@ export function SplashScreen({ onDone }: SplashScreenProps) {
           key="splash"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, filter: 'blur(10px)' }}
-          transition={{ duration: 0.75, ease: 'easeInOut' }}
-          className="fixed inset-0 z-[9999] overflow-hidden"
-          style={{ background: '#060810' }}
+          exit={{ opacity: 0, transition: { duration: 0.55, ease: 'easeInOut' } }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          style={{ background: '#000000' }}
         >
-          {/* ── Photo with Ken Burns zoom ── */}
+          {/* Radial glow behind logo */}
           <motion.div
-            className="absolute inset-0 w-full h-full"
-            initial={{ scale: 1.08 }}
-            animate={{ scale: 1.0 }}
-            transition={{ duration: 6, ease: 'easeOut' }}
+            className="absolute pointer-events-none"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: phase === 'glow' ? 0.55 : 0, scale: phase === 'glow' ? 1.2 : 0.7 }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            style={{
+              width: 280,
+              height: 280,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(193,154,107,0.5) 0%, transparent 70%)',
+              filter: 'blur(30px)',
+            }}
+          />
+
+          {/* Logo circle */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.78 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.65, ease: [0.34, 1.26, 0.64, 1] }}
+            className="relative flex items-center justify-center"
+            style={{ width: 148, height: 148 }}
           >
-            <img
-              src={domeImg}
-              alt="قبة الصخرة"
-              className="w-full h-full object-cover object-top"
-              style={{ willChange: 'transform' }}
-            />
-          </motion.div>
-
-          {/* ── Top dark fade (sky overlay) ── */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(6,8,16,0.55) 0%, rgba(6,8,16,0) 35%, rgba(6,8,16,0) 40%, rgba(6,8,16,0.72) 68%, rgba(6,8,16,0.97) 100%)',
-            }}
-          />
-
-          {/* ── Golden ambient glow pulse ── */}
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: phase === 'full' ? 0.18 : 0 }}
-            transition={{ duration: 2 }}
-            style={{
-              background: 'radial-gradient(ellipse at 50% 42%, rgba(193,154,107,0.4) 0%, transparent 65%)',
-            }}
-          />
-
-          {/* ── Text overlay — bottom ── */}
-          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center pb-16 px-4">
-
-            {/* Golden divider */}
+            {/* Outer ring */}
             <motion.div
-              initial={{ scaleX: 0, opacity: 0 }}
-              animate={{
-                scaleX: phase === 'text' || phase === 'full' ? 1 : 0,
-                opacity: phase === 'text' || phase === 'full' ? 1 : 0,
-              }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
-              className="flex items-center gap-3 mb-4"
-            >
-              <div style={{ width: 100, height: 1, background: 'linear-gradient(to left, rgba(193,154,107,0.9), transparent)' }} />
-              <svg width={18} height={18} viewBox="0 0 20 20">
-                <polygon
-                  points="10,1 12.1,7.3 18.8,7.3 13.4,11.2 15.5,17.5 10,13.6 4.5,17.5 6.6,11.2 1.2,7.3 7.9,7.3"
-                  fill="rgba(193,154,107,1)"
-                />
-              </svg>
-              <div style={{ width: 100, height: 1, background: 'linear-gradient(to right, rgba(193,154,107,0.9), transparent)' }} />
-            </motion.div>
-
-            {/* بسم الله الرحمن الرحيم */}
-            <motion.p
-              dir="rtl"
-              initial={{ opacity: 0, y: 18 }}
-              animate={{
-                opacity: phase === 'text' || phase === 'full' ? 1 : 0,
-                y: phase === 'text' || phase === 'full' ? 0 : 18,
-              }}
-              transition={{ duration: 0.9, ease: 'easeOut' }}
-              style={{
-                fontFamily: '"Amiri Quran", "Amiri", "Scheherazade New", serif',
-                fontSize: '1.7rem',
-                lineHeight: 1.8,
-                color: '#F5E6C8',
-                textShadow:
-                  '0 0 30px rgba(193,154,107,0.9), 0 0 60px rgba(193,154,107,0.45), 0 2px 12px rgba(0,0,0,0.95)',
-                letterSpacing: '0.05em',
-                textAlign: 'center',
-              }}
-            >
-              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-            </motion.p>
-
-            {/* App name */}
-            <motion.p
-              dir="rtl"
+              className="absolute inset-0 rounded-full"
               initial={{ opacity: 0 }}
-              animate={{ opacity: phase === 'full' ? 0.7 : 0 }}
-              transition={{ duration: 1, delay: 0.2 }}
+              animate={{ opacity: phase === 'glow' ? 1 : 0 }}
+              transition={{ duration: 0.8 }}
               style={{
-                fontFamily: '"Tajawal", sans-serif',
-                fontSize: '0.72rem',
-                color: 'rgba(193,154,107,0.9)',
-                letterSpacing: '0.26em',
-                marginTop: '0.65rem',
-                textAlign: 'center',
+                background: 'linear-gradient(135deg, rgba(193,154,107,0.6), rgba(193,154,107,0.08), rgba(193,154,107,0.4))',
+                padding: 2,
+                borderRadius: '50%',
+              }}
+            />
+
+            {/* Inner circle with logo */}
+            <div
+              className="relative rounded-full overflow-hidden flex items-center justify-center"
+              style={{
+                width: 140,
+                height: 140,
+                background: 'linear-gradient(145deg, #1a1208, #0d0d0d)',
+                border: '1.5px solid rgba(193,154,107,0.35)',
+                boxShadow: '0 0 40px rgba(193,154,107,0.25), 0 0 80px rgba(193,154,107,0.1)',
               }}
             >
-              رفيقك الإسلامي الشامل
-            </motion.p>
-          </div>
-
+              <img
+                src="/logo.png"
+                alt="نور"
+                style={{ width: 100, height: 100, objectFit: 'contain' }}
+              />
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
