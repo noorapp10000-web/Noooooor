@@ -12,12 +12,13 @@ echo "Root dir: $ROOT_DIR"
 echo "API server dev port: $API_SERVER_PORT"
 echo "Vite port: $VITE_PORT"
 
-# Resolve binaries - pnpm hoists to root node_modules/.bin in workspace mode
-TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
+# Resolve tsx binary
+TSX_BIN="$ROOT_DIR/artifacts/api-server/node_modules/.bin/tsx"
 if [ ! -f "$TSX_BIN" ]; then
-  TSX_BIN="$ROOT_DIR/artifacts/api-server/node_modules/.bin/tsx"
+  TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
 fi
 
+# Resolve vite binary - check root node_modules first (pnpm hoist), then artifact-level
 VITE_BIN="$ROOT_DIR/node_modules/.bin/vite"
 if [ ! -f "$VITE_BIN" ]; then
   VITE_BIN="$ROOT_DIR/artifacts/noor/node_modules/.bin/vite"
