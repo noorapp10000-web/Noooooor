@@ -137,19 +137,37 @@ function HadithCard({
   );
 }
 
-/* Highlight search snippet in text */
+/* Highlight search snippet in text — position-aware normalization mapping */
 function HighlightedText({ text, snippet, isDark }: { text: string; snippet: string; isDark: boolean }) {
-  const norm = normalizeArabic(snippet);
+  const normSnippet = normalizeArabic(snippet);
+  if (!normSnippet) return <>{text}</>;
+
+  // Build normToOrig: for each index in normalized text, which orig char does it come from?
+  const normToOrig: number[] = [];
+  let ni = 0;
+  for (let oi = 0; oi < text.length; oi++) {
+    const nc = normalizeArabic(text[oi]);
+    for (let k = 0; k < nc.length; k++) normToOrig[ni + k] = oi;
+    ni += nc.length;
+  }
+  normToOrig[ni] = text.length;
+
   const normText = normalizeArabic(text);
-  const idx = normText.indexOf(norm);
+  const idx = normText.indexOf(normSnippet);
   if (idx === -1) return <>{text}</>;
+
+  const origStart = normToOrig[idx] ?? 0;
+  const origEnd = (normToOrig[idx + normSnippet.length] ?? text.length);
+
+  if (origStart >= origEnd) return <>{text}</>;
+
   return (
     <>
-      {text.slice(0, idx)}
+      {text.slice(0, origStart)}
       <mark style={{ background: 'rgba(193,154,107,0.35)', color: isDark ? '#e8c98a' : '#5a3800', borderRadius: 3, padding: '0 2px' }}>
-        {text.slice(idx, idx + snippet.length)}
+        {text.slice(origStart, origEnd)}
       </mark>
-      {text.slice(idx + snippet.length)}
+      {text.slice(origEnd)}
     </>
   );
 }

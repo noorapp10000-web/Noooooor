@@ -182,23 +182,45 @@ function App() {
 
   // Firebase Auth state observer — source of truth for login state
   useEffect(() => {
+    // Global fallback: if Firebase auth never fires (extreme offline), unblock UI after 6s
+    const globalTimer = setTimeout(() => {
+      setIsLoggedIn(prev => {
+        if (prev === null) return false;
+        return prev;
+      });
+    }, 6000);
+
     const unsub = onAuthStateChanged(auth, async (user) => {
+      clearTimeout(globalTimer);
       if (user) {
-        try {
-          const profileSnap = await get(ref(rtdb, `users/${user.uid}/profile`));
-          if (profileSnap.exists()) {
-            await initUserSync(user.uid);
-            // تطبيق الثيم من RTDB بعد تحميل بيانات المستخدم
-            const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
-            document.documentElement.classList.toggle('dark', theme === 'dark');
-            setIsLoggedIn(true);
-            // طلب كل أذونات التطبيق بعد تأكيد تسجيل الدخول
-            requestAllPermissionsOnce();
-          } else {
-            // authenticated but no profile yet (incomplete registration)
-            setIsLoggedIn(false);
+        // Check profile — with 4-second timeout for offline resilience
+        const profileExists = await (async () => {
+          try {
+            const timeoutPromise = new Promise<boolean>((_, reject) =>
+              setTimeout(() => reject(new Error('timeout')), 4000)
+            );
+            const rtdbPromise = get(ref(rtdb, `users/${user.uid}/profile`)).then(snap => snap.exists());
+            return await Promise.race([rtdbPromise, timeoutPromise]);
+          } catch {
+            // Offline or timeout — check localStorage cache for profile
+            try {
+              const raw = localStorage.getItem(`noor_rtdb_cache_${user.uid}`);
+              if (raw) {
+                const cache = JSON.parse(raw);
+                return !!(cache?.profile);
+              }
+            } catch {}
+            return false;
           }
-        } catch {
+        })();
+
+        if (profileExists) {
+          await initUserSync(user.uid);
+          const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          setIsLoggedIn(true);
+          requestAllPermissionsOnce();
+        } else {
           setIsLoggedIn(false);
         }
       } else {
@@ -206,7 +228,7 @@ function App() {
         setIsLoggedIn(false);
       }
     });
-    return () => unsub();
+    return () => { unsub(); clearTimeout(globalTimer); };
   }, []);
 
   return (

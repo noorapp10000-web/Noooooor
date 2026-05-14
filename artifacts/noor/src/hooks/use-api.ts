@@ -180,7 +180,7 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
               Asr:     fmt(pt.asr),
               Maghrib: fmt(pt.maghrib),
               Isha:    fmt(pt.isha),
-              Midnight: fmt(pt.midnight),
+              Midnight: fmt((pt as unknown as { midnight: Date }).midnight),
             },
             hijri: undefined,
           };

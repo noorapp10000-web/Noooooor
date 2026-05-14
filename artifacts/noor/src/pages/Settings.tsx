@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, Download, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, Download, CheckCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -13,6 +13,7 @@ import {
 } from '@/lib/notifications';
 import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
+import { flushRTDB, getCurrentUid } from '@/lib/rtdb';
 
 const PRAYER_LIST: { key: PrayerKey; name: string }[] = [
   { key: 'Fajr',    name: 'الفجر'  },
@@ -581,6 +582,9 @@ export function Settings() {
           )}
         </motion.div>
 
+        {/* ── Manual Firebase Sync ── */}
+        <SyncSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
+
         {/* ── Export & Backup Section ── */}
         <ExportSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
 
@@ -598,6 +602,94 @@ export function Settings() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function SyncSection({
+  sectionBg,
+  borderColor,
+  textColor,
+  subText,
+}: {
+  sectionBg: string;
+  borderColor: string;
+  textColor: string;
+  subText: string;
+}) {
+  const [syncing, setSyncing] = useState(false);
+  const [syncDone, setSyncDone] = useState(false);
+  const [syncError, setSyncError] = useState(false);
+
+  const handleSync = async () => {
+    const uid = getCurrentUid();
+    if (!uid) { setSyncError(true); setTimeout(() => setSyncError(false), 3000); return; }
+    setSyncing(true);
+    setSyncDone(false);
+    setSyncError(false);
+    try {
+      await flushRTDB();
+      setSyncDone(true);
+    } catch {
+      setSyncError(true);
+    } finally {
+      setSyncing(false);
+      setTimeout(() => { setSyncDone(false); setSyncError(false); }, 4000);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.21 }}
+      className="rounded-2xl p-4"
+      style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
+    >
+      <div className="flex items-center gap-2.5 mb-4">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'linear-gradient(145deg, #C19A6B, #8B6340)' }}
+        >
+          <RefreshCw className="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>المزامنة مع السحابة</p>
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>احفظ تقدّمك في Firebase يدوياً</p>
+        </div>
+      </div>
+
+      <button
+        onClick={handleSync}
+        disabled={syncing}
+        className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
+        style={{
+          background: syncDone
+            ? 'rgba(34,197,94,0.1)'
+            : syncError
+              ? 'rgba(239,68,68,0.08)'
+              : 'rgba(193,154,107,0.08)',
+          border: `1.5px solid ${syncDone ? 'rgba(34,197,94,0.35)' : syncError ? 'rgba(239,68,68,0.25)' : 'rgba(193,154,107,0.25)'}`,
+        }}
+      >
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: syncDone ? 'rgba(34,197,94,0.15)' : syncError ? 'rgba(239,68,68,0.1)' : 'rgba(193,154,107,0.12)' }}
+        >
+          {syncDone
+            ? <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} />
+            : <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} style={{ color: syncError ? '#ef4444' : '#C19A6B' }} />
+          }
+        </div>
+        <div className="text-right flex-1">
+          <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: syncDone ? '#22c55e' : syncError ? '#ef4444' : textColor }}>
+            {syncing ? 'جاري المزامنة...' : syncDone ? 'تمت المزامنة بنجاح ✓' : syncError ? 'فشلت المزامنة' : 'مزامنة الآن'}
+          </p>
+          <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            {syncDone ? 'تم حفظ بياناتك على Firebase' : syncError ? 'تحقق من الاتصال بالإنترنت' : 'ذكر، أذكار، تقدّم القرآن...'}
+          </p>
+        </div>
+      </button>
+    </motion.div>
   );
 }
 

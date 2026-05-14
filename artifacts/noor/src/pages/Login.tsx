@@ -1,20 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check, Mail, Lock, Eye, EyeOff, ChevronRight,
-  LogIn, UserPlus, Download, Upload,
+  LogIn, UserPlus,
 } from 'lucide-react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
 } from 'firebase/auth';
 import { get, ref } from 'firebase/database';
 import { auth, rtdb } from '@/lib/firebase';
 import { initUserSync, saveProfileToRTDB, type UserProfile } from '@/lib/rtdb';
-import { EGYPT_GOVERNORATES as GOVS } from '@/lib/constants';
 
 interface LoginProps {
   onComplete: () => void;
@@ -208,7 +205,7 @@ async function finalizeUserProfile(
   photo: string,
   selectedGovId: string,
 ): Promise<void> {
-  const gov = GOVS.find(g => g.id === selectedGovId);
+  const gov = EGYPT_GOVERNORATES.find((g: { id: string }) => g.id === selectedGovId);
   if (!gov) throw new Error('Governorate not found');
 
   const profile: UserProfile = {
@@ -235,14 +232,10 @@ export function Login({ onComplete }: LoginProps) {
   const [govId, setGovId]         = useState('');
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
-  const [importSuccess, setImportSuccess] = useState(false);
-
   const [pendingUid, setPendingUid]       = useState('');
   const [pendingName, setPendingName]     = useState('');
   const [pendingEmail, setPendingEmail]   = useState('');
   const [pendingPhoto, setPendingPhoto]   = useState('');
-
-  const importFileRef = useRef<HTMLInputElement>(null);
 
   const clearError = () => setError('');
 
@@ -253,59 +246,6 @@ export function Login({ onComplete }: LoginProps) {
     } catch { return false; }
   }
 
-  /* ── Google Sign-In ──────────────────────────────────────── */
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-      const uid = cred.user.uid;
-
-      const hasProfile = await checkExistingProfile(uid);
-      if (hasProfile) {
-        await initUserSync(uid);
-        onComplete();
-      } else {
-        setPendingUid(uid);
-        setPendingName(cred.user.displayName || cred.user.email?.split('@')[0] || '');
-        setPendingEmail(cred.user.email || '');
-        setPendingPhoto(cred.user.photoURL || '');
-        setLoading(false);
-        setStep('city-picker');
-      }
-    } catch (e: unknown) {
-      const code = (e as { code?: string })?.code ?? '';
-      setError(mapFirebaseError(code));
-      setLoading(false);
-    }
-  };
-
-  /* ── Import Backup ─────────────────────────────────────── */
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (!data.__noor_backup__ || !data.keys) {
-          setError('الملف غير صالح أو تالف');
-          return;
-        }
-        const keys = data.keys as Record<string, string>;
-        for (const [key, value] of Object.entries(keys)) {
-          try { localStorage.setItem(key, value); } catch {}
-        }
-        setImportSuccess(true);
-        setError('');
-      } catch {
-        setError('تعذّر قراءة الملف، تأكد أنه ملف نسخة احتياطية صحيح');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
 
   /* ── Email Signup ─────────────────────────────────────────── */
   const handleSignupCity = async (selectedGov: string) => {
@@ -388,15 +328,6 @@ export function Login({ onComplete }: LoginProps) {
       style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}
       dir="rtl"
     >
-      {/* Hidden import file input */}
-      <input
-        ref={importFileRef}
-        type="file"
-        accept=".json"
-        className="hidden"
-        onChange={handleImportFile}
-      />
-
       {/* Subtle texture overlay */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
@@ -515,67 +446,6 @@ export function Login({ onComplete }: LoginProps) {
                 </div>
               </button>
 
-              {/* ── Divider ── */}
-              <div className="flex items-center gap-3 my-1">
-                <div className="flex-1 h-px" style={{ background: 'rgba(139,99,64,0.2)' }} />
-                <span className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(139,99,64,0.6)' }}>أو</span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(139,99,64,0.2)' }} />
-              </div>
-
-              {/* تسجيل الدخول بجوجل */}
-              <button
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="w-full rounded-2xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
-                style={{
-                  background: '#fff',
-                  border: '1.5px solid rgba(139,99,64,0.2)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(66,133,244,0.08)' }}
-                >
-                  {/* Google Icon SVG */}
-                  <svg width="20" height="20" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                  </svg>
-                </div>
-                <div className="text-right flex-1">
-                  <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>
-                    {loading ? 'جاري الدخول...' : 'الدخول بحساب جوجل'}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>دخول سريع بدون كلمة سر</p>
-                </div>
-              </button>
-
-              {/* استيراد نسخة احتياطية */}
-              <button
-                onClick={() => importFileRef.current?.click()}
-                className="w-full rounded-2xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97]"
-                style={{
-                  background: 'rgba(34,197,94,0.06)',
-                  border: '1.5px solid rgba(34,197,94,0.2)',
-                }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(34,197,94,0.1)' }}
-                >
-                  <Upload className="w-5 h-5" style={{ color: '#22c55e' }} />
-                </div>
-                <div className="text-right flex-1">
-                  <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#166534' }}>استيراد نسخة احتياطية</p>
-                  <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#4ade80' }}>استعد بياناتك من جهاز قديم</p>
-                </div>
-                <Download className="w-4 h-4 flex-shrink-0" style={{ color: '#22c55e' }} />
-              </button>
-
-              {importSuccess && <SuccessBadge msg="✅ تم استيراد بياناتك بنجاح! سجّل دخولك للمتابعة" />}
               {error && <ErrorBadge msg={error} />}
 
             </motion.div>

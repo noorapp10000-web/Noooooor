@@ -137,6 +137,70 @@ const FONT_MIN = 1.2;
 const FONT_MAX = 2.8;
 const FONT_STEP = 0.15;
 
+// ── Hizb start positions (surah, ayah) — 60 ahzab ─────────────────────────
+const HIZB_DATA: { hizb: number; juz: number; surah: number; ayah: number }[] = [
+  { hizb: 1,  juz: 1,  surah: 1,  ayah: 1   },
+  { hizb: 2,  juz: 1,  surah: 2,  ayah: 75  },
+  { hizb: 3,  juz: 2,  surah: 2,  ayah: 142 },
+  { hizb: 4,  juz: 2,  surah: 2,  ayah: 204 },
+  { hizb: 5,  juz: 3,  surah: 2,  ayah: 253 },
+  { hizb: 6,  juz: 3,  surah: 2,  ayah: 283 },
+  { hizb: 7,  juz: 4,  surah: 3,  ayah: 56  },
+  { hizb: 8,  juz: 4,  surah: 3,  ayah: 92  },
+  { hizb: 9,  juz: 5,  surah: 3,  ayah: 171 },
+  { hizb: 10, juz: 5,  surah: 4,  ayah: 1   },
+  { hizb: 11, juz: 6,  surah: 4,  ayah: 24  },
+  { hizb: 12, juz: 6,  surah: 4,  ayah: 148 },
+  { hizb: 13, juz: 7,  surah: 5,  ayah: 3   },
+  { hizb: 14, juz: 7,  surah: 5,  ayah: 82  },
+  { hizb: 15, juz: 8,  surah: 6,  ayah: 1   },
+  { hizb: 16, juz: 8,  surah: 6,  ayah: 111 },
+  { hizb: 17, juz: 9,  surah: 7,  ayah: 1   },
+  { hizb: 18, juz: 9,  surah: 7,  ayah: 88  },
+  { hizb: 19, juz: 10, surah: 7,  ayah: 188 },
+  { hizb: 20, juz: 10, surah: 8,  ayah: 41  },
+  { hizb: 21, juz: 11, surah: 9,  ayah: 1   },
+  { hizb: 22, juz: 11, surah: 9,  ayah: 93  },
+  { hizb: 23, juz: 12, surah: 11, ayah: 1   },
+  { hizb: 24, juz: 12, surah: 11, ayah: 96  },
+  { hizb: 25, juz: 13, surah: 12, ayah: 53  },
+  { hizb: 26, juz: 13, surah: 13, ayah: 18  },
+  { hizb: 27, juz: 14, surah: 15, ayah: 1   },
+  { hizb: 28, juz: 14, surah: 16, ayah: 1   },
+  { hizb: 29, juz: 15, surah: 17, ayah: 1   },
+  { hizb: 30, juz: 15, surah: 17, ayah: 99  },
+  { hizb: 31, juz: 16, surah: 18, ayah: 75  },
+  { hizb: 32, juz: 16, surah: 19, ayah: 59  },
+  { hizb: 33, juz: 17, surah: 21, ayah: 1   },
+  { hizb: 34, juz: 17, surah: 22, ayah: 1   },
+  { hizb: 35, juz: 18, surah: 23, ayah: 1   },
+  { hizb: 36, juz: 18, surah: 24, ayah: 21  },
+  { hizb: 37, juz: 19, surah: 25, ayah: 21  },
+  { hizb: 38, juz: 19, surah: 26, ayah: 111 },
+  { hizb: 39, juz: 20, surah: 27, ayah: 56  },
+  { hizb: 40, juz: 20, surah: 28, ayah: 51  },
+  { hizb: 41, juz: 21, surah: 29, ayah: 46  },
+  { hizb: 42, juz: 21, surah: 31, ayah: 21  },
+  { hizb: 43, juz: 22, surah: 33, ayah: 31  },
+  { hizb: 44, juz: 22, surah: 34, ayah: 24  },
+  { hizb: 45, juz: 23, surah: 36, ayah: 28  },
+  { hizb: 46, juz: 23, surah: 38, ayah: 1   },
+  { hizb: 47, juz: 24, surah: 39, ayah: 32  },
+  { hizb: 48, juz: 24, surah: 40, ayah: 41  },
+  { hizb: 49, juz: 25, surah: 41, ayah: 47  },
+  { hizb: 50, juz: 25, surah: 43, ayah: 23  },
+  { hizb: 51, juz: 26, surah: 46, ayah: 1   },
+  { hizb: 52, juz: 26, surah: 48, ayah: 17  },
+  { hizb: 53, juz: 27, surah: 51, ayah: 31  },
+  { hizb: 54, juz: 27, surah: 54, ayah: 1   },
+  { hizb: 55, juz: 28, surah: 58, ayah: 1   },
+  { hizb: 56, juz: 28, surah: 60, ayah: 1   },
+  { hizb: 57, juz: 29, surah: 67, ayah: 1   },
+  { hizb: 58, juz: 29, surah: 72, ayah: 1   },
+  { hizb: 59, juz: 30, surah: 78, ayah: 1   },
+  { hizb: 60, juz: 30, surah: 89, ayah: 1   },
+];
+
 // ── Juz start positions (surah, ayah) ──────────────────────────────────────
 const JUZ_DATA: { juz: number; name: string; surah: number; ayah: number }[] = [
   { juz: 1,  name: 'الجزء الأول',       surah: 1,  ayah: 1  },
@@ -218,7 +282,7 @@ export function Quran() {
   const [showMoshaf, setShowMoshaf] = useState(false);
 
   // Quran text search
-  const [searchView, setSearchView] = useState<'surahs' | 'search' | 'juz'>('surahs');
+  const [searchView, setSearchView] = useState<'surahs' | 'search' | 'juz' | 'hizb'>('surahs');
   const [quranSearch, setQuranSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -429,7 +493,7 @@ export function Quran() {
         <div className="flex rounded-xl mb-4 overflow-hidden" style={{ border: `1px solid ${C.searchBorder}`, background: C.searchBg }}>
           <button
             onClick={() => setSearchView('surahs')}
-            className="flex-1 py-2.5 text-sm font-bold transition-all"
+            className="flex-1 py-2.5 text-xs font-bold transition-all"
             style={{
               fontFamily: '"Tajawal", sans-serif',
               background: searchView === 'surahs' ? '#C19A6B' : 'transparent',
@@ -438,7 +502,7 @@ export function Quran() {
           >السور</button>
           <button
             onClick={() => setSearchView('juz')}
-            className="flex-1 py-2.5 text-sm font-bold transition-all"
+            className="flex-1 py-2.5 text-xs font-bold transition-all"
             style={{
               fontFamily: '"Tajawal", sans-serif',
               background: searchView === 'juz' ? '#C19A6B' : 'transparent',
@@ -446,15 +510,24 @@ export function Quran() {
             }}
           >الأجزاء</button>
           <button
+            onClick={() => setSearchView('hizb')}
+            className="flex-1 py-2.5 text-xs font-bold transition-all"
+            style={{
+              fontFamily: '"Tajawal", sans-serif',
+              background: searchView === 'hizb' ? '#C19A6B' : 'transparent',
+              color: searchView === 'hizb' ? '#0f0c07' : C.subtleText,
+            }}
+          >الأحزاب</button>
+          <button
             onClick={() => setSearchView('search')}
-            className="flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-1 transition-all"
+            className="flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1 transition-all"
             style={{
               fontFamily: '"Tajawal", sans-serif',
               background: searchView === 'search' ? '#C19A6B' : 'transparent',
               color: searchView === 'search' ? '#0f0c07' : C.subtleText,
             }}
           >
-            <Search size={12} />
+            <Search size={11} />
             بحث
           </button>
         </div>
@@ -487,6 +560,41 @@ export function Quran() {
                     <h3 className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: C.itemText }}>{j.name}</h3>
                     <p className="text-xs mt-0.5" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
                       {SURAH_NAMES[j.surah]} — آية {j.ayah}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4" style={{ color: 'rgba(193,154,107,0.4)' }} />
+              </button>
+            ))}
+          </div>
+        ) : searchView === 'hizb' ? (
+          /* ── Hizb Navigator — 60 ahzab ── */
+          <div className="flex-1 overflow-y-auto space-y-2 pb-24">
+            {HIZB_DATA.map(h => (
+              <button
+                key={h.hizb}
+                onClick={() => {
+                  trackSurahSelection(h.surah);
+                  setSelectedSurah(h.surah);
+                  setScrollToAyah(h.ayah);
+                  setMode('normal');
+                  setSelectedAyah(null);
+                  setActiveAyah(null);
+                }}
+                className="w-full p-3.5 rounded-2xl flex items-center justify-between transition-all"
+                style={{ background: C.itemBg, border: `1px solid ${C.itemBorder}` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+                    style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.3)', color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}
+                  >
+                    {h.hizb}
+                  </div>
+                  <div className="text-right">
+                    <h3 className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: C.itemText }}>الحزب {h.hizb}</h3>
+                    <p className="text-xs mt-0.5" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
+                      ج{h.juz} · {SURAH_NAMES[h.surah]} — آية {h.ayah}
                     </p>
                   </div>
                 </div>
