@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Share2 } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -49,7 +50,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveDone, setSaveDone] = useState(false);
-  const [sharing, setSharing] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   /* ── Build backup JSON ── */
@@ -60,20 +60,31 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
     return { json, fileName };
   }
 
-  /* ── Local export (save to storage) ── */
+  /* ── Export + Share (Android: write to cache → open share sheet immediately) ── */
   async function handleExport() {
     setSaving(true);
     try {
       const { json, fileName } = await buildBackup();
 
       if (Capacitor.isNativePlatform()) {
-        await Filesystem.writeFile({
+        // Write to app cache dir (always writable, no permissions needed)
+        const writeResult = await Filesystem.writeFile({
           path: fileName,
           data: json,
-          directory: Directory.External,
+          directory: Directory.Cache,
           encoding: Encoding.UTF8,
         });
+        // Open native share sheet — user picks: Save to Downloads, WhatsApp, Drive, etc.
+        await Share.share({
+          title: 'نسخة احتياطية - نور',
+          text: 'ملف النسخة الاحتياطية لتطبيق نور',
+          url: writeResult.uri,
+          dialogTitle: 'احفظ أو شارك النسخة الاحتياطية',
+        });
+        setSaveDone(true);
+        setTimeout(() => setSaveDone(false), 4000);
       } else {
+        // Web: browser download
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -83,53 +94,11 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        setSaveDone(true);
+        setTimeout(() => setSaveDone(false), 3000);
       }
-
-      setSaveDone(true);
-      setTimeout(() => setSaveDone(false), 4000);
-    } catch {
-      setSaveDone(false);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  /* ── Share backup via native share sheet ── */
-  async function handleShare() {
-    setSharing(true);
-    try {
-      const { json, fileName } = await buildBackup();
-
-      if (Capacitor.isNativePlatform()) {
-        // Write to cache dir then share via native sheet
-        const writeResult = await Filesystem.writeFile({
-          path: fileName,
-          data: json,
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8,
-        });
-        await Share.share({
-          title: 'نسخة احتياطية - Noor',
-          text: 'ملف النسخة الاحتياطية لتطبيق نور',
-          url: writeResult.uri,
-          dialogTitle: 'مشاركة النسخة الاحتياطية',
-        });
-      } else if (typeof navigator.share === 'function') {
-        const blob = new Blob([json], { type: 'application/json' });
-        const file = new File([blob], fileName, { type: 'application/json' });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'نسخة احتياطية - Noor' });
-        } else {
-          // Fallback: download
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url; a.download = fileName;
-          document.body.appendChild(a); a.click();
-          document.body.removeChild(a); URL.revokeObjectURL(url);
-        }
-      }
-    } catch { /* user cancelled share or error */ }
-    finally { setSharing(false); }
+    } catch { /* user cancelled share or write error */ }
+    finally { setSaving(false); }
   }
 
   /* ── Local import ── */
@@ -179,28 +148,10 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
           </div>
           <div className="text-right flex-1">
             <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone ? '#22c55e' : textColor }}>
-              {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير ✓' : 'تصدير إلى ملف'}
+              {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير ✓' : (Capacitor.isNativePlatform() ? 'تصدير ومشاركة النسخة' : 'تصدير النسخة الاحتياطية')}
             </p>
             <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              {Capacitor.isNativePlatform() ? 'حفظ noor-backup.json في التخزين الخارجي' : 'تنزيل ملف noor-backup.json'}
-            </p>
-          </div>
-        </button>
-
-        {/* Share via native share sheet */}
-        <button onClick={handleShare} disabled={sharing}
-          className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
-          style={{ background: 'rgba(193,154,107,0.08)', border: '1.5px solid rgba(193,154,107,0.25)' }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(193,154,107,0.12)' }}>
-            {sharing ? <RefreshCw className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} /> : <Share2 className="w-5 h-5" style={{ color: '#C19A6B' }} />}
-          </div>
-          <div className="text-right flex-1">
-            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
-              {sharing ? 'جاري التحضير...' : 'مشاركة النسخة الاحتياطية'}
-            </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              إرسال عبر واتساب أو البريد أو السحابة
+              {Capacitor.isNativePlatform() ? 'يفتح قائمة المشاركة — احفظ في التنزيلات أو واتساب أو درايف' : 'تنزيل ملف noor-backup.json'}
             </p>
           </div>
         </button>

@@ -94,7 +94,18 @@ export function Home() {
   const [tempGov, setTempGov] = useState<{ id: string; name: string; lat: number; lng: number } | null>(null);
   const [showGovPicker, setShowGovPicker] = useState(false);
 
-  const userProfile = getProfileCache();
+  const [userProfile, setUserProfile] = useState(() => getProfileCache());
+
+  // Re-read profile after mount — on APK the cache may load after first render
+  useEffect(() => {
+    const p = getProfileCache();
+    if (p) setUserProfile(p);
+    // Also listen for profile updates from Settings / Login
+    const handler = () => setUserProfile(getProfileCache());
+    window.addEventListener('noor:profile-updated', handler);
+    return () => window.removeEventListener('noor:profile-updated', handler);
+  }, []);
+
   const activeLat = (tempGov?.lat ?? userProfile?.lat) ?? null;
   const activeLng = (tempGov?.lng ?? userProfile?.lng) ?? null;
   const lat = userProfile?.lat ?? null;

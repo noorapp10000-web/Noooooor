@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
 import { SURAH_NAMES } from '@/lib/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,14 +53,6 @@ function _ptIsoDate(offset: number): string {
   return d.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
-function _ptAladhanDate(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  const dd = d.getDate().toString().padStart(2, '0');
-  const mm = (d.getMonth() + 1).toString().padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}-${mm}-${yyyy}`; // DD-MM-YYYY for API
-}
 
 function _ptCacheKey(lat: number, lng: number, isoDate: string): string {
   return `noor_pt_${lat.toFixed(4)}_${lng.toFixed(4)}_${isoDate}`;
@@ -176,7 +169,7 @@ export function useVerseWords(surah: number, ayah: number) {
 export function usePrayerTimes(lat: number | null, lng: number | null, dateOffset = 0) {
   return useQuery({
     queryKey: ['prayer-times', lat, lng, dateOffset],
-    queryFn: async () => {
+    queryFn: () => {
       if (!lat || !lng) throw new Error("No coordinates");
 
       const isoDate = _ptIsoDate(dateOffset);
@@ -185,68 +178,40 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
       const cached = _ptLoad(lat, lng, isoDate);
       if (cached) return cached;
 
-      // ── 2. Compute with adhan.js immediately (always works, no network) ─────
-      let result: PrayerTimesResult;
-      try {
-        const { Coordinates, PrayerTimes, CalculationMethod } = await import('adhan');
-        const coords = new Coordinates(lat, lng);
-        const params = CalculationMethod.Egyptian();
-        const d = new Date();
-        d.setDate(d.getDate() + dateOffset);
-        const pt = new PrayerTimes(coords, d, params);
-        const fmt = (date: Date) =>
-          `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-        result = {
-          timings: {
-            Fajr:     fmt(pt.fajr),
-            Sunrise:  fmt(pt.sunrise),
-            Dhuhr:    fmt(pt.dhuhr),
-            Asr:      fmt(pt.asr),
-            Maghrib:  fmt(pt.maghrib),
-            Isha:     fmt(pt.isha),
-            Midnight: fmt((pt as unknown as { midnight: Date }).midnight),
-          },
-          hijri: undefined,
-        };
-      } catch {
-        throw new Error('Prayer times unavailable — adhan.js failed');
-      }
+      // ── 2. Compute with adhan.js (static import — always bundled, no network) ─
+      const coords = new Coordinates(lat, lng);
+      const params = CalculationMethod.Egyptian();
+      const d = new Date();
+      d.setDate(d.getDate() + dateOffset);
+      const pt = new PrayerTimes(coords, d, params);
+      const fmt = (date: Date) =>
+        `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      const result: PrayerTimesResult = {
+        timings: {
+          Fajr:     fmt(pt.fajr),
+          Sunrise:  fmt(pt.sunrise),
+          Dhuhr:    fmt(pt.dhuhr),
+          Asr:      fmt(pt.asr),
+          Maghrib:  fmt(pt.maghrib),
+          Isha:     fmt(pt.isha),
+          Midnight: fmt((pt as unknown as { midnight: Date }).midnight),
+        },
+        hijri: undefined,
+      };
 
-      // ── 3. Save adhan result immediately (so caller gets instant data) ──────
+      // ── 3. Cache result for instant reads (offline-first) ──────────────────
       _ptSave(lat, lng, isoDate, result);
-
-      // ── 4. Try API in background for better Hijri date (non-blocking) ───────
-      //    If it succeeds, overwrite cache with API timings + Hijri.
-      //    The query will auto-refresh from cache on next navigation.
-      try {
-        const aladhanDate = _ptAladhanDate(dateOffset);
-        const res = await fetch(
-          `https://api.aladhan.com/v1/timings/${aladhanDate}?latitude=${lat}&longitude=${lng}&method=5`,
-          { signal: AbortSignal.timeout(5000) }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          const enriched: PrayerTimesResult = {
-            timings: data.data.timings as Record<string, string>,
-            hijri: data.data.date?.hijri as { day: string; month: { ar: string }; year: string } | undefined,
-          };
-          _ptSave(lat, lng, isoDate, enriched);
-          return enriched;
-        }
-      } catch { /* offline — keep adhan result */ }
 
       return result;
     },
     enabled: lat !== null && lng !== null,
-    // staleTime = until midnight: forces a background re-fetch if the date
-    // has rolled over to a new day within the same app session.
     staleTime: (() => {
       const now = new Date();
       const midnight = new Date(now);
       midnight.setHours(24, 0, 0, 0);
-      return midnight.getTime() - now.getTime(); // ms until next midnight
+      return midnight.getTime() - now.getTime();
     })(),
-    retry: 2,
+    retry: 0,
   });
 }
 

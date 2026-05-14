@@ -258,21 +258,26 @@ export function queueSettingSync(uid: string, key: string, value: unknown): void
 
 export function exportAllData(): string {
   const uid = _currentUid || localStorage.getItem('noor_uid') || '';
-  const data: Record<string, unknown> = {
-    _version: 2,
+
+  // Export EVERY noor_ key from localStorage (complete backup)
+  const allLS: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k?.startsWith('noor_')) {
+      try {
+        const v = localStorage.getItem(k);
+        if (v !== null) allLS[k] = v;
+      } catch {}
+    }
+  }
+
+  const data = {
+    _version: 3,
     _exportedAt: new Date().toISOString(),
     _uid: uid,
     _cache: _cache,
+    _localStorage: allLS,
   };
-  // Include extra localStorage keys (prayer times cache, quran surahs, etc.)
-  const extras: Record<string, string> = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && (k.startsWith('noor_pt_') || k.startsWith('noor_quran') || k === 'noor_uid')) {
-      try { extras[k] = localStorage.getItem(k) ?? ''; } catch {}
-    }
-  }
-  data._extras = extras;
   return JSON.stringify(data, null, 2);
 }
 
@@ -287,6 +292,13 @@ export function importAllData(jsonStr: string): { success: boolean; error?: stri
     _cache = data._cache as Record<string, unknown>;
     saveCache(uid);
 
+    // Restore all noor_ localStorage keys (v3 format)
+    if (data._localStorage && typeof data._localStorage === 'object') {
+      for (const [k, v] of Object.entries(data._localStorage as Record<string, string>)) {
+        try { if (k !== 'noor_uid') localStorage.setItem(k, String(v)); } catch {}
+      }
+    }
+    // Backward compat: v2 format used _extras
     if (data._extras && typeof data._extras === 'object') {
       for (const [k, v] of Object.entries(data._extras as Record<string, string>)) {
         try { if (k !== 'noor_uid') localStorage.setItem(k, v); } catch {}
@@ -294,7 +306,7 @@ export function importAllData(jsonStr: string): { success: boolean; error?: stri
     }
 
     return { success: true };
-  } catch (e) {
+  } catch {
     return { success: false, error: 'تعذّر قراءة الملف — تأكد أنه ملف نور صحيح' };
   }
 }
