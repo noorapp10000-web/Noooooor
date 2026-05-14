@@ -16,6 +16,7 @@
     "@capacitor/filesystem": "^5.2.2",
     "@capacitor/geolocation": "^5.0.8",
     "@capacitor/local-notifications": "^5.0.8",
+    "adhan": "^4.4.3",
     "firebase": "^12.11.0",
     "hls.js": "^1.6.15",
     "leaflet": "^1.9.4",

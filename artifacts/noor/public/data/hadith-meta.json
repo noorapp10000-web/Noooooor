@@ -1,0 +1,38 @@
+[
+  {
+    "slug": "sahih-bukhari",
+    "name": "صحيح البخاري",
+    "edition": "ara-bukhari",
+    "count": 7580
+  },
+  {
+    "slug": "sahih-muslim",
+    "name": "صحيح مسلم",
+    "edition": "ara-muslim",
+    "count": 7360
+  },
+  {
+    "slug": "al-tirmidhi",
+    "name": "جامع الترمذي",
+    "edition": "ara-tirmidhi",
+    "count": 3924
+  },
+  {
+    "slug": "abu-dawood",
+    "name": "سنن أبي داود",
+    "edition": "ara-abudawud",
+    "count": 5272
+  },
+  {
+    "slug": "ibn-e-majah",
+    "name": "سنن ابن ماجه",
+    "edition": "ara-ibnmajah",
+    "count": 4338
+  },
+  {
+    "slug": "sunan-nasai",
+    "name": "سنن النسائي",
+    "edition": "ara-nasai",
+    "count": 5679
+  }
+]

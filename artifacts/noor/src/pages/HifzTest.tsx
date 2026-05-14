@@ -331,7 +331,7 @@ function buildQuestion(verse: VerseData, surahVerses: VerseData[], baseUrl: stri
 }
 
 async function fetchQuranData(): Promise<Record<string, VerseData[]>> {
-  // Try localStorage cache first
+  // 1. Try localStorage cache first
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -340,25 +340,54 @@ async function fetchQuranData(): Promise<Record<string, VerseData[]>> {
     }
   } catch {}
 
-  // Fetch from quran.com API
+  // 2. Try local file (offline-first)
+  try {
+    const localRes = await fetch('/data/quran-uthmani-full.json');
+    if (localRes.ok) {
+      const verses: VerseData[] = await localRes.json();
+      const bySurah: Record<string, VerseData[]> = {};
+      for (const v of verses) {
+        const sNum = v.verse_key.split(':')[0];
+        if (!bySurah[sNum]) bySurah[sNum] = [];
+        bySurah[sNum].push(v);
+      }
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(bySurah)); } catch {}
+      return bySurah;
+    }
+  } catch {}
+
+  // 3. Try alquran.cloud (same source used in Quran page)
+  try {
+    const cloudRes = await fetch('https://api.alquran.cloud/v1/quran/quran-uthmani');
+    if (cloudRes.ok) {
+      const cloudData = await cloudRes.json();
+      const bySurah: Record<string, VerseData[]> = {};
+      let id = 1;
+      for (const surah of cloudData.data.surahs) {
+        const sNum = String(surah.number);
+        bySurah[sNum] = surah.ayahs.map((a: { numberInSurah: number; text: string }) => ({
+          id: id++,
+          verse_key: `${surah.number}:${a.numberInSurah}`,
+          text_uthmani: a.text,
+        }));
+      }
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(bySurah)); } catch {}
+      return bySurah;
+    }
+  } catch {}
+
+  // 4. Fallback: quran.com API
   const res = await fetch('https://api.quran.com/api/v4/quran/verses/uthmani');
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   const data = await res.json();
   const verses: VerseData[] = data.verses ?? [];
-
-  // Group by surah
   const bySurah: Record<string, VerseData[]> = {};
   for (const v of verses) {
     const sNum = v.verse_key.split(':')[0];
     if (!bySurah[sNum]) bySurah[sNum] = [];
     bySurah[sNum].push(v);
   }
-
-  // Cache
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(bySurah));
-  } catch {}
-
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(bySurah)); } catch {}
   return bySurah;
 }
 
@@ -586,19 +615,19 @@ export function HifzTest() {
 
   // Handle answer selection
   const handleAnswer = useCallback((choiceIdx: number) => {
-    if (selectedChoice !== null || audioPlaying) return;
+    if (selectedChoice !== null) return;
+    stopAudio();
     setSelectedChoice(choiceIdx);
     const correct = choiceIdx === questions[qIndex].correctIndex;
     if (correct) setCorrectAnswers(c => c + 1);
     setAnswers(a => [...a, correct]);
-    // Play audio immediately — always use the currently selected reciter
+    // Play audio after answering — doesn't block navigation
     const url = getAudioUrl(questions[qIndex].surahNum, questions[qIndex].verseNum, currentReciter.baseUrl);
     playAudio(url);
-  }, [selectedChoice, audioPlaying, questions, qIndex, playAudio, currentReciter]);
+  }, [selectedChoice, questions, qIndex, playAudio, stopAudio, currentReciter]);
 
-  // Go to next question
+  // Go to next question — always allowed even if audio is still playing
   const handleNext = useCallback(() => {
-    if (audioPlaying) return;
     stopAudio();
     if (qIndex + 1 >= questions.length) {
       // Show results
@@ -1055,9 +1084,9 @@ export function HifzTest() {
                   return (
                     <motion.button
                       key={idx}
-                      whileTap={selectedChoice === null && !audioPlaying ? { scale: 0.98 } : {}}
+                      whileTap={selectedChoice === null ? { scale: 0.98 } : {}}
                       onClick={() => handleAnswer(idx)}
-                      disabled={selectedChoice !== null || audioPlaying}
+                      disabled={selectedChoice !== null}
                       className="w-full text-center p-4 rounded-2xl flex items-center justify-between transition-all"
                       style={{
                         background: bgStyle,
@@ -1098,23 +1127,14 @@ export function HifzTest() {
                   >
                     <button
                       onClick={handleNext}
-                      disabled={audioPlaying}
                       className="w-full py-4 rounded-2xl font-bold text-white text-base transition-opacity"
                       style={{
                         fontFamily: '"Tajawal", sans-serif',
-                        background: audioPlaying
-                          ? 'rgba(139,99,64,0.4)'
-                          : 'linear-gradient(135deg,#8B6340,#C19A6B)',
-                        opacity: audioPlaying ? 0.7 : 1,
+                        background: 'linear-gradient(135deg,#8B6340,#C19A6B)',
                       }}
                       data-testid="button-next"
                     >
-                      {audioPlaying
-                        ? '⏳ انتظر حتى تنتهي التلاوة...'
-                        : qIndex + 1 >= questions.length
-                          ? 'عرض النتيجة'
-                          : 'السؤال التالي'
-                      }
+                      {qIndex + 1 >= questions.length ? 'عرض النتيجة' : 'السؤال التالي →'}
                     </button>
                   </motion.div>
                 )}

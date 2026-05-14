@@ -643,6 +643,9 @@ importers:
       '@capacitor/local-notifications':
         specifier: ^5.0.8
         version: 5.0.8(@capacitor/core@5.7.8)
+      adhan:
+        specifier: ^4.4.3
+        version: 4.4.3
       firebase:
         specifier: ^12.11.0
         version: 12.11.0
@@ -2495,6 +2498,9 @@ packages:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  adhan@4.4.3:
+    resolution: {integrity: sha512-568KkQd8OMLUj7o7+d2FDcm6vZHWQrE7vsm/Evssh8sfUDpPyaboj3PVsScZAr7L7sNRgPrtLMmDZZfM7VeAYw==}
 
   ajv-draft-04@1.0.0:
     resolution: {integrity: sha512-mv00Te6nmYbRp5DCwclxtt7yV/joXJPGS7nM+97GdxvuttCOfgI3K4U25zboyeX0O+myI8ERluxQe5wljMmVIw==}
@@ -6303,6 +6309,8 @@ snapshots:
       negotiator: 1.0.0
 
   acorn@8.16.0: {}
+
+  adhan@4.4.3: {}
 
   ajv-draft-04@1.0.0(ajv@8.18.0):
     optionalDependencies:

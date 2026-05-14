@@ -1,5 +1,6 @@
 import { useCompass } from '@/hooks/use-compass';
 import { useGeolocation, calculateQibla } from '@/hooks/use-geolocation';
+import { getProfileCache } from '@/lib/rtdb';
 import { ArrowLeft, MapPin, RotateCcw } from 'lucide-react';
 import { Link } from 'wouter';
 import { useEffect, useRef } from 'react';
@@ -255,7 +256,15 @@ function CompassNeedle({ isAligned, isSearching }: { isAligned: boolean; isSearc
 /* ── Main Qibla Page ────────────────────────────────────────── */
 export function Qibla() {
   const { heading, isSupported, mode, requestPermission } = useCompass();
-  const { coords, error: geoError, isLoading: geoLoading, requestLocation } = useGeolocation(true);
+  const { coords: geoCoords, error: geoError, isLoading: geoLoading, requestLocation } = useGeolocation(true);
+
+  // Use live geolocation first; fall back to saved profile coordinates
+  const profileCache = getProfileCache();
+  const profileCoords = (profileCache?.lat && profileCache?.lng)
+    ? { lat: profileCache.lat, lng: profileCache.lng }
+    : null;
+  const coords = geoCoords ?? profileCoords;
+  const usingProfileCoords = !geoCoords && !!profileCoords;
 
   const qiblaAngle  = coords ? calculateQibla(coords.lat, coords.lng) : 0;
   const arrowAngle  = ((qiblaAngle - (heading ?? 0)) % 360 + 360) % 360;
@@ -290,7 +299,8 @@ export function Qibla() {
   );
 
   const renderCompassContent = () => {
-    if (geoLoading) {
+    // While geolocation loads, show compass using profile coords if available
+    if (geoLoading && !coords) {
       return (
         <div className="flex flex-col items-center gap-6">
           <div className="w-20 h-20 rounded-full border-4 animate-spin"
@@ -447,11 +457,18 @@ export function Qibla() {
         )}
 
         {coords && (
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-3 h-3" style={{ color: '#6B5030' }}/>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#6B5030' }}>
-              موقعك: {coords.lat.toFixed(4)}°، {coords.lng.toFixed(4)}°
-            </p>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" style={{ color: '#6B5030' }}/>
+              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#6B5030' }}>
+                موقعك: {coords.lat.toFixed(4)}°، {coords.lng.toFixed(4)}°
+              </p>
+            </div>
+            {usingProfileCoords && (
+              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(200,153,26,0.55)' }}>
+                (من إعدادات ملفك — يُنصح بالسماح بالموقع للدقة)
+              </p>
+            )}
           </div>
         )}
       </div>

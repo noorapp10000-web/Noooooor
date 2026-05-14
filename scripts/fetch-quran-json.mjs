@@ -80,11 +80,33 @@ async function fetchAllIraab() {
   console.log('\n     All iraab files saved.');
 }
 
+async function fetchQuranUthmani() {
+  console.log('4/4  Fetching Quran Uthmani (for HifzTest offline)...');
+  const json = await fetchWithRetry('https://api.alquran.cloud/v1/quran/quran-uthmani');
+  const surahs = json.data.surahs;
+  const result = [];
+  let id = 1;
+  for (const surah of surahs) {
+    for (const ayah of surah.ayahs) {
+      result.push({ id: id++, verse_key: `${surah.number}:${ayah.numberInSurah}`, text_uthmani: ayah.text });
+    }
+  }
+  writeFileSync(`${DATA_DIR}/quran-uthmani-full.json`, JSON.stringify(result));
+  console.log(`     Saved ${result.length} ayahs  (${Math.round(JSON.stringify(result).length / 1024)}KB)`);
+}
+
 async function main() {
   console.log('=== Noor: Fetching Quran JSON data ===\n');
-  await fetchQuranText();
-  await fetchTafsir();
-  await fetchAllIraab();
+  const args = process.argv.slice(2);
+  const onlyUthmani = args.includes('--uthmani-only');
+  if (onlyUthmani) {
+    await fetchQuranUthmani();
+  } else {
+    await fetchQuranText();
+    await fetchTafsir();
+    await fetchAllIraab();
+    await fetchQuranUthmani();
+  }
   console.log('\n=== Done! ===');
 }
 

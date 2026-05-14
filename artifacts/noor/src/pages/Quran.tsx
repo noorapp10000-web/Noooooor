@@ -137,6 +137,40 @@ const FONT_MIN = 1.2;
 const FONT_MAX = 2.8;
 const FONT_STEP = 0.15;
 
+// ── Juz start positions (surah, ayah) ──────────────────────────────────────
+const JUZ_DATA: { juz: number; name: string; surah: number; ayah: number }[] = [
+  { juz: 1,  name: 'الجزء الأول',       surah: 1,  ayah: 1  },
+  { juz: 2,  name: 'الجزء الثاني',      surah: 2,  ayah: 142 },
+  { juz: 3,  name: 'الجزء الثالث',      surah: 2,  ayah: 253 },
+  { juz: 4,  name: 'الجزء الرابع',      surah: 3,  ayah: 92  },
+  { juz: 5,  name: 'الجزء الخامس',      surah: 4,  ayah: 24  },
+  { juz: 6,  name: 'الجزء السادس',      surah: 4,  ayah: 148 },
+  { juz: 7,  name: 'الجزء السابع',      surah: 5,  ayah: 82  },
+  { juz: 8,  name: 'الجزء الثامن',      surah: 6,  ayah: 111 },
+  { juz: 9,  name: 'الجزء التاسع',      surah: 7,  ayah: 88  },
+  { juz: 10, name: 'الجزء العاشر',      surah: 8,  ayah: 41  },
+  { juz: 11, name: 'الجزء الحادي عشر',  surah: 9,  ayah: 93  },
+  { juz: 12, name: 'الجزء الثاني عشر',  surah: 11, ayah: 6   },
+  { juz: 13, name: 'الجزء الثالث عشر',  surah: 12, ayah: 53  },
+  { juz: 14, name: 'الجزء الرابع عشر',  surah: 15, ayah: 1   },
+  { juz: 15, name: 'الجزء الخامس عشر',  surah: 17, ayah: 1   },
+  { juz: 16, name: 'الجزء السادس عشر',  surah: 18, ayah: 75  },
+  { juz: 17, name: 'الجزء السابع عشر',  surah: 21, ayah: 1   },
+  { juz: 18, name: 'الجزء الثامن عشر',  surah: 23, ayah: 1   },
+  { juz: 19, name: 'الجزء التاسع عشر',  surah: 25, ayah: 21  },
+  { juz: 20, name: 'الجزء العشرون',     surah: 27, ayah: 56  },
+  { juz: 21, name: 'الجزء الحادي والعشرون', surah: 29, ayah: 46 },
+  { juz: 22, name: 'الجزء الثاني والعشرون', surah: 33, ayah: 31 },
+  { juz: 23, name: 'الجزء الثالث والعشرون', surah: 36, ayah: 28 },
+  { juz: 24, name: 'الجزء الرابع والعشرون', surah: 39, ayah: 32 },
+  { juz: 25, name: 'الجزء الخامس والعشرون', surah: 41, ayah: 47 },
+  { juz: 26, name: 'الجزء السادس والعشرون', surah: 46, ayah: 1  },
+  { juz: 27, name: 'الجزء السابع والعشرون', surah: 51, ayah: 31 },
+  { juz: 28, name: 'الجزء الثامن والعشرون', surah: 58, ayah: 1  },
+  { juz: 29, name: 'الجزء التاسع والعشرون', surah: 67, ayah: 1  },
+  { juz: 30, name: 'الجزء الثلاثون',    surah: 78, ayah: 1   },
+];
+
 type Mode = 'normal' | 'listen' | 'tafsir';
 
 function getWordAudioUrl(surah: number, ayah: number, wordIdx: number): string {
@@ -184,7 +218,7 @@ export function Quran() {
   const [showMoshaf, setShowMoshaf] = useState(false);
 
   // Quran text search
-  const [searchView, setSearchView] = useState<'surahs' | 'search'>('surahs');
+  const [searchView, setSearchView] = useState<'surahs' | 'search' | 'juz'>('surahs');
   const [quranSearch, setQuranSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -403,20 +437,64 @@ export function Quran() {
             }}
           >السور</button>
           <button
+            onClick={() => setSearchView('juz')}
+            className="flex-1 py-2.5 text-sm font-bold transition-all"
+            style={{
+              fontFamily: '"Tajawal", sans-serif',
+              background: searchView === 'juz' ? '#C19A6B' : 'transparent',
+              color: searchView === 'juz' ? '#0f0c07' : C.subtleText,
+            }}
+          >الأجزاء</button>
+          <button
             onClick={() => setSearchView('search')}
-            className="flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-1.5 transition-all"
+            className="flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-1 transition-all"
             style={{
               fontFamily: '"Tajawal", sans-serif',
               background: searchView === 'search' ? '#C19A6B' : 'transparent',
               color: searchView === 'search' ? '#0f0c07' : C.subtleText,
             }}
           >
-            <Search size={13} />
-            بحث في القرآن
+            <Search size={12} />
+            بحث
           </button>
         </div>
 
-        {searchView === 'surahs' ? (
+        {searchView === 'juz' ? (
+          /* ── Juz (Portion) Navigator ── */
+          <div className="flex-1 overflow-y-auto space-y-2 pb-24">
+            {JUZ_DATA.map(j => (
+              <button
+                key={j.juz}
+                onClick={() => {
+                  trackSurahSelection(j.surah);
+                  setSelectedSurah(j.surah);
+                  setScrollToAyah(j.ayah);
+                  setMode('normal');
+                  setSelectedAyah(null);
+                  setActiveAyah(null);
+                }}
+                className="w-full p-4 rounded-2xl flex items-center justify-between transition-all"
+                style={{ background: C.itemBg, border: `1px solid ${C.itemBorder}` }}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                    style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.3)', color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}
+                  >
+                    {j.juz}
+                  </div>
+                  <div className="text-right">
+                    <h3 className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: C.itemText }}>{j.name}</h3>
+                    <p className="text-xs mt-0.5" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
+                      {SURAH_NAMES[j.surah]} — آية {j.ayah}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4" style={{ color: 'rgba(193,154,107,0.4)' }} />
+              </button>
+            ))}
+          </div>
+        ) : searchView === 'surahs' ? (
           <>
             <div className="relative mb-4">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#C19A6B', opacity: 0.6 }} />

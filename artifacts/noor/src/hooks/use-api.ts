@@ -145,18 +145,51 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
       if (cached) return cached;
 
       // ── 2. Not cached → fetch from API ─────────────────────────────────────
-      const aladhanDate = _ptAladhanDate(dateOffset);
-      const res = await fetch(
-        `https://api.aladhan.com/v1/timings/${aladhanDate}?latitude=${lat}&longitude=${lng}&method=5`
-      );
-      if (!res.ok) throw new Error('Failed to fetch prayer times');
-      const data = await res.json();
-      const result: PrayerTimesResult = {
-        timings: data.data.timings as Record<string, string>,
-        hijri: data.data.date?.hijri as { day: string; month: { ar: string }; year: string } | undefined,
-      };
+      let result: PrayerTimesResult | null = null;
+      try {
+        const aladhanDate = _ptAladhanDate(dateOffset);
+        const res = await fetch(
+          `https://api.aladhan.com/v1/timings/${aladhanDate}?latitude=${lat}&longitude=${lng}&method=5`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          result = {
+            timings: data.data.timings as Record<string, string>,
+            hijri: data.data.date?.hijri as { day: string; month: { ar: string }; year: string } | undefined,
+          };
+        }
+      } catch { /* network error — fall through to offline calc */ }
 
-      // ── 3. Persist to localStorage for offline use ─────────────────────────
+      // ── 3. Offline fallback using adhan-js (Egyptian Survey Authority) ──────
+      if (!result) {
+        try {
+          const { Coordinates, PrayerTimes, CalculationMethod } = await import('adhan');
+          const coords = new Coordinates(lat, lng);
+          const params = CalculationMethod.Egyptian();
+          const d = new Date();
+          d.setDate(d.getDate() + dateOffset);
+          const pt = new PrayerTimes(coords, d, params);
+          const fmt = (date: Date) =>
+            `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+          result = {
+            timings: {
+              Fajr:    fmt(pt.fajr),
+              Sunrise: fmt(pt.sunrise),
+              Dhuhr:   fmt(pt.dhuhr),
+              Asr:     fmt(pt.asr),
+              Maghrib: fmt(pt.maghrib),
+              Isha:    fmt(pt.isha),
+              Midnight: fmt(pt.midnight),
+            },
+            hijri: undefined,
+          };
+        } catch {
+          throw new Error('Prayer times unavailable — no network and adhan failed');
+        }
+      }
+
+      // ── 4. Persist to localStorage for offline use ─────────────────────────
       _ptSave(lat, lng, isoDate, result);
 
       return result;
