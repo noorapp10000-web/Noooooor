@@ -1,284 +1,349 @@
-# برومت لـ Replit Agent — مشروع موقع نور
+# برومت لـ Replit Agent — موقع تطبيق نور (v2.3)
 
 ---
 
 ## السياق العام
 
-أنا شغّال على موقع نور (Islamic companion website) مبني بـ React + Firebase.
-الموقع يستخدم Firebase لكل حاجة (Auth, Firestore, RTDB) وده مش هيتغير.
-عندي تطبيق موبايل (APK) منفصل يشتغل بـ localStorage فقط (بدون Firebase للـ auth).
+تطبيق **Noor** (نور) هو Islamic companion app متاح كـ:
+- **تطبيق Android (APK)** — مبني بـ React + Vite + Capacitor، يعمل بـ localStorage بالكامل، بدون نت
+- **موقع ويب** — نفس الكود تقريباً لكن يستخدم Firebase (Auth, Firestore, RTDB)
 
-**المطلوب: إضافة 3 ميزات للموقع بدون المساس بأي كود Firebase موجود.**
-
----
-
-## الميزة الأولى: Export / Import (حفظ واستعادة البيانات)
-
-### تنسيق الملف (مهم جداً — يجب أن يكون متوافقاً مع التطبيق)
-
-```json
-{
-  "uid": "...",
-  "exportedAt": "ISO date string",
-  "data": {
-    "profile": { "name": "...", "governorate": "..." },
-    "settings/theme": "light",
-    "azkar/morning": { "count": 3, "done": false },
-    "tasbih/total": 120
-  }
-}
-```
-
-المفتاح `data` هو كائن مسطّح (flat object) حيث كل مفتاح هو مسار البيانات وكل قيمة هي البيانات نفسها.
-هذا التنسيق نفسه المستخدم في التطبيق (localStorage-based).
-
-### آلية عمل Export في الموقع
-
-1. اجمع بيانات المستخدم من Firestore/RTDB (كل بياناته الشخصية: التسبيح، الأذكار، القرآن، إلخ)
-2. حوّلها إلى التنسيق أعلاه
-3. نزّل الملف باسم `noor-backup-YYYY-MM-DD.json`
-
-### آلية عمل Import في الموقع
-
-1. المستخدم يختار ملف JSON
-2. التحقق من صحة الملف (له مفتاح `data` و `uid`)
-3. ادفع البيانات إلى Firestore/RTDB للمستخدم الحالي
-4. أعِد تحميل الصفحة
-
-### مكان الإضافة
-
-أضف قسم "النسخة الاحتياطية" في صفحة الإعدادات (Settings) بأزرار:
-- "تصدير إلى ملف" → يُنزّل JSON
-- "استعادة من ملف" → يرفع JSON ويطبّق البيانات
+الـ package ID: `com.noor.app` | AppName على الموبايل: `Noor`
 
 ---
 
-## الميزة الثانية: نسخ احتياطية على Google Drive
+## استراتيجية النسخ الاحتياطي (مهم جداً)
 
-### الأداة المستخدمة
+### لا يوجد Google Drive
 
-استخدم Firebase Google Sign-In مع إضافة scope إضافي لـ Drive:
+النسخ الاحتياطي **محلي فقط** — لا يوجد Google Drive integration على الإطلاق.
 
-```typescript
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from './firebase';
-
-async function getGoogleDriveToken(): Promise<string> {
-  const provider = new GoogleAuthProvider();
-  provider.addScope('https://www.googleapis.com/auth/drive.file');
-  const result = await signInWithPopup(auth, provider);
-  const credential = GoogleAuthProvider.credentialFromResult(result);
-  if (!credential?.accessToken) throw new Error('فشل الحصول على صلاحية Google Drive');
-  return credential.accessToken;
-}
-```
-
-**ملاحظة:** إذا ظهر خطأ 403 بسبب Drive API، أضف رابطاً مباشراً لتفعيله:
-`https://console.cloud.google.com/apis/library/drive.googleapis.com`
-
-### اسم الملف على Drive
-
-`noor-backup.json` (نفس الاسم دايماً، يُحدَّث وليس مكرَّر)
-
-### عمليات Drive API
-
-```typescript
-const DRIVE_FILES_API = 'https://www.googleapis.com/drive/v3/files';
-const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
-
-// البحث عن ملف موجود
-async function findBackupFile(token: string): Promise<string | null> {
-  const q = encodeURIComponent("name='noor-backup.json' and trashed=false");
-  const res = await fetch(`${DRIVE_FILES_API}?q=${q}&fields=files(id)&spaces=drive`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
-  return data.files?.[0]?.id ?? null;
-}
-
-// رفع أو تحديث الملف (multipart upload)
-async function uploadOrUpdateFile(token: string, content: string): Promise<void> {
-  const metadata = { name: 'noor-backup.json', mimeType: 'application/json' };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', new Blob([content], { type: 'application/json' }));
-
-  const existingId = await findBackupFile(token);
-  if (existingId) {
-    await fetch(`${DRIVE_UPLOAD_API}/${existingId}?uploadType=multipart`, {
-      method: 'PATCH', headers: { Authorization: `Bearer ${token}` }, body: form
-    });
-  } else {
-    await fetch(`${DRIVE_UPLOAD_API}?uploadType=multipart`, {
-      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form
-    });
-  }
-}
-
-// تنزيل الملف
-async function downloadFile(token: string): Promise<string | null> {
-  const fileId = await findBackupFile(token);
-  if (!fileId) return null;
-  const res = await fetch(`${DRIVE_FILES_API}/${fileId}?alt=media`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return res.text();
-}
-```
-
-### الأزرار في صفحة الإعدادات
-
-في قسم "Google Drive" أضف:
-- زر "رفع نسخة إلى Drive" → `getGoogleDriveToken()` ثم `uploadOrUpdateFile()`
-- زر "استعادة من Drive" → `getGoogleDriveToken()` ثم `downloadFile()` ثم `importAllData()`
-- عرض email المستخدم المتصل بعد تسجيل الدخول
-- زر "تسجيل خروج من Drive" يمسح الـ token فقط (لا يؤثر على Firebase Auth الأساسي)
+**الخيارات المتاحة:**
+| الإجراء | التطبيق | الموقع |
+|---------|---------|--------|
+| تصدير | يحفظ `noor-backup.json` في التخزين الخارجي | يُنزّل `noor-backup.json` للمتصفح |
+| مشاركة | Native Share Sheet (واتساب / بريد / Drive / إلخ) | `navigator.share` أو تنزيل |
+| استعادة | اختيار ملف JSON محلي | اختيار ملف JSON محلي |
 
 ---
 
-## الميزة الثالثة: تسجيل الدخول بـ Google Drive في صفحة الـ Onboarding
+## تنسيق ملف النسخة الاحتياطية
 
-### الفكرة
-
-في صفحة التسجيل/الـ onboarding (حيث يدخل المستخدم اسمه للمرة الأولى)، أضف زر:
-
-**"ربط حساب Google Drive لاستعادة بياناتي"**
-
-### السيناريو الكامل
-
-```
-1. المستخدم يفتح الموقع للمرة الأولى
-2. يظهر له نموذج: "أهلاً بك في نور — أدخل اسمك"
-3. تحت النموذج: زر "أو سجّل دخول بـ Google Drive لاستعادة بياناتك"
-4. عند الضغط:
-   a. Firebase Google Sign-In مع drive.file scope
-   b. بعد النجاح: البحث عن noor-backup.json في Drive
-   c. إذا وُجد الملف → "وجدنا نسخة احتياطية! هل تريد استعادتها؟" (confirm dialog)
-   d. إذا وافق → importAllData(json) → reload
-   e. إذا لم يوجد ملف → تابع onboarding عادي مع حفظ Drive token للمستيقبل
-5. بعد الإعداد الأول: عند دخول الموقع مجدداً يكون Drive connected تلقائياً
-```
-
-### كود مقترح للـ onboarding component
-
-```tsx
-// في صفحة الـ onboarding
-const [driveChecking, setDriveChecking] = useState(false);
-const [driveFound, setDriveFound] = useState<string | null>(null); // JSON content
-
-async function handleDriveLogin() {
-  setDriveChecking(true);
-  try {
-    const token = await getGoogleDriveToken();
-    const json = await downloadFile(token);
-    if (json) {
-      setDriveFound(json);
-      // اعرض للمستخدم: "وجدنا نسخة احتياطية، هل تستعيدها؟"
-    } else {
-      // لا توجد نسخة، أكمل التسجيل العادي
-      completeOnboarding();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-  setDriveChecking(false);
-}
-
-function handleRestoreFromDrive() {
-  if (!driveFound) return;
-  importAllData(driveFound); // تطبيق البيانات
-  window.location.reload();
-}
-```
-
----
-
-## ملاحظات تقنية مهمة
-
-### تنسيق الملف — شرح مفصل
-
-الملف يجب أن يكون بهذا الشكل بالضبط حتى يعمل مع التطبيق أيضاً:
+يجب أن يكون التنسيق **هذا بالضبط** حتى يكون متوافقاً بين الموقع والتطبيق:
 
 ```json
 {
   "uid": "firebase-uid-or-local-uid",
-  "exportedAt": "2025-01-15T10:30:00.000Z",
+  "exportedAt": "2025-05-14T10:30:00.000Z",
   "data": {
-    "profile": { "name": "أحمد", "governorate": "القاهرة" },
+    "profile": { "name": "أحمد", "governorate": "القاهرة", "lat": 30.0444, "lng": 31.2357 },
     "settings/theme": "dark",
-    "azkar/morning/count": 5,
+    "settings/font_scale": 1,
+    "azkar/morning": { "count": 5, "done": true, "date": "2025-05-14" },
+    "azkar/evening": { "count": 0, "done": false, "date": "2025-05-14" },
     "tasbih/total": 250,
-    "quran/lastRead": { "surah": 2, "ayah": 100 },
-    "hifz/progress": { ... }
+    "quran/bookmark": { "surah": 2, "ayah": 100 },
+    "prayers/2025-05-14": { "Fajr": true, "Dhuhr": false, "Asr": true, "Maghrib": true, "Isha": false }
   }
 }
 ```
 
-- المفاتيح في `data` تستخدم `/` كفاصل للمسار (مثل localStorage keys)
-- القيم يمكن أن تكون أي نوع (string, number, object, boolean)
-- الـ `uid` يجب أن يكون uid المستخدم الحالي عند export
+**القواعد:**
+- مفاتيح `data` تستخدم `/` كفاصل للمسار (نفس مفاتيح localStorage في التطبيق)
+- القيم أي نوع (string, number, object, boolean, null)
+- `uid` = Firebase UID في الموقع، أو `local_${timestamp}` في التطبيق
+- الملف المُصدَّر من الموقع يعمل في التطبيق، والعكس صحيح
 
-### الـ importAllData function
+---
+
+## الميزة الأولى: Export / Import (محلي فقط)
+
+### Export في الموقع
 
 ```typescript
-function importAllData(json: string): { success: boolean; error?: string } {
+// lib/backup.ts
+import { auth } from './firebase';
+import { get, ref } from 'firebase/database';
+import { database } from './firebase';
+
+export async function exportAllData(): Promise<string> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('يجب تسجيل الدخول');
+
+  // جلب كل بيانات المستخدم من RTDB
+  const snapshot = await get(ref(database, `users/${uid}`));
+  const raw = snapshot.val() ?? {};
+
+  // تسطيح البيانات إلى flat object
+  const flat: Record<string, unknown> = {};
+  function flatten(obj: Record<string, unknown>, prefix = '') {
+    for (const [k, v] of Object.entries(obj)) {
+      const key = prefix ? `${prefix}/${k}` : k;
+      if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+        flatten(v as Record<string, unknown>, key);
+      } else {
+        flat[key] = v;
+      }
+    }
+  }
+  flatten(raw);
+
+  const backup = {
+    uid,
+    exportedAt: new Date().toISOString(),
+    data: flat,
+  };
+
+  return JSON.stringify(backup, null, 2);
+}
+
+export function downloadBackup(json: string): void {
+  const fileName = `noor-backup-${new Date().toISOString().split('T')[0]}.json`;
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+```
+
+### Import في الموقع
+
+```typescript
+// lib/backup.ts (تابع)
+import { update, ref } from 'firebase/database';
+
+export async function importAllData(json: string): Promise<{ success: boolean; error?: string }> {
   try {
     const parsed = JSON.parse(json);
     if (!parsed.data || typeof parsed.data !== 'object') {
       return { success: false, error: 'تنسيق الملف غير صحيح' };
     }
-    // ادفع كل مفتاح من data إلى Firestore/RTDB للمستخدم الحالي
-    const userId = auth.currentUser?.uid;
-    if (!userId) return { success: false, error: 'يجب تسجيل الدخول أولاً' };
-    
-    // مثال: دفع البيانات إلى RTDB
+
+    const uid = auth.currentUser?.uid;
+    if (!uid) return { success: false, error: 'يجب تسجيل الدخول أولاً' };
+
+    // بناء object للـ update
     const updates: Record<string, unknown> = {};
     for (const [path, value] of Object.entries(parsed.data)) {
-      updates[`users/${userId}/${path}`] = value;
+      updates[`users/${uid}/${path.replace(/\//g, '/')}`] = value;
     }
-    // await update(ref(database), updates);
-    
+
+    await update(ref(database), updates);
     return { success: true };
-  } catch {
+  } catch (e) {
     return { success: false, error: 'الملف تالف أو غير صالح' };
   }
 }
 ```
 
-### تصميم الـ UI
+### UI في صفحة الإعدادات
 
-- استخدم نفس تصميم الموقع الحالي (ألوان Firebase، fonts، إلخ)
-- أضف أيقونة Google Drive (SVG أو من lucide-react: `Cloud`)
-- الأزرار تكون disabled أثناء التحميل مع spinner
-- اعرض رسالة نجاح/خطأ واضحة بالعربي
-- في صفحة الـ onboarding: الزر يكون بارز وواضح تحت فورم الاسم
+أضف قسم "النسخة الاحتياطية" بثلاثة أزرار:
 
-### ترتيب التنفيذ المقترح
+```tsx
+// في صفحة Settings
+async function handleExport() {
+  const json = await exportAllData();
+  downloadBackup(json);
+}
 
-1. أنشئ ملف `lib/google-drive.ts` بكل دوال Drive
-2. أنشئ ملف `lib/backup.ts` بدوال `exportAllData` و `importAllData`
-3. حدّث صفحة الإعدادات بقسم النسخ الاحتياطية
-4. حدّث صفحة الـ onboarding بزر Google Drive
-5. تأكد من أن Firebase Google Auth يطلب drive.file scope
+async function handleShare() {
+  const json = await exportAllData();
+  const fileName = `noor-backup-${new Date().toISOString().split('T')[0]}.json`;
+  const file = new File([json], fileName, { type: 'application/json' });
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ files: [file], title: 'نسخة احتياطية - Noor' });
+  } else {
+    downloadBackup(json); // fallback
+  }
+}
+```
+
+**الأزرار الثلاثة:**
+- `تصدير إلى ملف` → `handleExport()` — تنزيل noor-backup.json
+- `مشاركة النسخة الاحتياطية` → `handleShare()` — Web Share API أو تنزيل
+- `استعادة من ملف` → `<input type="file">` → `importAllData()` → `reload()`
 
 ---
 
-## ما يجب عدم تغييره
+## الميزة الثانية: استعادة في صفحة الـ Onboarding
 
-- لا تلمس Firebase Auth الأساسي (Google Sign-In للدخول للموقع)
-- لا تلمس Firestore collections الحالية (leaderboard، rankings، إلخ)
-- لا تلمس أي كود Firebase موجود إلا بإضافة `addScope` فقط
-- الموقع يبقى يعتمد على Firebase بالكامل كما هو
+في صفحة التسجيل/الترحيب (حيث يدخل المستخدم اسمه للمرة الأولى)، أضف زر:
+
+**"استعادة من نسخة احتياطية"** → يفتح `<input type="file">` → `importAllData()` → `reload()`
+
+```tsx
+// في صفحة Login / Onboarding
+<div className="mt-4">
+  <input
+    type="file"
+    accept=".json,application/json"
+    className="hidden"
+    ref={importRef}
+    onChange={async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const result = await importAllData(text);
+      if (result.success) {
+        window.location.reload();
+      } else {
+        alert(result.error);
+      }
+    }}
+  />
+  <button
+    onClick={() => importRef.current?.click()}
+    className="w-full border rounded-xl p-3 text-sm"
+  >
+    📂 استعادة من نسخة احتياطية
+  </button>
+  <p className="text-xs text-center mt-2 opacity-60">
+    بياناتك محفوظة على جهازك — لا حاجة لإنترنت
+  </p>
+</div>
+```
 
 ---
 
-## ملخص ما يُنفَّذ
+## مواقيت الصلاة (بدون API)
+
+مواقيت الصلاة في الموقع يجب أن تعمل **بالكامل offline** باستخدام مكتبة **adhan.js** (الطريقة المصرية):
+
+```typescript
+import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
+
+function getPrayerTimes(lat: number, lng: number, date = new Date()) {
+  const coords = new Coordinates(lat, lng);
+  const params = CalculationMethod.Egyptian(); // هيئة المساحة المصرية
+  const pt = new PrayerTimes(coords, date, params);
+
+  const fmt = (d: Date) =>
+    `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+  return {
+    Fajr:    fmt(pt.fajr),
+    Sunrise: fmt(pt.sunrise),
+    Dhuhr:   fmt(pt.dhuhr),
+    Asr:     fmt(pt.asr),
+    Maghrib: fmt(pt.maghrib),
+    Isha:    fmt(pt.isha),
+  };
+}
+```
+
+**استراتيجية التخزين المؤقت:**
+1. احسب بـ adhan.js فوراً (لا انتظار)
+2. احفظ في localStorage بمفتاح `noor_pt_{lat}_{lng}_{YYYY-MM-DD}`
+3. اجلب من الـ API (aladhan.com) في الخلفية فقط للحصول على التاريخ الهجري
+4. لو الـ API أجاب → حدّث localStorage بالتاريخ الهجري
+
+**المحافظات المصرية وإحداثياتها:** استخدم نفس `EGYPT_GOVERNORATES` الموجود في `artifacts/noor/src/lib/constants.ts`
+
+---
+
+## الإشعارات
+
+الإشعارات في الموقع (browser) تختلف عن الموبايل:
+
+```typescript
+// طلب إذن الإشعارات في المتصفح
+async function requestBrowserNotifications(): Promise<boolean> {
+  if (!('Notification' in window)) return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+// جدولة إشعار صلاة
+function schedulePrayerNotification(prayerName: string, time: string, minutesBefore = 10) {
+  const [h, m] = time.split(':').map(Number);
+  const triggerTime = new Date();
+  triggerTime.setHours(h, m - minutesBefore, 0, 0);
+  const delay = triggerTime.getTime() - Date.now();
+  if (delay <= 0) return;
+  setTimeout(() => {
+    new Notification('🕌 تطبيق نُور', {
+      body: `${prayerName} بعد ${minutesBefore} دقيقة`,
+      icon: '/icons/icon-192.png',
+    });
+  }, delay);
+}
+```
+
+**ملاحظة:** إشعارات المتصفح محدودة (لا تعمل لو أُغلق التاب). للإشعارات الحقيقية في الخلفية يجب استخدام APK فقط عبر `@capacitor/local-notifications`.
+
+---
+
+## مزامنة البيانات بين الموقع والتطبيق
+
+| البيانات | الموقع | التطبيق |
+|---------|--------|---------|
+| الملف الشخصي | Firebase RTDB | localStorage |
+| التسبيح | Firebase RTDB + Firestore | localStorage |
+| الأذكار | Firebase RTDB | localStorage |
+| التقدم في القرآن | Firebase RTDB | localStorage |
+| الصلوات | Firebase RTDB | localStorage |
+| الإعدادات | Firebase RTDB | localStorage |
+
+**المزامنة:** عبر ملف `noor-backup.json` فقط (Export من أحدهما → Import في الآخر).
+
+---
+
+## الميزات الرئيسية للتطبيق (v2.3)
 
 | الميزة | الوصف |
 |--------|--------|
-| Export محلي | تنزيل noor-backup.json من الموقع |
-| Import محلي | رفع ملف واستعادة البيانات |
-| Drive Backup | رفع/تنزيل noor-backup.json على Google Drive |
-| Drive Login | تسجيل الدخول بـ Google Drive في صفحة التسجيل + استعادة تلقائية |
+| القرآن الكريم | قارئ مع تفسير ميسر وبحث عربي كامل (6236 آية) |
+| الأحاديث | 6 كتب (34532 حديث) مع بحث عربي وتظليل النتائج |
+| مواقيت الصلاة | adhan.js (بدون نت) + تاريخ هجري من API |
+| الإشعارات | `@capacitor/local-notifications` — بدون نت تماماً |
+| الأذكار | صباح/مساء مع تتبع التقدم |
+| التسبيح | عداد رقمي مع مزامنة Firebase |
+| القبلة | بوصلة ذكية |
+| التاريخ الإسلامي | 4975 حدث في 5 حقب |
+| الاختبارات | 5820 سؤال في 6 تخصصات |
+| الإذاعات والقنوات | بث مباشر (HLS) |
+| النسخ الاحتياطي | محلي فقط + مشاركة عبر Share Sheet |
 
-الملف المُصدَّر من الموقع يعمل على التطبيق، والملف المُصدَّر من التطبيق يعمل على الموقع.
+---
+
+## ما يجب عدم تغييره في الموقع
+
+- لا تلمس Firebase Auth (Google Sign-In)
+- لا تلمس Firestore collections الحالية (leaderboard، sohbaLeaderboard)
+- لا تضف أي Google Drive scope أو Drive API
+- الموقع يبقى يعتمد على Firebase كما هو
+- تنسيق ملف الـ backup يبقى كما هو (متوافق مع التطبيق)
+
+---
+
+## تصميم الـ UI
+
+- **الخط الرئيسي:** `"Tajawal", sans-serif` (نصوص) + `"Amiri"` (عربي كلاسيكي)
+- **اللون الأساسي:** `#C19A6B` (ذهبي/عنبري)
+- **الخلفية الفاتحة:** `#FDFBF5`
+- **الخلفية الداكنة:** `#0f0c07`
+- **الاتجاه:** `dir="rtl"` على كل الصفحات
+- الأزرار تكون `disabled` أثناء التحميل مع spinner
+- رسائل نجاح/خطأ واضحة بالعربي
+- أيقونات من `lucide-react` (Download, Upload, Share2, FolderOpen, HardDrive)
+
+---
+
+## ملخص ما يُنفَّذ في الموقع
+
+| الميزة | الوصف | الأولوية |
+|--------|--------|---------|
+| Export محلي | تنزيل noor-backup.json | عالية |
+| Import محلي | رفع ملف واستعادة البيانات | عالية |
+| مشاركة النسخة | Web Share API أو تنزيل | متوسطة |
+| Import في Onboarding | زر استعادة في صفحة الترحيب | عالية |
+| مواقيت الصلاة | adhan.js offline-first | عالية |
+| إشعارات المتصفح | Notification API (محدودة) | منخفضة |
+
+**لا يوجد Google Drive — النسخ الاحتياطي محلي فقط.**
