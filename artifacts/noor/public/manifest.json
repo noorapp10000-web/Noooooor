@@ -1,6 +1,6 @@
 {
-  "name": "نور - تطبيق إسلامي شامل",
-  "short_name": "نُور",
+  "name": "Noor app",
+  "short_name": "Noor app",
   "description": "رفيقك الإسلامي الشامل: قرآن، أحاديث، أذكار، أذان، قبلة، وتسبيح",
   "start_url": "/",
   "display": "standalone",

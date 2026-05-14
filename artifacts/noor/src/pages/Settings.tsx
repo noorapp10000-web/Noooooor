@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, Download, CheckCircle, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -585,9 +585,6 @@ export function Settings() {
         {/* ── Manual Firebase Sync ── */}
         <SyncSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
 
-        {/* ── Export & Backup Section ── */}
-        <ExportSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
-
         {/* Preview note */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -689,109 +686,6 @@ function SyncSection({
           </p>
         </div>
       </button>
-    </motion.div>
-  );
-}
-
-function ExportSection({
-  sectionBg,
-  borderColor,
-  textColor,
-  subText,
-}: {
-  sectionBg: string;
-  borderColor: string;
-  textColor: string;
-  subText: string;
-}) {
-  const [exported, setExported] = useState(false);
-
-  const handleExport = () => {
-    const exportData: Record<string, string> = {};
-    const SKIP_KEYS = ['noor_quran_uthmani_v2', 'noor_quran_uthmani'];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      if (!key.startsWith('noor_')) continue;
-      if (SKIP_KEYS.some(skip => key.startsWith(skip))) continue;
-      const value = localStorage.getItem(key);
-      if (value !== null) exportData[key] = value;
-    }
-
-    const backup = {
-      __noor_backup__: true,
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      keys: exportData,
-    };
-
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `noor-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setExported(true);
-    setTimeout(() => setExported(false), 3000);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.22 }}
-      className="rounded-2xl p-4"
-      style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
-    >
-      <div className="flex items-center gap-2.5 mb-4">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'linear-gradient(145deg, #3b82f6, #1d4ed8)' }}
-        >
-          <Download className="w-4 h-4 text-white" />
-        </div>
-        <div>
-          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>النسخة الاحتياطية</p>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>احفظ بياناتك وتقدّمك</p>
-        </div>
-      </div>
-
-      <button
-        onClick={handleExport}
-        className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97]"
-        style={{
-          background: exported ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.08)',
-          border: `1.5px solid ${exported ? 'rgba(34,197,94,0.35)' : 'rgba(59,130,246,0.25)'}`,
-        }}
-      >
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: exported ? 'rgba(34,197,94,0.15)' : 'rgba(59,130,246,0.12)' }}
-        >
-          {exported
-            ? <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} />
-            : <Download className="w-5 h-5" style={{ color: '#3b82f6' }} />
-          }
-        </div>
-        <div className="text-right flex-1">
-          <p
-            className="font-bold text-sm"
-            style={{ fontFamily: '"Tajawal", sans-serif', color: exported ? '#22c55e' : '#1d4ed8' }}
-          >
-            {exported ? 'تم التصدير بنجاح ✓' : 'تصدير النسخة الاحتياطية'}
-          </p>
-          <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-            {exported ? 'تحقق من مجلد التنزيلات' : 'ذكر، أذكار، تقدّم الاختبارات...'}
-          </p>
-        </div>
-      </button>
-
-      <p className="text-xs text-center mt-3" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-        لاستيراد النسخة الاحتياطية: افتح التطبيق واضغط «استيراد نسخة احتياطية» في شاشة الدخول
-      </p>
     </motion.div>
   );
 }
