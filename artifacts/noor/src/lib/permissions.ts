@@ -1,47 +1,44 @@
 /**
  * Noor App — Startup Permissions Handler
- * Requests all required Android permissions on first launch after login.
+ * Requests all required Android permissions after first login.
  * Silently skipped in browser / dev mode.
  */
 
 import { Capacitor } from '@capacitor/core';
 import { requestNotificationPermission } from './notifications';
 
-const PERMISSIONS_REQUESTED_KEY = 'noor_permissions_requested';
-
 /**
- * Request all app permissions upfront on first login.
- * Subsequent calls are skipped (once per install).
+ * Request notification and location permissions.
+ * Called once after login — shows dialogs if not yet granted.
+ * Uses a localStorage flag so dialogs only show ONCE per install.
  */
 export async function requestAllPermissionsOnce(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
-  // Only show the permissions dialog once per installation
-  const alreadyRequested = localStorage.getItem(PERMISSIONS_REQUESTED_KEY) === '1';
-  if (alreadyRequested) return;
+  const PERM_KEY = 'noor_permissions_v2';
+  const done = localStorage.getItem(PERM_KEY) === '1';
+  if (done) return;
 
-  // Small delay so the UI is visible before dialogs appear
-  await new Promise<void>(r => setTimeout(r, 1500));
+  // Small delay so the app UI is visible before dialogs appear
+  await new Promise<void>(r => setTimeout(r, 1800));
 
   // 1. Notification permission (Android 13+ = API 33+)
-  await requestNotificationPermission();
-
-  // 2. Geolocation (for prayer times & Qibla) — triggers browser dialog
   try {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        () => {},
-        () => {},
-        { timeout: 8000 },
-      );
-    }
+    await requestNotificationPermission();
   } catch {}
 
-  localStorage.setItem(PERMISSIONS_REQUESTED_KEY, '1');
-  console.log('[Permissions] All permissions requested');
+  // 2. Location permission — handled properly by @capacitor/geolocation
+  // The Qibla/prayer pages call requestLocation() themselves.
+  // We just mark as done so we don't spam the user on every open.
+
+  localStorage.setItem(PERM_KEY, '1');
+  console.log('[Permissions] Startup permissions requested');
 }
 
-/** Force re-request permissions (call from settings if user denied before). */
+/**
+ * Force re-request permissions on next app open.
+ * Call this from Settings when the user taps "طلب الإذن مجدداً".
+ */
 export function resetPermissionsFlag(): void {
-  localStorage.removeItem(PERMISSIONS_REQUESTED_KEY);
+  localStorage.removeItem('noor_permissions_v2');
 }

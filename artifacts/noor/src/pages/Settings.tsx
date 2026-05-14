@@ -14,13 +14,13 @@ import {
 import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
 
-const PRAYER_LIST: { key: PrayerKey; name: string; emoji: string }[] = [
-  { key: 'Fajr',    name: 'الفجر',  emoji: '🌙' },
-  { key: 'Sunrise', name: 'الشروق', emoji: '🌅' },
-  { key: 'Dhuhr',   name: 'الظهر',  emoji: '☀️' },
-  { key: 'Asr',     name: 'العصر',  emoji: '🌤️' },
-  { key: 'Maghrib', name: 'المغرب', emoji: '🌆' },
-  { key: 'Isha',    name: 'العشاء', emoji: '🌙' },
+const PRAYER_LIST: { key: PrayerKey; name: string }[] = [
+  { key: 'Fajr',    name: 'الفجر'  },
+  { key: 'Sunrise', name: 'الشروق' },
+  { key: 'Dhuhr',   name: 'الظهر'  },
+  { key: 'Asr',     name: 'العصر'  },
+  { key: 'Maghrib', name: 'المغرب' },
+  { key: 'Isha',    name: 'العشاء' },
 ];
 
 const MINUTES_OPTIONS = [
@@ -386,7 +386,6 @@ export function Settings() {
                         }}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-base">{prayer.emoji}</span>
                           <span
                             className="font-bold text-sm"
                             style={{

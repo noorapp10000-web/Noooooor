@@ -5,9 +5,9 @@
     <color name="colorPrimaryDark">#A07848</color>
     <color name="colorAccent">#C19A6B</color>
 
-    <!-- Adaptive icon background — Noor gold -->
-    <color name="ic_launcher_background">#C19A6B</color>
+    <!-- Adaptive icon background — cream matching logo background -->
+    <color name="ic_launcher_background">#FDFBF5</color>
 
-    <!-- Splash screen background — warm cream (matches app background) -->
-    <color name="splash_background">#FDFBF0</color>
+    <!-- Splash screen background — dark (matches React SplashScreen first frame) -->
+    <color name="splash_background">#060810</color>
 </resources>
