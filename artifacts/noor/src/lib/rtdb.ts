@@ -1,11 +1,13 @@
 /**
- * rtdb.ts — Firebase Realtime Database (RTDB only, no localStorage)
+ * rtdb.ts — Firebase Realtime Database + localStorage Offline Backup
  *
  * المسار: users/{uid}/
  * الاستراتيجية:
- *   - تحميل: جلب كل بيانات المستخدم مرة واحدة عند بدء الجلسة
+ *   - تحميل: جلب كل بيانات المستخدم من RTDB عند بدء الجلسة
+ *   - Offline fallback: لو RTDB فشل (لا نت عند الفتح)، يُحمَّل من localStorage
  *   - كتابة: قائمة انتظار + إرسال كل 10 ثواني
  *   - إرسال فوري: عند إخفاء الصفحة أو إغلاقها
+ *   - بعد كل flush ناجح: تحديث localStorage كنسخة احتياطية
  */
 
 import { ref, get, update, set } from 'firebase/database';
@@ -38,6 +40,39 @@ let _pendingUpdates: Record<string, unknown> = {};
 let _flushTimer: ReturnType<typeof setTimeout> | null = null;
 let _visibilityHandlerAttached = false;
 const FLUSH_INTERVAL_MS = 10_000;
+
+/* ══════════════════════════════════════════════════════════════
+   localStorage BACKUP — يضمن عمل التطبيق أوفلاين بعد إعادة الفتح
+══════════════════════════════════════════════════════════════ */
+
+function lsKey(uid: string): string {
+  return `noor_rtdb_${uid}`;
+}
+
+/** احفظ الكاش الحالي في localStorage (يُستدعى بعد كل تحميل أو flush ناجح) */
+function persistCacheToLS(uid: string): void {
+  try {
+    localStorage.setItem(lsKey(uid), JSON.stringify(_cache));
+  } catch {}
+}
+
+/** حمّل الكاش من localStorage (fallback عند عدم الاتصال) */
+function loadCacheFromLS(uid: string): boolean {
+  try {
+    const raw = localStorage.getItem(lsKey(uid));
+    if (!raw) return false;
+    _cache = JSON.parse(raw) as Record<string, unknown>;
+    console.info('[RTDB] Offline mode — loaded cache from localStorage');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** امسح نسخة المستخدم من localStorage عند تسجيل الخروج */
+function clearCacheFromLS(uid: string): void {
+  try { localStorage.removeItem(lsKey(uid)); } catch {}
+}
 
 /* ══════════════════════════════════════════════════════════════
    HELPERS
@@ -100,6 +135,7 @@ export function getProfileCache(): UserProfile | null {
 /** احفظ الـ profile في RTDB والكاش */
 export async function saveProfileToRTDB(uid: string, profile: UserProfile): Promise<void> {
   _cache['profile'] = profile;
+  persistCacheToLS(uid);
   await set(ref(rtdb, `users/${uid}/profile`), profile);
 }
 
@@ -108,6 +144,7 @@ export async function updateProfileInRTDB(uid: string, updates: Partial<UserProf
   const existing = getProfileCache() ?? {} as UserProfile;
   const merged = { ...existing, ...updates };
   _cache['profile'] = merged;
+  persistCacheToLS(uid);
   await update(ref(rtdb, `users/${uid}/profile`), updates);
 }
 
@@ -115,7 +152,11 @@ export async function updateProfileInRTDB(uid: string, updates: Partial<UserProf
    INIT — تهيئة جلسة المستخدم
 ══════════════════════════════════════════════════════════════ */
 
-/** يُستدعى مرة واحدة بعد تسجيل الدخول — يجلب كل بيانات المستخدم في الكاش */
+/**
+ * يُستدعى مرة واحدة بعد تسجيل الدخول.
+ * - إذا كان هناك اتصال: يجلب كل بيانات المستخدم من RTDB ويحدّث localStorage
+ * - إذا لم يكن هناك اتصال: يحمّل البيانات من localStorage (آخر نسخة محفوظة)
+ */
 export async function initUserSync(uid: string): Promise<void> {
   _currentUid = uid;
   _pendingUpdates = {};
@@ -128,9 +169,15 @@ export async function initUserSync(uid: string): Promise<void> {
     } else {
       _cache = {};
     }
+    // ✅ حفظ نسخة احتياطية في localStorage بعد كل تحميل ناجح
+    persistCacheToLS(uid);
   } catch (e) {
-    console.warn('[RTDB] Init load error:', e);
-    _cache = {};
+    // ❌ فشل RTDB (أوفلاين عند الفتح) — جرّب localStorage
+    const loaded = loadCacheFromLS(uid);
+    if (!loaded) {
+      _cache = {};
+    }
+    console.warn('[RTDB] Init load failed (offline?), using localStorage cache:', e);
   }
 
   attachVisibilityHandler();
@@ -144,11 +191,12 @@ export async function initUserSync(uid: string): Promise<void> {
 export function queueRTDBUpdate(uid: string, updates: Record<string, unknown>): void {
   if (!uid) return;
   _currentUid = uid;
-  // حدّث الكاش فوراً
   for (const [k, v] of Object.entries(updates)) {
     setCacheValue(k, v);
   }
   Object.assign(_pendingUpdates, updates);
+  // حدّث localStorage فوراً أيضاً لضمان عدم ضياع البيانات
+  persistCacheToLS(uid);
   scheduleFlush();
 }
 
@@ -167,9 +215,12 @@ export async function flushRTDB(): Promise<void> {
   _pendingUpdates = {};
   try {
     await update(userRef(uid), updates);
+    // ✅ بعد flush ناجح — حدّث localStorage ليعكس آخر حالة مؤكدة
+    persistCacheToLS(uid);
   } catch (e) {
+    // ❌ فشل الإرسال — أعد البيانات لقائمة الانتظار (ستُرسل في المرة القادمة)
     Object.assign(_pendingUpdates, updates);
-    console.warn('[RTDB] Flush error:', e);
+    console.warn('[RTDB] Flush error (offline?) — will retry:', e);
   }
 }
 
@@ -187,6 +238,7 @@ function attachVisibilityHandler(): void {
 
 /** مسح الحالة عند تسجيل الخروج */
 export function clearSyncState(): void {
+  if (_currentUid) clearCacheFromLS(_currentUid);
   _currentUid = null;
   _cache = {};
   _pendingUpdates = {};
