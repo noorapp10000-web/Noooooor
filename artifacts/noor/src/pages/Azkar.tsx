@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { getTodayKey, cn } from '@/lib/utils';
 import { HISN_CATEGORIES, HISN_ITEMS, type HisnCategory } from '@/lib/hisnData';
 import { queueAzkarSync, getCacheValue, getCurrentUid } from '@/lib/rtdb';
-import { auth } from '@/lib/firebase';
+import { getOrCreateLocalUid } from '@/lib/rtdb';
 
 /* ── Ornament ────────────────────────────────────*/
 function IslamicOrnament() {
@@ -89,7 +89,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
       const cur = prev[id] ?? 0;
       if (cur >= max) return prev;
       const next = { ...prev, [id]: cur + 1 };
-      const uid = auth.currentUser?.uid ?? getCurrentUid();
+      const uid = getCurrentUid() || getOrCreateLocalUid();
       if (uid) queueAzkarSync(uid, category.id, next);
       return next;
     });
@@ -104,7 +104,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
             onConfirm={() => {
               setProgress({});
               setShowReset(false);
-              const uid = auth.currentUser?.uid ?? getCurrentUid();
+              const uid = getCurrentUid() || getOrCreateLocalUid();
               if (uid) queueAzkarSync(uid, category.id, {});
             }}
             onCancel={() => setShowReset(false)}

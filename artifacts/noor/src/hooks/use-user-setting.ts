@@ -1,11 +1,6 @@
 import { useState, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
-import { getSettingCache, queueSettingSync, getCurrentUid } from '@/lib/rtdb';
+import { getSettingCache, queueSettingSync, getCurrentUid, getOrCreateLocalUid } from '@/lib/rtdb';
 
-/**
- * Hook يقرأ إعداداً من كاش RTDB ويؤجل الكتابة إلى Firebase.
- * يعمل بدون localStorage تماماً.
- */
 export function useUserSetting<T>(
   key: string,
   defaultVal: T,
@@ -16,7 +11,7 @@ export function useUserSetting<T>(
     (v: T | ((prev: T) => T)) => {
       setValue(prev => {
         const next = typeof v === 'function' ? (v as (p: T) => T)(prev) : v;
-        const uid = auth.currentUser?.uid ?? getCurrentUid();
+        const uid = getCurrentUid() || localStorage.getItem('noor_uid') || getOrCreateLocalUid();
         if (uid) queueSettingSync(uid, key, next);
         return next;
       });

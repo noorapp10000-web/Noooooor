@@ -1,97 +1,16 @@
 import { TASBIH_TYPES } from '@/lib/constants';
 import {
-  syncUserLeaderboard,
-  incrementGovernorateCounter,
-  getRebuildIncludedUsers,
-  addPendingGovernorateCount,
-  getPendingGovernorateCount,
-  clearPendingGovernorateCount,
-} from '@/lib/firestore';
-import {
   queueTasbihSync,
   flushRTDB,
   getCacheValue,
   getCurrentUid,
-  getProfileCache,
-  getSettingCache,
-  getGovSyncedCount,
-  queueGovSyncedCountUpdate,
+  getOrCreateLocalUid,
   todayKey,
 } from '@/lib/rtdb';
-import { auth } from '@/lib/firebase';
 import { BarChart2 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { useUserSetting } from '@/hooks/use-user-setting';
-
-const SESSION_FLUSH_INTERVAL_MS = 5 * 60 * 1000; // 5 دقائق
-
-/* جمع كل التسبيح في الذاكرة وبعتها مرة واحدة لـ Firestore:
-   - مرة لتحديث ترتيب المستخدم (sohbaLeaderboard) بالإجمالي الكلي
-   - مرة لزيادة عداد المحافظة بالفرق فقط (الجديد منذ آخر مزامنة)
-   = يشمل التسبيح القديم تلقائياً في أول مزامنة */
-async function flushSessionToFirestore(
-  totalsRef: { current: Record<string, number> },
-): Promise<void> {
-  const profile = getProfileCache();
-  const uid = auth.currentUser?.uid;
-  if (!uid || !profile) return;
-
-  const totalTasbeeh = Object.values(totalsRef.current).reduce((a, b) => a + b, 0);
-
-  // لو مفيش تسبيح خالص ما نبعتش
-  const govSyncedCount = getGovSyncedCount();
-  const hasPending = getPendingGovernorateCount() > 0;
-  if (totalTasbeeh <= 0 && !hasPending) return;
-
-  // الفرق بين الإجمالي الكلي وإيه اللي بُعت للمحافظة من قبل
-  const delta = totalTasbeeh - govSyncedCount;
-
-  // امسح الـ pending فوراً عشان لو المستخدم ضغط في النص ما يضيعش
-  clearPendingGovernorateCount();
-
-  try {
-    const isPublic = getSettingCache<boolean>('noor_leaderboard_visible', false);
-
-    await syncUserLeaderboard({
-      userId: uid,
-      displayName: profile.name || 'ذاكر',
-      governorate: profile.governorateName || null,
-      isPublic,
-      tasbeehCount: totalTasbeeh,
-      quranCompletions: getCacheValue<number>('quran_completions', 0),
-      currentSurah: getCacheValue<number>('last_surah', 1),
-      azkarStreak: getCacheValue<number>('azkar_streak', 0),
-      tadabburStreak: getCacheValue<number>('tadabbur_streak', 0),
-      earnedBadges: [],
-    });
-
-    if (delta > 0 && profile.governorateId && profile.governorateName) {
-      // لو المستخدم عنده gov_synced_count = 0، ممكن بياناته اتحسبت بالفعل في آخر rebuild
-      // نتحقق عشان نمنع الازدواجية
-      let shouldIncrement = true;
-      if (govSyncedCount === 0) {
-        const includedUsers = await getRebuildIncludedUsers();
-        if (includedUsers.includes(uid)) {
-          // بياناته اتحسبت في الـ rebuild — نحدّث الرقم بس من غير إضافة
-          shouldIncrement = false;
-        }
-      }
-      if (shouldIncrement) {
-        await incrementGovernorateCounter(
-          profile.governorateId,
-          profile.governorateName,
-          delta,
-        );
-      }
-      // في كل الأحوال احفظ الرقم الجديد عشان نحسب الفرق صح المرة الجاية
-      queueGovSyncedCountUpdate(uid, totalTasbeeh);
-    }
-  } catch {
-    // لو فشلت، رجّع الـ pending عشان نحاول تاني المرة الجاية
-    addPendingGovernorateCount(delta > 0 ? delta : 1);
-  }
-}
 
 const BEAD_COUNT = 33;
 
@@ -115,9 +34,7 @@ function BeadsSVG({ count, limit }: { count: number; limit: number }) {
       {beads.map((b, i) => (
         <g key={i}>
           <circle
-            cx={b.x}
-            cy={b.y}
-            r={i % 10 === 0 ? 8 : 6}
+            cx={b.x} cy={b.y} r={i % 10 === 0 ? 8 : 6}
             fill={b.filled ? 'hsl(var(--primary))' : 'hsl(var(--card))'}
             stroke={b.filled ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
             strokeWidth="1.5"
@@ -147,10 +64,8 @@ function ResetConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; on
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
       <motion.div
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.85, opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.85, opacity: 0 }} transition={{ duration: 0.2 }}
         className="relative bg-card border border-border rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center"
       >
         <svg width="32" height="32" viewBox="0 0 40 40" className="mx-auto mb-3 text-primary opacity-60">
@@ -159,22 +74,11 @@ function ResetConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; on
         <h3 className="font-bold text-lg mb-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>تصفير العداد</h3>
         <p className="text-muted-foreground text-sm mb-5" style={{ fontFamily: '"Tajawal", sans-serif' }}>هل تريد تصفير عداد هذا التسبيح؟</p>
         <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-bold text-sm hover:bg-secondary/80 transition-colors"
-            style={{ fontFamily: '"Tajawal", sans-serif' }}
-          >
+          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-bold text-sm hover:bg-secondary/80 transition-colors" style={{ fontFamily: '"Tajawal", sans-serif' }}>
             إلغاء
           </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl font-bold text-sm transition-colors"
-            style={{
-              background: 'linear-gradient(135deg, #C19A6B, #a07a4a)',
-              color: '#000',
-              fontFamily: '"Tajawal", sans-serif',
-            }}
-          >
+          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl font-bold text-sm transition-colors"
+            style={{ background: 'linear-gradient(135deg, #C19A6B, #a07a4a)', color: '#000', fontFamily: '"Tajawal", sans-serif' }}>
             تصفير
           </button>
         </div>
@@ -187,71 +91,35 @@ export function Tasbih() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
 
-  const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-
-  // Initialize from RTDB cache
-  const [typeIndex, setTypeIndex] = useState<number>(() =>
-    getCacheValue<number>('tasbih_type_idx', 0)
-  );
-  const [totals, setTotals] = useState<Record<string, number>>(() =>
-    getCacheValue<Record<string, number>>('tasbih_totals', {})
-  );
-  const [counts, setCounts] = useState<Record<string, number>>(() =>
-    getCacheValue<Record<string, number>>('tasbih_counts', {})
-  );
-  const [dailyCount, setDailyCount] = useState<number>(() =>
-    getCacheValue<number>(`tasbih_daily/${todayKey()}`, 0)
-  );
+  const [typeIndex, setTypeIndex] = useState<number>(() => getCacheValue<number>('tasbih_type_idx', 0));
+  const [totals, setTotals] = useState<Record<string, number>>(() => getCacheValue<Record<string, number>>('tasbih_totals', {}));
+  const [counts, setCounts] = useState<Record<string, number>>(() => getCacheValue<Record<string, number>>('tasbih_counts', {}));
+  const [dailyCount, setDailyCount] = useState<number>(() => getCacheValue<number>(`tasbih_daily/${todayKey()}`, 0));
   const [showStats, setShowStats] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
 
   const controls = useAnimation();
   const [isPressing, setIsPressing] = useState(false);
 
-  const totalsRef  = useRef(totals);
-  const countsRef  = useRef(counts);
-  const dailyRef   = useRef(dailyCount);
-  useEffect(() => { totalsRef.current  = totals;     }, [totals]);
-  useEffect(() => { countsRef.current  = counts;     }, [counts]);
-  useEffect(() => { dailyRef.current   = dailyCount; }, [dailyCount]);
+  const totalsRef = useRef(totals);
+  const countsRef = useRef(counts);
+  const dailyRef  = useRef(dailyCount);
+  useEffect(() => { totalsRef.current = totals; }, [totals]);
+  useEffect(() => { countsRef.current = counts; }, [counts]);
+  useEffect(() => { dailyRef.current  = dailyCount; }, [dailyCount]);
 
   const currentType = TASBIH_TYPES[typeIndex];
   const count = counts[currentType.id] ?? 0;
   const total = totals[currentType.id] ?? 0;
 
-  // Flush RTDB on unmount
-  useEffect(() => {
-    return () => {
-      if (getCurrentUid()) flushRTDB();
-    };
-  }, []);
+  function getUid() { return getCurrentUid() || localStorage.getItem('noor_uid') || getOrCreateLocalUid(); }
 
-  // إرسال الجلسة لـ Firestore: كل 5 دقائق + إخفاء الصفحة + إغلاقها
-  useEffect(() => {
-    const flush = () => { flushSessionToFirestore(totalsRef).catch(() => {}); };
-
-    const interval = setInterval(flush, SESSION_FLUSH_INTERVAL_MS);
-
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('beforeunload', flush);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('beforeunload', flush);
-      flush();
-    };
-  }, []);
+  // Flush on unmount
+  useEffect(() => { return () => { flushRTDB(); }; }, []);
 
   const handleTypeChange = (idx: number) => {
     setTypeIndex(idx);
-    const uid = auth.currentUser?.uid;
-    if (uid) {
-      queueTasbihSync(uid, totalsRef.current, countsRef.current, dailyRef.current);
-    }
+    queueTasbihSync(getUid(), totalsRef.current, countsRef.current, dailyRef.current);
   };
 
   const handleTap = () => {
@@ -266,12 +134,7 @@ export function Tasbih() {
     setTotals(newTotals);
     setDailyCount(newDaily);
 
-    // debounced write to RTDB (10s) — البيانات الشخصية
-    const uid = auth.currentUser?.uid;
-    if (uid) queueTasbihSync(uid, newTotals, newCounts, newDaily);
-
-    // عداد الجلسة المحلي — يُرسل لـ Firestore كل 5 دقائق أو نهاية الجلسة
-    addPendingGovernorateCount(1);
+    queueTasbihSync(getUid(), newTotals, newCounts, newDaily);
   };
 
   const handleResetConfirm = () => {
@@ -279,8 +142,7 @@ export function Tasbih() {
     setCounts(newCounts);
     setShowResetDialog(false);
     if ('vibrate' in navigator) navigator.vibrate([30, 20, 30]);
-    const uid = auth.currentUser?.uid;
-    if (uid) queueTasbihSync(uid, totalsRef.current, newCounts, dailyRef.current);
+    queueTasbihSync(getUid(), totalsRef.current, newCounts, dailyRef.current);
   };
 
   return (
@@ -292,12 +154,8 @@ export function Tasbih() {
           <button onClick={() => setShowStats(!showStats)} className="p-2 bg-secondary text-primary rounded-full">
             <BarChart2 className="w-5 h-5" />
           </button>
-          <button
-            onClick={() => setShowResetDialog(true)}
-            className="p-2 rounded-full transition-colors"
-            style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}
-            title="تصفير"
-          >
+          <button onClick={() => setShowResetDialog(true)} className="p-2 rounded-full transition-colors"
+            style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }} title="تصفير">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3 3v5h5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -327,46 +185,19 @@ export function Tasbih() {
       )}
 
       {/* Dhikr type selector */}
-      <div
-        className="no-scrollbar"
-        style={{
-          display: 'flex',
-          flexShrink: 0,
-          gap: '8px',
-          overflowX: 'scroll',
-          overflowY: 'visible',
-          paddingTop: '6px',
-          paddingBottom: '6px',
-          marginBottom: '4px',
-        }}
-      >
+      <div className="no-scrollbar" style={{ display: 'flex', flexShrink: 0, gap: '8px', overflowX: 'scroll', overflowY: 'visible', paddingTop: '6px', paddingBottom: '6px', marginBottom: '4px' }}>
         {TASBIH_TYPES.map((t, idx) => {
           const isActive = typeIndex === idx;
           return (
-            <button
-              key={t.id}
-              onClick={() => handleTypeChange(idx)}
-              style={{
-                flexShrink: 0,
-                padding: '5px 12px',
-                borderRadius: '999px',
-                fontSize: '12px',
-                fontWeight: 700,
-                fontFamily: '"Tajawal", sans-serif',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                outline: 'none',
-                transition: 'background 0.2s, color 0.2s',
-                background: isActive
-                  ? 'linear-gradient(135deg, #C19A6B, #a07a4a)'
-                  : (dark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.13)'),
-                color: isActive ? '#fff' : (dark ? '#C19A6B' : '#7a4f1e'),
-                border: isActive
-                  ? '1.5px solid #C19A6B'
-                  : `1.5px solid ${dark ? 'rgba(193,154,107,0.3)' : 'rgba(193,154,107,0.35)'}`,
-                boxShadow: isActive ? '0 2px 8px rgba(193,154,107,0.25)' : 'none',
-              }}
-            >
+            <button key={t.id} onClick={() => handleTypeChange(idx)} style={{
+              flexShrink: 0, padding: '5px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700,
+              fontFamily: '"Tajawal", sans-serif', whiteSpace: 'nowrap', cursor: 'pointer', outline: 'none',
+              transition: 'background 0.2s, color 0.2s',
+              background: isActive ? 'linear-gradient(135deg, #C19A6B, #a07a4a)' : (dark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.13)'),
+              color: isActive ? '#fff' : (dark ? '#C19A6B' : '#7a4f1e'),
+              border: isActive ? '1.5px solid #C19A6B' : `1.5px solid ${dark ? 'rgba(193,154,107,0.3)' : 'rgba(193,154,107,0.35)'}`,
+              boxShadow: isActive ? '0 2px 8px rgba(193,154,107,0.25)' : 'none',
+            }}>
               {t.label}
             </button>
           );
@@ -413,16 +244,11 @@ export function Tasbih() {
         </motion.button>
       </div>
 
-      {/* Reset Confirm Dialog */}
       <AnimatePresence>
         {showResetDialog && (
-          <ResetConfirmDialog
-            onConfirm={handleResetConfirm}
-            onCancel={() => setShowResetDialog(false)}
-          />
+          <ResetConfirmDialog onConfirm={handleResetConfirm} onCancel={() => setShowResetDialog(false)} />
         )}
       </AnimatePresence>
-
     </div>
   );
 }

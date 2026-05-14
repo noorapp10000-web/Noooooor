@@ -1,24 +1,9 @@
 /**
- * rtdb.ts — Firebase Realtime Database + Offline-First Persistence
+ * store.ts — Pure localStorage persistence (no Firebase)
  *
- * طبقات الحماية:
- *   1. RTDB (online)       — المصدر الرسمي
- *   2. localStorage cache  — آخر snapshot محفوظ (يُحمَّل عند فتح التطبيق أوفلاين)
- *   3. localStorage pending — تغييرات لم تُرسَل بعد (تنجو من إغلاق التطبيق وتُرسَل عند عودة النت)
- *
- * السيناريو الكامل:
- *   • المستخدم أوفلاين → يغيّر الثيم → يُحفظ في cache + pending
- *   • يغلق التطبيق → pending في localStorage (لا يضيع)
- *   • يفتح التطبيق مع نت → يجلب من RTDB + يطبّق pending المحفوظ → يرسل pending → يحدّث RTDB
- *   • يفتح حسابه من تليفون ثاني → يجد آخر تغييراته في RTDB ✅
+ * نفس الـ API القديمة — كل الملفات التانية مش محتاجة تتغير.
+ * البيانات محفوظة في localStorage فقط على الجهاز.
  */
-
-import { ref, get, update, set } from 'firebase/database';
-import { rtdb } from './firebase';
-
-/* ══════════════════════════════════════════════════════════════
-   TYPES
-══════════════════════════════════════════════════════════════ */
 
 export interface UserProfile {
   uid: string;
@@ -34,15 +19,26 @@ export interface UserProfile {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   LOCAL UID
+══════════════════════════════════════════════════════════════ */
+
+export function getOrCreateLocalUid(): string {
+  let uid = localStorage.getItem('noor_uid');
+  if (!uid) {
+    uid = crypto.randomUUID();
+    localStorage.setItem('noor_uid', uid);
+  }
+  return uid;
+}
+
+/* ══════════════════════════════════════════════════════════════
    IN-MEMORY STATE
 ══════════════════════════════════════════════════════════════ */
 
 let _currentUid: string | null = null;
 let _cache: Record<string, unknown> = {};
 let _pendingUpdates: Record<string, unknown> = {};
-let _flushTimer: ReturnType<typeof setTimeout> | null = null;
 let _visibilityHandlerAttached = false;
-const FLUSH_INTERVAL_MS = 10_000;
 
 /* ══════════════════════════════════════════════════════════════
    localStorage KEYS
@@ -64,7 +60,6 @@ function loadCache(uid: string): boolean {
     const raw = localStorage.getItem(cacheKey(uid));
     if (!raw) return false;
     _cache = JSON.parse(raw) as Record<string, unknown>;
-    console.info('[RTDB] أوفلاين — تم تحميل البيانات من localStorage');
     return true;
   } catch { return false; }
 }
@@ -85,7 +80,6 @@ function loadPending(uid: string): void {
     if (!raw) return;
     const saved = JSON.parse(raw) as Record<string, unknown>;
     Object.assign(_pendingUpdates, saved);
-    console.info('[RTDB] استُعيدت', Object.keys(saved).length, 'تحديثات معلّقة من localStorage');
   } catch {}
 }
 
@@ -99,8 +93,6 @@ function clearLS(uid: string): void {
 /* ══════════════════════════════════════════════════════════════
    HELPERS
 ══════════════════════════════════════════════════════════════ */
-
-function userRef(uid: string) { return ref(rtdb, `users/${uid}`); }
 
 export function todayKey(): string {
   const d = new Date();
@@ -144,104 +136,26 @@ export function getProfileCache(): UserProfile | null {
   return p as UserProfile;
 }
 
-export async function saveProfileToRTDB(uid: string, profile: UserProfile): Promise<void> {
+export function saveProfileToRTDB(_uid: string, profile: UserProfile): void {
+  const uid = _uid || getOrCreateLocalUid();
   _cache['profile'] = profile;
   saveCache(uid);
-  await set(ref(rtdb, `users/${uid}/profile`), profile);
 }
 
-export async function updateProfileInRTDB(uid: string, updates: Partial<UserProfile>): Promise<void> {
+export function updateProfileInRTDB(uid: string, updates: Partial<UserProfile>): void {
   const existing = getProfileCache() ?? {} as UserProfile;
   const merged = { ...existing, ...updates };
   _cache['profile'] = merged;
   saveCache(uid);
-  await update(ref(rtdb, `users/${uid}/profile`), updates);
 }
 
 /* ══════════════════════════════════════════════════════════════
-   INIT — المدخل الرئيسي بعد تسجيل الدخول
+   INIT
 ══════════════════════════════════════════════════════════════ */
 
-/**
- * يُستدعى مرة واحدة بعد تسجيل الدخول.
- *
- * المنطق:
- * 1. يُحمَّل الـ pending المحفوظ من الجلسة السابقة (لو موجود)
- * 2. يجلب بيانات RTDB
- * 3. يطبّق الـ pending على البيانات الجديدة (pending يتغلب على RTDB لأنه أحدث)
- * 4. يحفظ النتيجة في localStorage
- * 5. لو الـ pending مش فارغ → يُجدوَل flush فوري
- * 6. لو RTDB فشل (أوفلاين) → يُحمَّل من localStorage + pending يفضل معلّقاً
- */
-export async function initUserSync(uid: string): Promise<void> {
+export function initUserSync(uid: string): void {
   _currentUid = uid;
   _pendingUpdates = {};
-  if (_flushTimer !== null) { clearTimeout(_flushTimer); _flushTimer = null; }
-
-  // ① استعد الـ pending من الجلسة السابقة
-  loadPending(uid);
-  const hasSavedPending = Object.keys(_pendingUpdates).length > 0;
-
-  try {
-    // ② جلب من RTDB
-    const snap = await get(userRef(uid));
-    _cache = snap.exists() ? (snap.val() as Record<string, unknown>) : {};
-
-    // ③ طبّق الـ pending على RTDB data (pending = أحدث = يتغلب)
-    if (hasSavedPending) {
-      for (const [k, v] of Object.entries(_pendingUpdates)) {
-        setCacheValue(k, v);
-      }
-    }
-
-    // ④ احفظ النسخة المدمجة في localStorage
-    saveCache(uid);
-
-    // ⑤ لو في pending → ابعته لـ RTDB فوراً
-    if (hasSavedPending) {
-      scheduleFlush(500); // flush سريع بعد نصف ثانية
-    }
-  } catch (e) {
-    // ⑥ أوفلاين — حمّل من localStorage (pending يفضل معلقاً حتى يرجع النت)
-    const loaded = loadCache(uid);
-    if (!loaded) _cache = {};
-    // لو في pending → طبّقه على الكاش
-    if (hasSavedPending) {
-      for (const [k, v] of Object.entries(_pendingUpdates)) {
-        setCacheValue(k, v);
-      }
-    }
-    console.warn('[RTDB] تعذّر الاتصال — وضع أوفلاين، الـ pending محفوظ وسيُرسَل لاحقاً');
-  }
-
-  attachVisibilityHandler();
-}
-
-/* ══════════════════════════════════════════════════════════════
-   BATCH SYNC
-══════════════════════════════════════════════════════════════ */
-
-export function queueRTDBUpdate(uid: string, updates: Record<string, unknown>): void {
-  if (!uid) return;
-  _currentUid = uid;
-  for (const [k, v] of Object.entries(updates)) {
-    setCacheValue(k, v);
-  }
-  Object.assign(_pendingUpdates, updates);
-  // حفظ فوري في localStorage — يضمن عدم الضياع حتى لو أُغلق التطبيق
-  saveCache(uid);
-  savePending(uid);
-  // لا auto-flush — المزامنة يدوية فقط من زرار Sync أو عند إغلاق التطبيق
-}
-
-/**
- * تحميل سريع من localStorage فوراً — بدون انتظار RTDB
- * يُستخدم عند بدء التطبيق حتى لا تظهر شاشة التحميل
- */
-export function initUserSyncFast(uid: string): void {
-  _currentUid = uid;
-  _pendingUpdates = {};
-  if (_flushTimer !== null) { clearTimeout(_flushTimer); _flushTimer = null; }
 
   loadPending(uid);
   const hasSavedPending = Object.keys(_pendingUpdates).length > 0;
@@ -253,46 +167,48 @@ export function initUserSyncFast(uid: string): void {
     for (const [k, v] of Object.entries(_pendingUpdates)) {
       setCacheValue(k, v);
     }
+    saveCache(uid);
+    _pendingUpdates = {};
+    savePending(uid);
   }
 
-  // مزامنة RTDB في الخلفية بدون انتظار
-  initUserSync(uid).catch(e => console.warn('[RTDB] Background sync failed:', e));
   attachVisibilityHandler();
 }
 
-function scheduleFlush(delay = FLUSH_INTERVAL_MS): void {
-  if (_flushTimer !== null) return;
-  _flushTimer = setTimeout(() => { _flushTimer = null; flushRTDB(); }, delay);
+export function initUserSyncFast(uid: string): void {
+  initUserSync(uid);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BATCH SYNC — localStorage only
+══════════════════════════════════════════════════════════════ */
+
+export function queueRTDBUpdate(uid: string, updates: Record<string, unknown>): void {
+  if (!uid) return;
+  _currentUid = uid;
+  for (const [k, v] of Object.entries(updates)) {
+    setCacheValue(k, v);
+  }
+  Object.assign(_pendingUpdates, updates);
+  saveCache(uid);
+  savePending(uid);
 }
 
 export async function flushRTDB(): Promise<void> {
-  if (!_currentUid || Object.keys(_pendingUpdates).length === 0) return;
-  const uid = _currentUid;
-  const updates = { ..._pendingUpdates };
+  if (!_currentUid) return;
+  saveCache(_currentUid);
   _pendingUpdates = {};
-  try {
-    await update(userRef(uid), updates);
-    // ✅ نجح الإرسال — امسح الـ pending من localStorage
-    savePending(uid); // (فارغ الآن)
-    saveCache(uid);   // حدّث cache ليعكس آخر حالة
-  } catch (e) {
-    // ❌ فشل — أعد الـ pending وخزّنه
-    Object.assign(_pendingUpdates, updates);
-    savePending(uid);
-    console.warn('[RTDB] فشل الإرسال — سيُعاد المحاولة لاحقاً:', e);
-  }
+  savePending(_currentUid);
 }
 
 function attachVisibilityHandler(): void {
   if (_visibilityHandlerAttached) return;
   _visibilityHandlerAttached = true;
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      if (_flushTimer !== null) { clearTimeout(_flushTimer); _flushTimer = null; }
-      flushRTDB();
+    if (document.visibilityState === 'hidden' && _currentUid) {
+      saveCache(_currentUid);
     }
   });
-  window.addEventListener('beforeunload', () => flushRTDB());
 }
 
 export function clearSyncState(): void {
@@ -300,7 +216,6 @@ export function clearSyncState(): void {
   _currentUid = null;
   _cache = {};
   _pendingUpdates = {};
-  if (_flushTimer !== null) { clearTimeout(_flushTimer); _flushTimer = null; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -335,4 +250,51 @@ export function getSettingCache<T>(key: string, defaultVal: T): T {
 
 export function queueSettingSync(uid: string, key: string, value: unknown): void {
   queueRTDBUpdate(uid, { [`settings/${key}`]: value });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BACKUP / RESTORE
+══════════════════════════════════════════════════════════════ */
+
+export function exportAllData(): string {
+  const uid = _currentUid || localStorage.getItem('noor_uid') || '';
+  const data: Record<string, unknown> = {
+    _version: 2,
+    _exportedAt: new Date().toISOString(),
+    _uid: uid,
+    _cache: _cache,
+  };
+  // Include extra localStorage keys (prayer times cache, quran surahs, etc.)
+  const extras: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (k.startsWith('noor_pt_') || k.startsWith('noor_quran') || k === 'noor_uid')) {
+      try { extras[k] = localStorage.getItem(k) ?? ''; } catch {}
+    }
+  }
+  data._extras = extras;
+  return JSON.stringify(data, null, 2);
+}
+
+export function importAllData(jsonStr: string): { success: boolean; error?: string } {
+  try {
+    const data = JSON.parse(jsonStr) as Record<string, unknown>;
+    if (!data._cache || typeof data._cache !== 'object') {
+      return { success: false, error: 'ملف النسخة الاحتياطية غير صحيح' };
+    }
+
+    const uid = _currentUid || localStorage.getItem('noor_uid') || getOrCreateLocalUid();
+    _cache = data._cache as Record<string, unknown>;
+    saveCache(uid);
+
+    if (data._extras && typeof data._extras === 'object') {
+      for (const [k, v] of Object.entries(data._extras as Record<string, string>)) {
+        try { if (k !== 'noor_uid') localStorage.setItem(k, v); } catch {}
+      }
+    }
+
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: 'تعذّر قراءة الملف — تأكد أنه ملف نور صحيح' };
+  }
 }

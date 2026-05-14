@@ -5,7 +5,7 @@ import { Link } from 'wouter';
 import { useAudio } from '@/contexts/AudioContext';
 import { SURAH_NAMES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import { auth } from '@/lib/firebase';
+import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getSettingCache, queueRTDBUpdate, getCurrentUid } from '@/lib/rtdb';
 import { useToast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
@@ -31,7 +31,7 @@ function loadFavorites(): FavoritesMap {
 }
 
 function saveFavorites(next: FavoritesMap) {
-  const uid = auth.currentUser?.uid ?? getCurrentUid();
+  const uid = getCurrentUid() || getOrCreateLocalUid();
   if (!uid) return;
   queueRTDBUpdate(uid, { 'settings/favorite_reciters': next });
 }

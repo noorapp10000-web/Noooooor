@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuranSurahs, useSurah, useTafsir } from '@/hooks/use-api';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
-import { auth } from '@/lib/firebase';
+import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
 import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2 } from 'lucide-react';
@@ -289,7 +289,7 @@ export function Quran() {
   const [searchCount, setSearchCount] = useState(0);
 
   const trackSurahSelection = useCallback((surahNum: number) => {
-    const uid = auth.currentUser?.uid ?? getCurrentUid();
+    const uid = getCurrentUid() || getOrCreateLocalUid();
     if (!uid) return;
 
     const prevSurah = getCacheValue<number>('last_surah', 1);

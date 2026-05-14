@@ -7,10 +7,7 @@ import {
 } from 'lucide-react';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import { motion, AnimatePresence } from 'framer-motion';
-import { auth } from '@/lib/firebase';
-import { linkWithCredential, EmailAuthProvider, createUserWithEmailAndPassword } from 'firebase/auth';
-import { deleteLeaderboardEntry } from '@/lib/firestore';
-import { getProfileCache, updateProfileInRTDB, initUserSync } from '@/lib/rtdb';
+import { getProfileCache, updateProfileInRTDB, getCurrentUid, getOrCreateLocalUid } from '@/lib/rtdb';
 import {
   IslamicStarIcon,
   HeadphonesIcon,
@@ -469,55 +466,8 @@ function GuestUpgradeSheet({ onClose, onDone }: { onClose: () => void; onDone: (
   const [error, setError]       = useState('');
 
   const handleSubmit = async () => {
-    if (step === 'email') { if (email.trim()) setStep('password'); return; }
-    if (!password || loading) return;
-    setLoading(true);
-    setError('');
-    try {
-      const profile = getProfileCache() as (Record<string, unknown> | null);
-      const oldLeaderboardId: string | null = (profile?.leaderboardId as string) ?? null;
-
-      let uid: string;
-
-      if (auth.currentUser?.isAnonymous) {
-        /* ── الحالة الجديدة: ربط الإيميل بحساب الضيف الأنونيموس
-               → نفس الـ UID، مفيش تكرار في الليدربورد */
-        const credential = EmailAuthProvider.credential(email.trim(), password);
-        try {
-          const linked = await linkWithCredential(auth.currentUser, credential);
-          uid = linked.user.uid;
-        } catch (linkErr: unknown) {
-          const code = (linkErr as { code?: string })?.code ?? '';
-          if (code === 'auth/email-already-in-use' || code === 'auth/credential-already-in-use') {
-            throw linkErr; // أظهر رسالة الخطأ للمستخدم
-          }
-          throw linkErr;
-        }
-      } else {
-        /* ── حالة قديمة: لا يوجد مستخدم anonymous حالي */
-        const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        uid = cred.user.uid;
-
-        /* احذف الـ entry القديم لو كان UID مختلف */
-        if (oldLeaderboardId && oldLeaderboardId !== uid) {
-          deleteLeaderboardEntry(oldLeaderboardId).catch(() => {});
-        }
-      }
-
-      /* الـ profile موجود بالفعل في RTDB cache — لا حاجة لـ localStorage */
-
-      /* ابدأ المزامنة مع RTDB بالـ uid الجديد */
-      await initUserSync(uid);
-
-      /* أطلق حدث التحديث */
-      window.dispatchEvent(new CustomEvent('noor-profile-updated'));
-
-      onDone();
-    } catch (e: unknown) {
-      const code = (e as { code?: string })?.code ?? '';
-      setError(mapAuthError(code));
-      setLoading(false);
-    }
+    // No-op: account upgrade not needed (localStorage-only mode)
+    onDone();
   };
 
   const inputStyle: React.CSSProperties = {
@@ -687,9 +637,9 @@ export function MoreMenu() {
   };
 
   const handleSaveName = async (newName: string) => {
-    const uid = auth.currentUser?.uid;
+    const uid = getCurrentUid() || getOrCreateLocalUid();
     if (!uid) return;
-    await updateProfileInRTDB(uid, { name: newName, nameLastChanged: Date.now() });
+    updateProfileInRTDB(uid, { name: newName, nameLastChanged: Date.now() });
     setProfileVersion(v => v + 1);
     setShowEditNameDialog(false);
   };

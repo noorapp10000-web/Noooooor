@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Link } from 'wouter';
 import { queueDailyTrackerSync, getCurrentUid, getCacheValue, getFullCache, getSettingCache } from '@/lib/rtdb';
-import { auth } from '@/lib/firebase';
+import { getOrCreateLocalUid } from '@/lib/rtdb';
 
 const MORNING_CAT_ID = 27;
 const EVENING_CAT_ID = 9001;
@@ -378,7 +378,7 @@ export function HomeTracker() {
   const togglePrayer = (key: PrayerKey) => {
     setState(prev => {
       const next = { ...prev, prayers: { ...prev.prayers, [key]: !prev.prayers[key] } };
-      const uid = auth.currentUser?.uid ?? getCurrentUid();
+      const uid = getCurrentUid() || getOrCreateLocalUid();
       if (uid) queueDailyTrackerSync(uid, currentDateKey, next);
       return next;
     });
@@ -388,7 +388,7 @@ export function HomeTracker() {
   const toggleQuranWird = () => {
     setState(prev => {
       const next = { ...prev, quranWird: !prev.quranWird };
-      const uid = auth.currentUser?.uid ?? getCurrentUid();
+      const uid = getCurrentUid() || getOrCreateLocalUid();
       if (uid) queueDailyTrackerSync(uid, currentDateKey, next);
       return next;
     });

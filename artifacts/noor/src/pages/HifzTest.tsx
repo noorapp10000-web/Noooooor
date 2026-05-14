@@ -6,7 +6,7 @@ import {
   Volume2, VolumeX, Star, ChevronDown,
 } from 'lucide-react';
 import { useUserSetting } from '@/hooks/use-user-setting';
-import { auth } from '@/lib/firebase';
+import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { queueRTDBUpdate, getCacheValue } from '@/lib/rtdb';
 
 /* ═══════════════════════════════════════════════════════════════
@@ -554,7 +554,7 @@ export function HifzTest() {
   }, [ratingsVersion]);
 
   const saveRating = useCallback((surahNum: number, testIdx: number, rating: Rating) => {
-    const uid = auth.currentUser?.uid;
+    const uid = getCurrentUid() || getOrCreateLocalUid();
     if (!uid) return;
     queueRTDBUpdate(uid, { [`hifz_results/${surahNum}_${testIdx}`]: rating });
     setRatingsVersion(v => v + 1);
