@@ -181,9 +181,38 @@ export function useVerseWords(surah: number, ayah: number) {
 // Hijri date: enriched from aladhan API in background if network available.
 // • City/day changes → different query key → instant recompute via adhan.js
 // • Works 100% offline forever, no first-fetch requirement
+function _computePrayerTimes(lat: number, lng: number, dateOffset: number): PrayerTimesResult {
+  const isoDate = _ptIsoDate(dateOffset);
+  const cached = _ptLoad(lat, lng, isoDate);
+  if (cached) return cached;
+  const coords = new Coordinates(lat, lng);
+  const params = CalculationMethod.Egyptian();
+  const d = new Date();
+  d.setDate(d.getDate() + dateOffset);
+  const pt = new PrayerTimes(coords, d, params);
+  const fmt = (date: Date | undefined) =>
+    date ? `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}` : '00:00';
+  const midnight = (pt as unknown as { midnight?: Date }).midnight;
+  const result: PrayerTimesResult = {
+    timings: {
+      Fajr:     fmt(pt.fajr),
+      Sunrise:  fmt(pt.sunrise),
+      Dhuhr:    fmt(pt.dhuhr),
+      Asr:      fmt(pt.asr),
+      Maghrib:  fmt(pt.maghrib),
+      Isha:     fmt(pt.isha),
+      Midnight: fmt(midnight),
+    },
+    hijri: undefined,
+  };
+  _ptSave(lat, lng, isoDate, result);
+  return result;
+}
+
 export function usePrayerTimes(lat: number | null, lng: number | null, dateOffset = 0) {
   return useQuery({
     queryKey: ['prayer-times', lat, lng, dateOffset],
+    initialData: (lat && lng) ? () => _computePrayerTimes(lat, lng, dateOffset) : undefined,
     queryFn: () => {
       if (!lat || !lng) throw new Error("No coordinates");
 
@@ -199,17 +228,18 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
       const d = new Date();
       d.setDate(d.getDate() + dateOffset);
       const pt = new PrayerTimes(coords, d, params);
-      const fmt = (date: Date) =>
-        `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      const fmtD = (date: Date | undefined) =>
+        date ? `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}` : '00:00';
+      const midnight = (pt as unknown as { midnight?: Date }).midnight;
       const result: PrayerTimesResult = {
         timings: {
-          Fajr:     fmt(pt.fajr),
-          Sunrise:  fmt(pt.sunrise),
-          Dhuhr:    fmt(pt.dhuhr),
-          Asr:      fmt(pt.asr),
-          Maghrib:  fmt(pt.maghrib),
-          Isha:     fmt(pt.isha),
-          Midnight: fmt((pt as unknown as { midnight: Date }).midnight),
+          Fajr:     fmtD(pt.fajr),
+          Sunrise:  fmtD(pt.sunrise),
+          Dhuhr:    fmtD(pt.dhuhr),
+          Asr:      fmtD(pt.asr),
+          Maghrib:  fmtD(pt.maghrib),
+          Isha:     fmtD(pt.isha),
+          Midnight: fmtD(midnight),
         },
         hijri: undefined,
       };
