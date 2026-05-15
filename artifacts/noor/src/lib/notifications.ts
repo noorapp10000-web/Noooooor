@@ -1,15 +1,15 @@
 /**
- * Noor Prayer Notifications
+ * Noor Prayer Notifications — 100% Offline
  *
- * Two-layer approach:
- *  1. Native Android (PrayerNotificationScheduler) — 100% offline, AlarmManager-based,
- *     synced via PrayerWidget Capacitor plugin. Works even if the app was never opened online.
- *  2. Capacitor LocalNotifications — JS-scheduled backup layer for when API timings are available.
+ * Prayer times are computed locally via the `adhan` JS library (same library
+ * the app already uses for the home screen widget). No API call needed.
  *
- * Settings are stored in localStorage AND synced to Android SharedPreferences.
+ * Works on Android only (silently no-ops in browser dev mode).
  */
 
 import { Capacitor } from '@capacitor/core';
+import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
+import { getProfileCache } from '@/lib/rtdb';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ export type PrayerKey = 'Fajr' | 'Sunrise' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha
 
 export type NotificationSettings = {
   enabled: boolean;
-  minutesBefore: number;
+  minutesBefore: number; // 0 = at prayer time
   prayers: Record<PrayerKey, boolean>;
 };
 
@@ -36,10 +36,14 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   },
 };
 
-// Prayer order (index matches Android PRAYER_NAMES_AR array)
+// Prayer order index — must match Android PRAYER_NAMES_AR array (0=Fajr … 5=Isha)
 const PRAYER_ORDER: PrayerKey[] = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
-// ─── Storage ──────────────────────────────────────────────────────────────────
+// Cairo fallback coordinates (used if user hasn't set a location yet)
+const DEFAULT_LAT = 30.0444;
+const DEFAULT_LNG = 31.2357;
+
+// ─── Settings storage ─────────────────────────────────────────────────────────
 
 const SETTINGS_KEY = 'noor_notification_settings';
 
@@ -59,40 +63,80 @@ export function getNotificationSettings(): NotificationSettings {
 }
 
 export function saveNotificationSettings(s: NotificationSettings): void {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-  } catch {}
-  // Sync to Android native layer (offline notifications)
-  syncToNative(s);
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
+  // Push to Android native layer so AlarmManager-based notifications update too
+  _syncToNative(s);
 }
 
-// ─── Native sync ──────────────────────────────────────────────────────────────
+// ─── Local prayer-time calculation (adhan library, no API) ───────────────────
 
 /**
- * Push notification settings to the Android PrayerNotificationScheduler.
- * This allows the native AlarmManager-based system to reschedule prayer alarms
- * immediately without needing the app to reopen.
+ * Computes the 6 prayer times for a given day using the Adhan JS library.
+ * Uses Egyptian calculation method (same as the widget).
+ * Returns { prayerKey → Date } — actual Date objects in the device's locale.
  */
-async function syncToNative(s: NotificationSettings): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
-  try {
-    const { registerPlugin } = await import('@capacitor/core');
-    const PrayerWidgetPlugin = registerPlugin<{
-      updateNotificationSettings(opts: {
-        enabled: boolean;
-        minutesBefore: number;
-        prayers: boolean[];
-      }): Promise<void>;
-    }>('PrayerWidget');
+function _computePrayerDates(
+  lat: number,
+  lng: number,
+  dayOffset = 0,
+): Record<PrayerKey, Date> {
+  const coords = new Coordinates(lat, lng);
+  const params  = CalculationMethod.Egyptian();
 
-    await PrayerWidgetPlugin.updateNotificationSettings({
-      enabled:       s.enabled,
-      minutesBefore: s.minutesBefore,
-      prayers:       PRAYER_ORDER.map(k => s.prayers[k]),
-    });
-  } catch (e) {
-    console.warn('[Notifications] Native sync failed:', e);
-  }
+  // Build the date for the requested day in the device's local timezone
+  const base = new Date();
+  base.setDate(base.getDate() + dayOffset);
+  const day = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 12, 0, 0);
+
+  const pt = new PrayerTimes(coords, day, params);
+
+  return {
+    Fajr:    pt.fajr,
+    Sunrise: pt.sunrise,
+    Dhuhr:   pt.dhuhr,
+    Asr:     pt.asr,
+    Maghrib: pt.maghrib,
+    Isha:    pt.isha,
+  };
+}
+
+/** Returns stored lat/lng, falling back to Cairo if user hasn't set location. */
+function _getCoords(): { lat: number; lng: number } {
+  try {
+    const profile = getProfileCache();
+    if (profile?.lat && profile?.lng) {
+      return { lat: profile.lat, lng: profile.lng };
+    }
+  } catch {}
+  return { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+}
+
+// ─── Capacitor LocalNotifications plugin ─────────────────────────────────────
+
+async function _getPlugin() {
+  if (!Capacitor.isNativePlatform()) return null;
+  const { LocalNotifications } = await import('@capacitor/local-notifications');
+  return LocalNotifications;
+}
+
+/** Ask the OS for notification permission. Returns true if granted. */
+export async function requestNotificationPermission(): Promise<boolean> {
+  const plugin = await _getPlugin();
+  if (!plugin) return false;
+  try {
+    const res = await plugin.requestPermissions();
+    return res.display === 'granted';
+  } catch { return false; }
+}
+
+/** Check current notification permission status. */
+export async function checkNotificationPermission(): Promise<boolean> {
+  const plugin = await _getPlugin();
+  if (!plugin) return false;
+  try {
+    const res = await plugin.checkPermissions();
+    return res.display === 'granted';
+  } catch { return false; }
 }
 
 // ─── Prayer metadata ──────────────────────────────────────────────────────────
@@ -106,96 +150,68 @@ const PRAYER_META: { key: PrayerKey; name: string; emoji: string; id: number }[]
   { key: 'Isha',    name: 'العشاء', emoji: '🌙', id: 106 },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Cancel helpers ───────────────────────────────────────────────────────────
 
-function parseHHMM(timeStr: string): { h: number; m: number } | null {
-  const match = timeStr?.match(/^(\d{1,2}):(\d{2})/);
-  if (!match) return null;
-  return { h: parseInt(match[1], 10), m: parseInt(match[2], 10) };
-}
-
-// ─── Capacitor LocalNotifications layer ──────────────────────────────────────
-
-async function getPlugin() {
-  if (!Capacitor.isNativePlatform()) return null;
-  const { LocalNotifications } = await import('@capacitor/local-notifications');
-  return LocalNotifications;
-}
-
-/** Ask the OS for notification permission. Returns true if granted. */
-export async function requestNotificationPermission(): Promise<boolean> {
-  const plugin = await getPlugin();
-  if (!plugin) return false;
+async function _cancelForDay(plugin: Awaited<ReturnType<typeof _getPlugin>>, dayOffset: number) {
+  if (!plugin) return;
   try {
-    const res = await plugin.requestPermissions();
-    return res.display === 'granted';
-  } catch {
-    return false;
-  }
+    await plugin.cancel({ notifications: PRAYER_META.map(m => ({ id: m.id + dayOffset * 10 })) });
+  } catch {}
 }
 
-/** Check current notification permission status. */
-export async function checkNotificationPermission(): Promise<boolean> {
-  const plugin = await getPlugin();
-  if (!plugin) return false;
-  try {
-    const res = await plugin.checkPermissions();
-    return res.display === 'granted';
-  } catch {
-    return false;
-  }
+export async function cancelPrayerNotificationsForDay(dayOffset = 0): Promise<void> {
+  const plugin = await _getPlugin();
+  await _cancelForDay(plugin, dayOffset);
 }
 
-/**
- * Schedule Capacitor LocalNotification prayer notifications for a given day.
- * Acts as a backup layer alongside the native AlarmManager notifications.
- */
-export async function schedulePrayerNotifications(
-  timings: Record<string, string>,
-  dayOffset = 0,
+export async function cancelAllPrayerNotifications(): Promise<void> {
+  const plugin = await _getPlugin();
+  await _cancelForDay(plugin, 0);
+  await _cancelForDay(plugin, 1);
+}
+
+// ─── Core scheduling ──────────────────────────────────────────────────────────
+
+async function _scheduleForDay(
+  plugin: Awaited<ReturnType<typeof _getPlugin>>,
+  settings: NotificationSettings,
+  dayOffset: number,
 ): Promise<void> {
-  const plugin = await getPlugin();
   if (!plugin) return;
 
-  const settings = getNotificationSettings();
-  await cancelPrayerNotificationsForDay(dayOffset);
-  if (!settings.enabled) return;
+  // Cancel previous notifications for this day first
+  await _cancelForDay(plugin, dayOffset);
 
-  const hasPermission = await checkNotificationPermission();
-  if (!hasPermission) return;
-
+  const { lat, lng } = _getCoords();
+  const prayerDates = _computePrayerDates(lat, lng, dayOffset);
   const now = new Date();
-  const baseDate = new Date();
-  baseDate.setDate(baseDate.getDate() + dayOffset);
 
   const notifications: Parameters<typeof plugin.schedule>[0]['notifications'] = [];
 
   for (const meta of PRAYER_META) {
     if (!settings.prayers[meta.key]) continue;
-    const timeStr = timings[meta.key];
-    if (!timeStr) continue;
-    const parsed = parseHHMM(timeStr);
-    if (!parsed) continue;
 
-    const triggerDate = new Date(baseDate);
-    triggerDate.setHours(parsed.h, parsed.m - settings.minutesBefore, 0, 0);
-    if (triggerDate <= now) continue;
+    const prayerDate = prayerDates[meta.key];
+    if (!prayerDate) continue;
 
-    const notifId = meta.id + dayOffset * 10;
+    // Trigger time = prayer time minus the advance offset
+    const triggerDate = new Date(prayerDate.getTime() - settings.minutesBefore * 60_000);
+    if (triggerDate <= now) continue; // already passed
+
     const atTime = settings.minutesBefore === 0;
     const body = atTime
       ? `حان وقت ${meta.name} ${meta.emoji}`
       : `${meta.name} بعد ${settings.minutesBefore} دقيقة ${meta.emoji}`;
 
     notifications.push({
-      id: notifId,
-      title: '🕌 تطبيق نُور',
+      id:        meta.id + dayOffset * 10,
+      title:     '🕌 تطبيق نُور',
       body,
-      schedule: { at: triggerDate, allowWhileIdle: true },
+      schedule:  { at: triggerDate, allowWhileIdle: true },
       channelId: 'prayer_channel',
       iconColor: '#C19A6B',
-      sound: 'default',
-      extra: { prayerKey: meta.key, dayOffset },
+      sound:     'default',
+      extra:     { prayerKey: meta.key, dayOffset },
     });
   }
 
@@ -204,34 +220,61 @@ export async function schedulePrayerNotifications(
   }
 }
 
-/** Cancel all Noor Capacitor notifications for a specific day. */
-export async function cancelPrayerNotificationsForDay(dayOffset = 0): Promise<void> {
-  const plugin = await getPlugin();
-  if (!plugin) return;
-  try {
-    const ids = PRAYER_META.map(m => ({ id: m.id + dayOffset * 10 }));
-    await plugin.cancel({ notifications: ids });
-  } catch {}
-}
-
-/** Cancel all Noor Capacitor notifications (today + tomorrow). */
-export async function cancelAllPrayerNotifications(): Promise<void> {
-  await cancelPrayerNotificationsForDay(0);
-  await cancelPrayerNotificationsForDay(1);
-}
+// ─── Native Android sync ──────────────────────────────────────────────────────
 
 /**
- * Main entry point — call whenever prayer times are loaded or settings change.
- * Schedules both the Capacitor layer (online timings) and syncs native layer settings.
+ * Push notification settings to Android PrayerNotificationScheduler via Capacitor.
+ * This updates the native AlarmManager alarms without needing the app to restart.
  */
-export async function syncPrayerNotifications(
-  todayTimings: Record<string, string>,
-  tomorrowTimings?: Record<string, string>,
-): Promise<void> {
-  await schedulePrayerNotifications(todayTimings, 0);
-  if (tomorrowTimings) {
-    await schedulePrayerNotifications(tomorrowTimings, 1);
+async function _syncToNative(s: NotificationSettings): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const { registerPlugin } = await import('@capacitor/core');
+    const PrayerWidgetPlugin = registerPlugin<{
+      updateNotificationSettings(opts: {
+        enabled: boolean;
+        minutesBefore: number;
+        prayers: boolean[];
+      }): Promise<void>;
+    }>('PrayerWidget');
+    await PrayerWidgetPlugin.updateNotificationSettings({
+      enabled:       s.enabled,
+      minutesBefore: s.minutesBefore,
+      prayers:       PRAYER_ORDER.map(k => s.prayers[k]),
+    });
+  } catch (e) {
+    console.warn('[Notifications] Native sync failed:', e);
   }
-  // Also push current settings to native layer to ensure it's in sync
-  syncToNative(getNotificationSettings());
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Schedule prayer notifications for today and tomorrow.
+ * Fully offline — computes prayer times locally via `adhan`.
+ * Call whenever the app opens, location changes, or settings change.
+ */
+export async function syncPrayerNotifications(): Promise<void> {
+  const plugin = await _getPlugin();
+  if (!plugin) return;
+
+  const settings = getNotificationSettings();
+
+  if (!settings.enabled) {
+    await cancelAllPrayerNotifications();
+    _syncToNative(settings);
+    return;
+  }
+
+  const hasPermission = await checkNotificationPermission();
+  if (!hasPermission) return;
+
+  // Schedule today and tomorrow (rolling 48-hour coverage)
+  await Promise.all([
+    _scheduleForDay(plugin, settings, 0),
+    _scheduleForDay(plugin, settings, 1),
+  ]);
+
+  // Keep native Android AlarmManager layer in sync
+  _syncToNative(settings);
 }

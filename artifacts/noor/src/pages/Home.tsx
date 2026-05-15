@@ -3,7 +3,7 @@ import { MapPin, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache, updateProfileInRTDB, getCurrentUid } from '@/lib/rtdb';
-import { syncPrayerNotifications, getNotificationSettings } from '@/lib/notifications';
+import { syncPrayerNotifications } from '@/lib/notifications';
 import { updatePrayerWidget } from '@/lib/widget';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -115,28 +115,20 @@ export function Home() {
   const times = prayerResult?.timings;
   const hijri = prayerResult?.hijri;
 
-  const { data: tomorrowResult } = usePrayerTimes(activeLat, activeLng, 1);
-
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time24: string } | null>(null);
   const [countdown, setCountdown] = useState('');
 
-  // ── Schedule prayer notifications whenever timings load or settings change ──
+  // ── Schedule prayer notifications (offline — adhan library, no API needed) ──
   useEffect(() => {
-    if (!times) return;
-    const settings = getNotificationSettings();
-    if (!settings.enabled) return;
-    syncPrayerNotifications(times, tomorrowResult?.timings);
-  }, [times, tomorrowResult]);
+    syncPrayerNotifications();
+  }, [activeLat, activeLng]); // re-schedule when location changes
 
   // Re-schedule when notification settings change from the Settings page
   useEffect(() => {
-    const handler = () => {
-      if (!times) return;
-      syncPrayerNotifications(times, tomorrowResult?.timings);
-    };
+    const handler = () => syncPrayerNotifications();
     window.addEventListener('noor:notif-settings-changed', handler);
     return () => window.removeEventListener('noor:notif-settings-changed', handler);
-  }, [times, tomorrowResult]);
+  }, []);
 
   useEffect(() => {
     if (!times || dateOffset !== 0) return;
