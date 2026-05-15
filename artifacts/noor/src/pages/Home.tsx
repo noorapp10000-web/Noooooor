@@ -172,6 +172,7 @@ export function Home() {
 
   useEffect(() => {
     if (!nextPrayer || dateOffset !== 0) return;
+    let lastWidgetMinute = -1;
     const tick = () => {
       // Compute countdown entirely in Egypt timezone (handles UTC+2/UTC+3 DST)
       const nowCairoParts = new Intl.DateTimeFormat('en-US', {
@@ -188,6 +189,12 @@ export function Home() {
       const mm = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
       const ss = (diff % 60).toString().padStart(2, '0');
       setCountdown(`${hh}:${mm}:${ss}`);
+      // Update the home-screen widget once per minute (avoids flooding native bridge)
+      const currentMinute = Math.floor(diff / 60);
+      if (currentMinute !== lastWidgetMinute) {
+        lastWidgetMinute = currentMinute;
+        updatePrayerWidget(nextPrayer.name, fmt12(nextPrayer.time24), `${hh}:${mm}`);
+      }
     };
     tick();
     const id = setInterval(tick, 1000);

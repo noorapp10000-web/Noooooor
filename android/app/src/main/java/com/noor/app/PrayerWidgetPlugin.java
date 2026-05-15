@@ -18,6 +18,7 @@ public class PrayerWidgetPlugin extends Plugin {
     public void updateWidget(PluginCall call) {
         String prayerName = call.getString("prayerName", "المغرب");
         String prayerTime = call.getString("prayerTime", "--:--");
+        String countdown  = call.getString("countdown", "--:--");
 
         Context context = getContext();
         SharedPreferences prefs = context.getSharedPreferences(
@@ -26,6 +27,7 @@ public class PrayerWidgetPlugin extends Plugin {
         prefs.edit()
             .putString(PrayerWidgetProvider.KEY_PRAYER_NAME, prayerName)
             .putString(PrayerWidgetProvider.KEY_PRAYER_TIME, prayerTime)
+            .putString(PrayerWidgetProvider.KEY_COUNTDOWN,   countdown)
             .apply();
 
         AppWidgetManager manager = AppWidgetManager.getInstance(context);

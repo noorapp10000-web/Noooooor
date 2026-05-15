@@ -10,6 +10,13 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
   },
+  plugins: {
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#C19A6B',
+      sound: 'beep.wav',
+    },
+  },
 };
 
 export default config;

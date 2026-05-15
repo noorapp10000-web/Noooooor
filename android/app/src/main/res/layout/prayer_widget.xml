@@ -4,50 +4,106 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
-    android:padding="10dp"
+    android:padding="12dp"
     android:gravity="center">
 
+    <!-- "الصلاة القادمة" label -->
     <TextView
         android:id="@+id/widget_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="الصلاة القادمة"
-        android:textColor="#8B6A3E"
+        android:textColor="#99FFFFFF"
         android:textSize="9sp"
         android:gravity="center"
-        android:letterSpacing="0.05" />
+        android:letterSpacing="0.12"
+        android:fontFamily="sans-serif" />
 
+    <!-- Prayer name -->
     <TextView
         android:id="@+id/widget_prayer_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="المغرب"
-        android:textColor="#3D1F0A"
-        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
         android:gravity="center"
         android:fontFamily="sans-serif-medium"
         android:layout_marginTop="2dp" />
 
+    <!-- Countdown row: [HH] : [MM] -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp"
+        android:layoutDirection="ltr">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_digit_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/widget_countdown_hh"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="00"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":"
+            android:textColor="#99FFFFFF"
+            android:textSize="20sp"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:paddingBottom="3dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_digit_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:gravity="center">
+            <TextView
+                android:id="@+id/widget_countdown_mm"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="00"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Prayer time -->
     <TextView
         android:id="@+id/widget_prayer_time"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="6:41 م"
         android:textColor="#C19A6B"
-        android:textSize="24sp"
+        android:textSize="11sp"
         android:gravity="center"
-        android:fontFamily="sans-serif-medium"
-        android:layout_marginTop="1dp" />
-
-    <TextView
-        android:id="@+id/widget_app_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="نور"
-        android:textColor="#C19A6B"
-        android:textSize="8sp"
-        android:gravity="center"
-        android:layout_marginTop="4dp"
-        android:alpha="0.7" />
+        android:fontFamily="sans-serif"
+        android:layout_marginTop="4dp" />
 
 </LinearLayout>

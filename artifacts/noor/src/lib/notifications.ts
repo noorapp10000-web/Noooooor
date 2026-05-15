@@ -162,7 +162,9 @@ export async function schedulePrayerNotifications(
       title: '🕌 تطبيق نُور',
       body,
       schedule: { at: triggerDate, allowWhileIdle: true },
+      channelId: 'prayer_channel',
       iconColor: '#C19A6B',
+      sound: 'default',
       extra: { prayerKey: meta.key, dayOffset },
     });
   }
