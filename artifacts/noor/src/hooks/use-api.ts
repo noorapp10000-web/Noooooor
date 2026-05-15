@@ -131,16 +131,40 @@ export function useSurah(number: number) {
   });
 }
 
+// Tafsir Muyassar — local JSON first (offline), API fallback
+let _tafsirLocalCache: Record<string, string> | null = null;
+
+async function _getTafsirLocal(): Promise<Record<string, string> | null> {
+  if (_tafsirLocalCache) return _tafsirLocalCache;
+  try {
+    const res = await fetch('/data/tafsir-muyassar.json');
+    if (!res.ok) return null;
+    _tafsirLocalCache = await res.json();
+    return _tafsirLocalCache;
+  } catch { return null; }
+}
+
 export function useTafsir(surah: number, ayah: number) {
   return useQuery({
     queryKey: ['tafsir', surah, ayah],
     queryFn: async () => {
-      const res = await fetch(`https://api.quran.com/api/v4/tafsirs/16/by_ayah/${surah}:${ayah}?language=ar`);
-      if (!res.ok) throw new Error('Failed to fetch tafsir');
+      // ── 1. Try local JSON first (offline, 2.5MB bundled in public/data/) ──
+      const local = await _getTafsirLocal();
+      const key = `${surah}:${ayah}`;
+      if (local?.[key]) {
+        return { text: local[key], source: 'local' };
+      }
+
+      // ── 2. Fallback: quran.com API (needs network) ──────────────────────
+      const res = await fetch(
+        `https://api.quran.com/api/v4/tafsirs/16/by_ayah/${surah}:${ayah}?language=ar`
+      );
+      if (!res.ok) throw new Error('Tafsir unavailable');
       const data = await res.json();
       return data.tafsir;
     },
     enabled: !!surah && !!ayah,
+    staleTime: Infinity,
   });
 }
 

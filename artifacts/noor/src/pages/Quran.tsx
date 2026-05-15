@@ -1070,7 +1070,7 @@ export function Quran() {
           >
             <div className="w-12 h-1.5 rounded-full mx-auto mb-5" style={{ background: 'rgba(193,154,107,0.4)' }} />
             <Dialog.Title className="text-base font-bold mb-4" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
-              تفسير الجلالين — الآية {activeAyah}
+              التفسير الميسر — الآية {activeAyah}
             </Dialog.Title>
             <div
               className="text-lg leading-loose"
