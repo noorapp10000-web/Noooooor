@@ -247,6 +247,139 @@ async function _syncToNative(s: NotificationSettings): Promise<void> {
   }
 }
 
+// ─── Daily Reminder ───────────────────────────────────────────────────────────
+
+export type DailyReminderSettings = {
+  enabled: boolean;
+  hour: number;   // 0–23
+  minute: number; // 0 or 30
+};
+
+export const DEFAULT_DAILY_REMINDER_SETTINGS: DailyReminderSettings = {
+  enabled: false,
+  hour: 7,
+  minute: 0,
+};
+
+const DAILY_REMINDER_KEY = 'noor_daily_reminder_settings';
+
+export function getDailyReminderSettings(): DailyReminderSettings {
+  try {
+    const raw = localStorage.getItem(DAILY_REMINDER_KEY);
+    if (raw) return { ...DEFAULT_DAILY_REMINDER_SETTINGS, ...JSON.parse(raw) };
+  } catch {}
+  return { ...DEFAULT_DAILY_REMINDER_SETTINGS };
+}
+
+export function saveDailyReminderSettings(s: DailyReminderSettings): void {
+  try { localStorage.setItem(DAILY_REMINDER_KEY, JSON.stringify(s)); } catch {}
+}
+
+// 40 curated short hadiths & ayahs — embedded so no file I/O at schedule time
+const DAILY_REMINDERS: { text: string; source: string }[] = [
+  { text: 'إِنَّ مَعَ الْعُسْرِ يُسْرًا', source: 'سورة الشرح: 6' },
+  { text: 'وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ', source: 'سورة الطلاق: 3' },
+  { text: 'أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ', source: 'سورة الرعد: 28' },
+  { text: 'وَقُل رَّبِّ زِدْنِي عِلْمًا', source: 'سورة طه: 114' },
+  { text: 'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ', source: 'سورة آل عمران: 173' },
+  { text: 'وَاسْتَعِينُوا بِالصَّبْرِ وَالصَّلَاةِ ۚ إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', source: 'سورة البقرة: 153' },
+  { text: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ', source: 'سورة البقرة: 201' },
+  { text: 'وَهُوَ مَعَكُمْ أَيْنَ مَا كُنتُمْ ۚ وَاللَّهُ بِمَا تَعْمَلُونَ بَصِيرٌ', source: 'سورة الحديد: 4' },
+  { text: 'إِنَّ اللَّهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ', source: 'سورة التوبة: 120' },
+  { text: 'وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ ۚ عَلَيْهِ تَوَكَّلْتُ وَإِلَيْهِ أُنِيبُ', source: 'سورة هود: 88' },
+  { text: 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا', source: 'سورة الشرح: 5' },
+  { text: 'وَاللَّهُ يُحِبُّ الصَّابِرِينَ', source: 'سورة آل عمران: 146' },
+  { text: 'وَلَذِكْرُ اللَّهِ أَكْبَرُ', source: 'سورة العنكبوت: 45' },
+  { text: 'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي', source: 'سورة طه: 25-26' },
+  { text: 'إِنَّ اللَّهَ جَمِيلٌ يُحِبُّ الْجَمَالَ', source: 'صحيح مسلم: 91' },
+  { text: 'إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى', source: 'صحيح البخاري: 1' },
+  { text: 'المسلم من سلم المسلمون من لسانه ويده', source: 'صحيح البخاري: 10' },
+  { text: 'خيركم من تعلم القرآن وعلّمه', source: 'صحيح البخاري: 5027' },
+  { text: 'أحب الأعمال إلى الله أدومها وإن قلّ', source: 'صحيح البخاري: 6465' },
+  { text: 'إن الله رفيق يحب الرفق في الأمر كله', source: 'صحيح البخاري: 6927' },
+  { text: 'تبسمك في وجه أخيك صدقة', source: 'سنن الترمذي: 1956' },
+  { text: 'كل معروف صدقة', source: 'صحيح البخاري: 6021' },
+  { text: 'من لا يرحم لا يُرحم', source: 'صحيح البخاري: 5997' },
+  { text: 'أكمل المؤمنين إيماناً أحسنهم خلقاً', source: 'سنن الترمذي: 1162' },
+  { text: 'البر حسن الخلق، والإثم ما حاك في صدرك وكرهت أن يطلع عليه الناس', source: 'صحيح مسلم: 2553' },
+  { text: 'من كان يؤمن بالله واليوم الآخر فليقل خيراً أو ليصمت', source: 'صحيح البخاري: 6018' },
+  { text: 'سبحان الله وبحمده سبحان الله العظيم — كلمتان خفيفتان على اللسان، ثقيلتان في الميزان، حبيبتان إلى الرحمن', source: 'صحيح البخاري: 6682' },
+  { text: 'من سلك طريقاً يلتمس فيه علماً سهّل الله له طريقاً إلى الجنة', source: 'صحيح مسلم: 2699' },
+  { text: 'إن الله لا ينظر إلى صوركم وأموالكم، ولكن ينظر إلى قلوبكم وأعمالكم', source: 'صحيح مسلم: 2564' },
+  { text: 'لا تحقرن من المعروف شيئاً ولو أن تلقى أخاك بوجه طلق', source: 'صحيح مسلم: 2626' },
+  { text: 'المؤمن للمؤمن كالبنيان يشد بعضه بعضاً', source: 'صحيح البخاري: 481' },
+  { text: 'اتق المحارم تكن أعبد الناس، وارض بما قسم الله تكن أغنى الناس', source: 'سنن الترمذي: 2305' },
+  { text: 'انظر إلى من هو أسفل منك، ولا تنظر إلى من هو فوقك؛ فهو أجدر ألا تزدري نعمة الله عليك', source: 'صحيح مسلم: 2963' },
+  { text: 'ازهد في الدنيا يحبك الله، وازهد فيما عند الناس يحبك الناس', source: 'سنن ابن ماجه: 4102' },
+  { text: 'الطهور شطر الإيمان', source: 'صحيح مسلم: 223' },
+  { text: 'إن الله يحب إذا عمل أحدكم عملاً أن يتقنه', source: 'صحيح ابن حبان: 93' },
+  { text: 'من أصبح منكم آمناً في سربه، معافى في جسده، عنده قوت يومه؛ فكأنما حيزت له الدنيا بحذافيرها', source: 'سنن الترمذي: 2346' },
+  { text: 'الدال على الخير كفاعله', source: 'سنن الترمذي: 2670' },
+  { text: 'إن مما يلحق المؤمن من عمله وحسناته بعد موته: علماً علّمه ونشره', source: 'سنن ابن ماجه: 242' },
+  { text: 'خير الناس أنفعهم للناس', source: 'صحيح الجامع: 3289' },
+];
+
+function _pickReminder(seed: number): { text: string; source: string } {
+  return DAILY_REMINDERS[seed % DAILY_REMINDERS.length];
+}
+
+export async function cancelDailyReminder(): Promise<void> {
+  const plugin = await _getPlugin();
+  if (!plugin) return;
+  try {
+    const ids = Array.from({ length: 60 }, (_, i) => ({ id: 8000 + i }));
+    await plugin.cancel({ notifications: ids });
+  } catch {}
+}
+
+/** Schedule a daily Islamic reminder for the next 30 days. Fully offline. */
+export async function syncDailyReminder(): Promise<void> {
+  const plugin = await _getPlugin();
+  if (!plugin) return;
+
+  const s = getDailyReminderSettings();
+
+  if (!s.enabled) {
+    await cancelDailyReminder();
+    return;
+  }
+
+  const hasPermission = await checkNotificationPermission();
+  if (!hasPermission) return;
+
+  await cancelDailyReminder();
+
+  const now = new Date();
+  // Use today's date as seed base so the same reminder shows the whole day
+  const seedBase = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const notifications: any[] = [];
+
+  for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+    const triggerDate = new Date(now);
+    triggerDate.setDate(triggerDate.getDate() + dayOffset);
+    triggerDate.setHours(s.hour, s.minute, 0, 0);
+    if (triggerDate <= now) continue;
+
+    const reminder = _pickReminder(seedBase + dayOffset);
+    notifications.push({
+      id: 8000 + dayOffset,
+      title: '✨ تذكير يومي — نُور',
+      body: `${reminder.text}\n— ${reminder.source}`,
+      schedule: { at: triggerDate, allowWhileIdle: true },
+      channelId: 'prayer_channel',
+      iconColor: '#C19A6B',
+      sound: 'default',
+      extra: { type: 'daily_reminder', dayOffset },
+    });
+  }
+
+  if (notifications.length > 0) {
+    await plugin.schedule({ notifications });
+  }
+}
+
 // ─── Test notification ────────────────────────────────────────────────────────
 
 /**

@@ -3,7 +3,7 @@ import { MapPin, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache, updateProfileInRTDB, getCurrentUid } from '@/lib/rtdb';
-import { syncPrayerNotifications } from '@/lib/notifications';
+import { syncPrayerNotifications, syncDailyReminder } from '@/lib/notifications';
 import { updatePrayerWidget } from '@/lib/widget';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -121,6 +121,7 @@ export function Home() {
   // ── Schedule prayer notifications (offline — adhan library, no API needed) ──
   useEffect(() => {
     syncPrayerNotifications();
+    syncDailyReminder();
   }, [activeLat, activeLng]); // re-schedule when location changes
 
   // Re-schedule when notification settings change from the Settings page
@@ -128,6 +129,13 @@ export function Home() {
     const handler = () => syncPrayerNotifications();
     window.addEventListener('noor:notif-settings-changed', handler);
     return () => window.removeEventListener('noor:notif-settings-changed', handler);
+  }, []);
+
+  // Re-schedule daily reminder when its settings change
+  useEffect(() => {
+    const handler = () => syncDailyReminder();
+    window.addEventListener('noor:daily-reminder-changed', handler);
+    return () => window.removeEventListener('noor:daily-reminder-changed', handler);
   }, []);
 
   useEffect(() => {

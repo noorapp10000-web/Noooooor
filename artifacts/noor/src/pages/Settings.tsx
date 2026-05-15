@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Sparkles } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
@@ -8,7 +8,8 @@ import { useUserSetting } from '@/hooks/use-user-setting';
 import {
   getNotificationSettings, saveNotificationSettings,
   cancelAllPrayerNotifications, sendTestNotification,
-  type NotificationSettings, type PrayerKey,
+  getDailyReminderSettings, saveDailyReminderSettings, syncDailyReminder,
+  type NotificationSettings, type PrayerKey, type DailyReminderSettings,
 } from '@/lib/notifications';
 import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
@@ -220,6 +221,7 @@ export function Settings() {
   const isNative = Capacitor.isNativePlatform();
   const [testNotifState, setTestNotifState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [testCountdown, setTestCountdown] = useState(0);
+  const [dailyReminder, setDailyReminder] = useState<DailyReminderSettings>(getDailyReminderSettings);
 
   useEffect(() => {
     saveNotificationSettings(notifSettings);
@@ -229,6 +231,11 @@ export function Settings() {
   function setEnabled(val: boolean) { setNotifSettings(s => ({ ...s, enabled: val })); if (!val) cancelAllPrayerNotifications(); }
   function setMinutesBefore(val: number) { setNotifSettings(s => ({ ...s, minutesBefore: val })); }
   function togglePrayer(key: PrayerKey) { setNotifSettings(s => ({ ...s, prayers: { ...s.prayers, [key]: !s.prayers[key] } })); }
+
+  useEffect(() => {
+    saveDailyReminderSettings(dailyReminder);
+    window.dispatchEvent(new CustomEvent('noor:daily-reminder-changed'));
+  }, [dailyReminder]);
 
   async function handleTestNotification() {
     if (testNotifState !== 'idle') return;
@@ -455,6 +462,90 @@ export function Settings() {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Daily Reminder */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+          className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
+          {/* Header */}
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(145deg, #C19A6B, #7B4F2E)' }}>
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>التذكير اليومي</p>
+              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>حديث أو آية يومياً في وقت تختاره</p>
+            </div>
+            <ToggleSwitch
+              enabled={dailyReminder.enabled}
+              onToggle={() => setDailyReminder(s => ({ ...s, enabled: !s.enabled }))}
+              accentColor="#C19A6B"
+            />
+          </div>
+
+          {!isNative && <NativeOnlyNote subText={subText} />}
+
+          {dailyReminder.enabled && (
+            <div className="space-y-4">
+              {/* Time preset picker */}
+              <div>
+                <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>وقت الإشعار</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'بعد الفجر', hour: 6,  minute: 0 },
+                    { label: 'الصباح',    hour: 8,  minute: 0 },
+                    { label: 'الضحى',     hour: 10, minute: 0 },
+                    { label: 'بعد الظهر', hour: 14, minute: 0 },
+                    { label: 'العصر',     hour: 17, minute: 0 },
+                    { label: 'الليل',     hour: 21, minute: 0 },
+                  ].map(opt => {
+                    const selected = dailyReminder.hour === opt.hour && dailyReminder.minute === opt.minute;
+                    const displayHour = opt.hour > 12 ? opt.hour - 12 : opt.hour === 0 ? 12 : opt.hour;
+                    const ampm = opt.hour >= 12 ? 'م' : 'ص';
+                    return (
+                      <button
+                        key={opt.label}
+                        onClick={() => setDailyReminder(s => ({ ...s, hour: opt.hour, minute: opt.minute }))}
+                        className="rounded-xl py-2.5 px-1 flex flex-col items-center gap-0.5 transition-all"
+                        style={{
+                          fontFamily: '"Tajawal", sans-serif',
+                          background: selected ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.06)',
+                          border: `1.5px solid ${selected ? '#C19A6B' : borderColor}`,
+                        }}>
+                        <span className="text-xs font-bold" style={{ color: selected ? '#C19A6B' : textColor }}>{opt.label}</span>
+                        <span className="text-[10px]" style={{ color: selected ? '#C19A6B' : subText }}>{displayHour}:00 {ampm}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: borderColor }} />
+
+              {/* Notification preview */}
+              <div>
+                <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>معاينة الإشعار</p>
+                <div className="rounded-xl p-3 flex items-start gap-3"
+                  style={{ background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: `1px solid ${borderColor}` }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ background: 'linear-gradient(145deg, #C19A6B, #7B4F2E)' }}>
+                    <span className="text-base">✨</span>
+                  </div>
+                  <div className="flex-1 text-right">
+                    <p className="text-xs font-bold mb-1" style={{ color: textColor, fontFamily: '"Tajawal", sans-serif' }}>تذكير يومي — نُور</p>
+                    <p className="text-xs leading-relaxed" style={{ color: textColor, fontFamily: '"Amiri", serif', fontSize: 13 }}>
+                      أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ
+                    </p>
+                    <p className="text-[10px] mt-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>— سورة الرعد: 28</p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-center mt-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+                  يتغير النص كل يوم — 40 حديثاً وآية مختارة
+                </p>
+              </div>
             </div>
           )}
         </motion.div>
