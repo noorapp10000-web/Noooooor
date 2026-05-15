@@ -84,7 +84,7 @@ jobs:
       - name: 🏗️ Build web app
         run: pnpm --filter @workspace/noor run build
         env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY != '' && secrets.VITE_FIREBASE_API_KEY || 'AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074' }}
+          VITE_FIREBASE_API_KEY: 'AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074'
           VITE_FIREBASE_AUTH_DOMAIN: 'noooooor-app.firebaseapp.com'
           VITE_FIREBASE_PROJECT_ID: 'noooooor-app'
           VITE_FIREBASE_STORAGE_BUCKET: 'noooooor-app.firebasestorage.app'
@@ -96,36 +96,64 @@ jobs:
 
       # ── 9. Sync Capacitor → copies web assets + generates Android files ───────
       - name: 🔄 Sync Capacitor to Android
-        run: pnpm exec cap sync android --deployment
+        run: pnpm exec cap sync android
 
-      # ── 10. Create local.properties (required by Gradle to find Android SDK) ──
+      # ── 10. Verify cap sync output ────────────────────────────────────────────
+      - name: 🔍 Verify Android project structure
+        run: |
+          echo "=== capacitor.settings.gradle ==="
+          cat android/capacitor.settings.gradle
+          echo ""
+          echo "=== capacitor-cordova-android-plugins exists? ==="
+          ls android/capacitor-cordova-android-plugins/ 2>/dev/null && echo "EXISTS" || echo "MISSING"
+          echo ""
+          echo "=== Web assets copied? ==="
+          ls android/app/src/main/assets/public/ 2>/dev/null | head -5 && echo "EXISTS" || echo "MISSING"
+          echo ""
+          echo "=== node_modules/@capacitor/android path ==="
+          find node_modules -path "*/capacitor/android/capacitor" -type d 2>/dev/null | head -3 || echo "NOT FOUND"
+
+      # ── 11. Create local.properties (required by Gradle to find Android SDK) ──
       - name: 📝 Create local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "Created local.properties with sdk.dir=$ANDROID_HOME"
+          echo "Verify SDK exists:"
+          ls "$ANDROID_HOME/platforms/" 2>/dev/null | grep "android-34" || echo "WARNING: android-34 not found!"
+          ls "$ANDROID_HOME/build-tools/" 2>/dev/null | grep "34" || echo "WARNING: build-tools 34 not found!"
 
-      # ── 11. Make Gradle wrapper executable ────────────────────────────────────
+      # ── 12. Make Gradle wrapper executable ────────────────────────────────────
       - name: 🔧 Fix Gradle permissions
         run: chmod +x android/gradlew
 
-      # ── 12. Build APK ─────────────────────────────────────────────────────────
+      # ── 13. Build APK ─────────────────────────────────────────────────────────
       - name: 🔨 Build Debug APK
         if: ${{ github.event.inputs.build_type != 'release' }}
         run: |
+          set -o pipefail
           cd android
           ./gradlew assembleDebug \
             --no-daemon \
             --stacktrace \
-            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+            --info \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+            2>&1 | tee /tmp/gradle.log
+          grep -E "FAILURE|ERROR|error:|Exception|Could not" /tmp/gradle.log | tail -50 || true
 
       - name: 🔐 Build Release APK
         if: ${{ github.event.inputs.build_type == 'release' }}
         run: |
+          set -o pipefail
           cd android
           ./gradlew assembleRelease \
             --no-daemon \
             --stacktrace \
-            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+            --info \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+            2>&1 | tee /tmp/gradle.log
+          grep -E "FAILURE|ERROR|error:|Exception|Could not" /tmp/gradle.log | tail -50 || true
 
-      # ── 13. Find APK ──────────────────────────────────────────────────────────
+      # ── 14. Find APK ──────────────────────────────────────────────────────────
       - name: 📋 Locate APK
         id: find_apk
         run: |
@@ -134,7 +162,7 @@ jobs:
           echo "✅ APK found: $APK_PATH"
           ls -lh "$APK_PATH"
 
-      # ── 14. Upload APK ────────────────────────────────────────────────────────
+      # ── 15. Upload APK ────────────────────────────────────────────────────────
       - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -143,7 +171,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      # ── 15. Summary ───────────────────────────────────────────────────────────
+      # ── 16. Summary ───────────────────────────────────────────────────────────
       - name: 📊 Build Summary
         run: |
           APK_PATH="${{ steps.find_apk.outputs.apk_path }}"
