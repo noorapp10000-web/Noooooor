@@ -69,7 +69,9 @@ public class PrayerWidgetPlugin extends Plugin {
             JSArray prayers = call.getArray("prayers");
             if (prayers != null) {
                 for (int i = 0; i < Math.min(6, prayers.length()); i++) {
-                    prayerEnabled[i] = prayers.getJSONArray().getBoolean(i);
+                    prayerEnabled[i] = prayers.toList().get(i) instanceof Boolean
+                        ? (Boolean) prayers.toList().get(i)
+                        : Boolean.parseBoolean(String.valueOf(prayers.toList().get(i)));
                 }
             }
         } catch (Exception ignored) {}
