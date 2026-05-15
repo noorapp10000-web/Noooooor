@@ -131,9 +131,25 @@ export function getFullCache(): Record<string, unknown> { return _cache; }
 ══════════════════════════════════════════════════════════════ */
 
 export function getProfileCache(): UserProfile | null {
+  // 1. Try in-memory cache (fast path)
   const p = _cache['profile'];
-  if (!p || typeof p !== 'object') return null;
-  return p as UserProfile;
+  if (p && typeof p === 'object') return p as UserProfile;
+
+  // 2. Direct localStorage fallback — handles APK cold-start before initUserSync runs
+  try {
+    const uid = localStorage.getItem('noor_uid');
+    if (!uid) return null;
+    const raw = localStorage.getItem(`noor_rtdb_cache_${uid}`);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const profile = data['profile'];
+    if (profile && typeof profile === 'object') {
+      _cache = data; // Populate in-memory cache as side-effect
+      _currentUid = uid;
+      return profile as UserProfile;
+    }
+  } catch {}
+  return null;
 }
 
 export function saveProfileToRTDB(_uid: string, profile: UserProfile): void {

@@ -120,11 +120,7 @@ export function useSurah(number: number) {
         }
       } catch { /* fall through to API */ }
 
-      // Fallback to API
-      const res = await fetch(`https://api.alquran.cloud/v1/surah/${number}/quran-uthmani`);
-      if (!res.ok) throw new Error('Failed to fetch surah');
-      const data = await res.json();
-      return data.data;
+      throw new Error(`السورة ${number} غير متوفرة في الملف المحلي`);
     },
     enabled: !!number,
     staleTime: Infinity,
@@ -155,13 +151,8 @@ export function useTafsir(surah: number, ayah: number) {
         return { text: local[key], source: 'local' };
       }
 
-      // ── 2. Fallback: quran.com API (needs network) ──────────────────────
-      const res = await fetch(
-        `https://api.quran.com/api/v4/tafsirs/16/by_ayah/${surah}:${ayah}?language=ar`
-      );
-      if (!res.ok) throw new Error('Tafsir unavailable');
-      const data = await res.json();
-      return data.tafsir;
+      // Not found in local JSON
+      throw new Error('التفسير غير متوفر لهذه الآية');
     },
     enabled: !!surah && !!ayah,
     staleTime: Infinity,
@@ -239,20 +230,34 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
   });
 }
 
-// --- RECITERS API ---
+// --- RECITERS — local JSON first (offline), API fallback ---
+let _recitersLocalCache: Array<{id:string;name:string;country?:string;moshaf:Array<{id:number;name:string;server:string;surah_total:string;moshaf_type:number}>}> | null = null;
+
 export function useReciters() {
   return useQuery({
     queryKey: ['mp3quran-reciters'],
     queryFn: async () => {
+      // 1. Try local cache (populated from a previous fetch)
+      if (_recitersLocalCache) return _recitersLocalCache;
+
+      // 2. Try local file /data/reciters.json (offline-first)
+      try {
+        const local = await fetch('/data/reciters.json');
+        if (local.ok) {
+          const data = await local.json();
+          if (data.reciters?.length) {
+            _recitersLocalCache = data.reciters;
+            return _recitersLocalCache!;
+          }
+        }
+      } catch {}
+
+      // 3. Fallback: mp3quran.net API (audio service — allowed)
       const res = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
       if (!res.ok) throw new Error('Failed to fetch reciters');
       const data = await res.json();
-      return data.reciters as Array<{
-        id: string;
-        name: string;
-        country?: string;
-        moshaf: Array<{ id: number; name: string; server: string; surah_total: string; moshaf_type: number }>;
-      }>;
+      _recitersLocalCache = data.reciters;
+      return _recitersLocalCache!;
     },
     staleTime: Infinity,
   });

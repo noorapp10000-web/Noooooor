@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, type ReactElement } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { SURAH_NAMES } from '@/lib/constants';
 import { HISN_ITEMS } from '@/lib/hisnData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Link } from 'wouter';
-import { queueDailyTrackerSync, getCurrentUid, getCacheValue, getFullCache, getSettingCache } from '@/lib/rtdb';
+import { queueDailyTrackerSync, getCurrentUid, getCacheValue, getSettingCache } from '@/lib/rtdb';
 import { getOrCreateLocalUid } from '@/lib/rtdb';
 
 const MORNING_CAT_ID = 27;
@@ -298,44 +298,6 @@ function DuaIcon3D() {
   );
 }
 
-/* ── Heatmap helpers ─────────────────────────────────────────── */
-function getDayScore(dateKey: string): number {
-  let score = 0;
-  try {
-    const t = getCacheValue<{ prayers?: Record<string, boolean>; quranWird?: boolean }>(
-      `daily_tracker/${dateKey}`, {}
-    );
-    score += Object.values(t.prayers || {}).filter(Boolean).length;
-    if (t.quranWird) score += 1;
-  } catch {}
-  try {
-    const pm = getCacheValue<Record<number, number>>(`azkar/${dateKey}/${MORNING_CAT_ID}`, {});
-    const morningDone = MORNING_ITEMS.length > 0 && MORNING_ITEMS.every(z => (pm[z.id] ?? 0) >= z.count);
-    if (morningDone) score += 1;
-  } catch {}
-  try {
-    const pe = getCacheValue<Record<number, number>>(`azkar/${dateKey}/${EVENING_CAT_ID}`, {});
-    const eveningDone = EVENING_ITEMS.length > 0 && EVENING_ITEMS.every(z => (pe[z.id] ?? 0) >= z.count);
-    if (eveningDone) score += 1;
-  } catch {}
-  try {
-    const daily = getCacheValue<number>(`tasbih_daily/${dateKey}`, 0);
-    if (daily >= TASBIH_DAILY_GOAL) score += 1;
-  } catch {}
-  return score;
-}
-
-function cellColor(score: number, isToday: boolean): string {
-  if (isToday && score === 0) return 'rgba(var(--primary-rgb, 197,160,89),0.14)';
-  if (score === 0) return 'rgba(197,160,89,0.06)';
-  if (score <= 2) return '#6b4a20';
-  if (score <= 4) return '#a0702e';
-  if (score <= 6) return '#c5922a';
-  if (score <= 7) return '#c5b060';
-  if (score <= 8) return '#c5a059';
-  return '#e8c870';
-}
-
 const PRAYERS: { key: PrayerKey; label: string }[] = [
   { key: 'fajr',    label: 'الفجر'  },
   { key: 'dhuhr',   label: 'الظهر'  },
@@ -353,8 +315,6 @@ export function HomeTracker() {
     const cached = getCacheValue<TrackerState | null>(`daily_tracker/${currentDateKey}`, null);
     return cached ?? DEFAULT_STATE;
   });
-
-  const [showAllDays, setShowAllDays] = useState(false);
 
   // أذكار الصباح progress
   const morningProgress = getCacheValue<Record<number, number>>(`azkar/${currentDateKey}/${MORNING_CAT_ID}`, {});
@@ -404,66 +364,6 @@ export function HomeTracker() {
   }, [currentDateKey]);
 
   const bookmark = getSettingCache<{ surah: number; ayah: number } | null>('quran_bookmark', null);
-
-  const { weeks, monthLabels } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let gridStart: Date;
-    let totalCells: number;
-
-    if (showAllDays) {
-      const cache = getFullCache();
-      const allDateKeys: string[] = [];
-      const dt = cache['daily_tracker'] as Record<string, unknown> | undefined;
-      if (dt) allDateKeys.push(...Object.keys(dt));
-      const td = cache['tasbih_daily'] as Record<string, unknown> | undefined;
-      if (td) allDateKeys.push(...Object.keys(td));
-      const az = cache['azkar'] as Record<string, unknown> | undefined;
-      if (az) allDateKeys.push(...Object.keys(az));
-      const validKeys = allDateKeys.filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
-      let earliest = today;
-      if (validKeys.length > 0) {
-        const e = new Date(validKeys[0]);
-        e.setHours(0, 0, 0, 0);
-        if (e < today) earliest = e;
-      }
-      const startDow = earliest.getDay();
-      gridStart = new Date(earliest);
-      gridStart.setDate(gridStart.getDate() - startDow);
-      const diffDays = Math.floor((today.getTime() - gridStart.getTime()) / 86400000) + 7;
-      totalCells = Math.ceil(diffDays / 7) * 7;
-    } else {
-      const dayOfWeek = today.getDay();
-      totalCells = 91 + (6 - dayOfWeek);
-      gridStart = new Date(today);
-      gridStart.setDate(gridStart.getDate() - (totalCells - 1));
-    }
-
-    const cells: { dateKey: string; score: number; isToday: boolean; date: Date }[] = [];
-    for (let i = 0; i < totalCells; i++) {
-      const d = new Date(gridStart);
-      d.setDate(d.getDate() + i);
-      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const isFuture = d > today;
-      cells.push({ dateKey, score: isFuture ? -1 : getDayScore(dateKey), isToday: d.getTime() === today.getTime(), date: new Date(d) });
-    }
-
-    const numWeeks = Math.ceil(cells.length / 7);
-    const weeksArr: typeof cells[] = [];
-    for (let w = 0; w < numWeeks; w++) weeksArr.push(cells.slice(w * 7, w * 7 + 7));
-
-    const months: { label: string; col: number }[] = [];
-    weeksArr.forEach((week, col) => {
-      const first = week[0];
-      if (!first) return;
-      if (col === 0 || first.date.getDate() <= 7) {
-        const m = new Intl.DateTimeFormat('ar-EG', { month: 'short' }).format(first.date);
-        if (!months.length || months[months.length - 1].label !== m) months.push({ label: m, col });
-      }
-    });
-
-    return { weeks: weeksArr, monthLabels: months };
-  }, [showAllDays]);
 
   const progressColor = progressPct === 100 ? '#22c55e' : progressPct >= 60 ? '#c5a059' : '#a07a3a';
 
@@ -784,81 +684,6 @@ export function HomeTracker() {
         </div>
       </div>
 
-      {/* ── Heatmap ── */}
-      <div className="rounded-3xl overflow-hidden border border-primary/15" style={{ background: 'var(--color-card)' }}>
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm text-primary" style={{ fontFamily: '"Tajawal", sans-serif' }}>سجل الأيام</h3>
-            <button
-              onClick={() => setShowAllDays(v => !v)}
-              className="text-xs px-2.5 py-1 rounded-full transition-all"
-              style={{
-                fontFamily: '"Tajawal", sans-serif',
-                background: showAllDays ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.08)',
-                color: '#c5a059',
-                border: '1px solid rgba(197,160,89,0.25)',
-              }}
-            >
-              {showAllDays ? 'آخر 13 أسبوع' : 'كل الأيام'}
-            </button>
-          </div>
-          <div className="overflow-x-auto" style={{ direction: 'ltr' }}>
-            <div style={{ display: 'inline-block' }}>
-              <div style={{ display: 'flex', marginBottom: 4, paddingRight: 28 }}>
-                {weeks.map((_, col) => {
-                  const ml = monthLabels.find(m => m.col === col);
-                  return (
-                    <div key={col} style={{ width: 13, marginLeft: 2, flexShrink: 0 }}>
-                      {ml && <span className="text-[8px] text-muted-foreground">{ml.label}</span>}
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ display: 'flex', gap: 2 }}>
-                {weeks.map((week, col) => (
-                  <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {week.map((cell, row) => (
-                      <div key={row} style={{
-                        width: 13, height: 13, borderRadius: 3,
-                        background: cell.score < 0 ? 'transparent' : cellColor(cell.score, cell.isToday),
-                        border: cell.isToday ? '1.5px solid #c5a059' : '1px solid rgba(197,160,89,0.08)',
-                        boxShadow: cell.score === 8 ? '0 0 5px rgba(197,160,89,0.7)' : 'none',
-                        transition: 'background 0.2s',
-                      }} title={cell.score >= 0 ? `${cell.dateKey}: ${cell.score}/8` : ''} />
-                    ))}
-                  </div>
-                ))}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingRight: 4 }}>
-                  {['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'].map(d => (
-                    <div key={d} style={{ height: 13, lineHeight: '13px' }} className="text-[9px] text-muted-foreground">{d}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(197,160,89,0.1)' }}>
-            <div className="flex items-end justify-center gap-3" style={{ direction: 'ltr' }}>
-              {[
-                { score: 0,  label: 'لا شيء' },
-                { score: 2,  label: '١-٢' },
-                { score: 4,  label: '٣-٥' },
-                { score: 6,  label: '٦-٧' },
-                { score: 8,  label: 'مثالي' },
-              ].map(({ score, label }) => (
-                <div key={score} className="flex flex-col items-center gap-1">
-                  <div style={{
-                    width: 13, height: 13, borderRadius: 3,
-                    background: cellColor(score, false),
-                    border: '1px solid rgba(197,160,89,0.15)',
-                    boxShadow: score === 8 ? '0 0 5px rgba(197,160,89,0.6)' : 'none',
-                  }} />
-                  <span className="text-[9px] text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

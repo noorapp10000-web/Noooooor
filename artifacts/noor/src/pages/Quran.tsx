@@ -40,37 +40,15 @@ async function getQuranIndex(): Promise<QuranEntry[]> {
       return _quranCache!;
     } catch { /* try next */ }
   }
-  // Final fallback: API
-  const res = await fetch('https://api.alquran.cloud/v1/quran/quran-simple');
-  const json = await res.json();
-  _quranCache = [];
-  for (const surah of json.data.surahs) {
-    for (const ayah of surah.ayahs) {
-      const t = ayah.text as string;
-      _quranCache.push({ s: surah.number, a: ayah.numberInSurah, t, n: normalizeArabic(t) });
-    }
-  }
-  return _quranCache!;
+  throw new Error('فهرس البحث غير متوفر — تأكد من اتصال البيانات');
 }
 
 async function getTafsirIndex(): Promise<Record<string, string>> {
   if (_tafsirCache) return _tafsirCache;
-  try {
-    const res = await fetch('/data/tafsir-muyassar.json');
-    if (!res.ok) throw new Error('local not ready');
-    _tafsirCache = await res.json();
-    return _tafsirCache!;
-  } catch {
-    const res = await fetch('https://api.alquran.cloud/v1/quran/ar.muyassar');
-    const json = await res.json();
-    _tafsirCache = {};
-    for (const surah of json.data.surahs) {
-      for (const ayah of surah.ayahs) {
-        _tafsirCache[`${surah.number}:${ayah.numberInSurah}`] = ayah.text;
-      }
-    }
-    return _tafsirCache!;
-  }
+  const res = await fetch('/data/tafsir-muyassar.json');
+  if (!res.ok) throw new Error('local tafsir not ready');
+  _tafsirCache = await res.json();
+  return _tafsirCache!;
 }
 
 
@@ -234,6 +212,26 @@ const JUZ_DATA: { juz: number; name: string; surah: number; ayah: number }[] = [
   { juz: 29, name: 'الجزء التاسع والعشرون', surah: 67, ayah: 1  },
   { juz: 30, name: 'الجزء الثلاثون',    surah: 78, ayah: 1   },
 ];
+
+/** Compute juz number for an ayah using JUZ_DATA (for locally-loaded surahs lacking juz field) */
+function lookupJuz(surah: number, ayahNum: number): number {
+  let result = 1;
+  for (const j of JUZ_DATA) {
+    if (j.surah < surah || (j.surah === surah && j.ayah <= ayahNum)) result = j.juz;
+    else break;
+  }
+  return result;
+}
+
+/** Compute approximate hizbQuarter using HIZB_DATA (returns hizb*4 so hizbDisplay shows correct حزب, ربع 4 fallback) */
+function lookupHizbQuarter(surah: number, ayahNum: number): number {
+  let result = 4;
+  for (const h of HIZB_DATA) {
+    if (h.surah < surah || (h.surah === surah && h.ayah <= ayahNum)) result = h.hizb * 4;
+    else break;
+  }
+  return result;
+}
 
 type Mode = 'normal' | 'listen' | 'tafsir';
 
@@ -775,7 +773,7 @@ export function Quran() {
             {surahName}
           </h2>
           <p className="text-xs mt-0.5" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
-            الجزء {currentJuz ?? surahData?.ayahs?.[0]?.juz ?? '—'}
+            الجزء {currentJuz ?? (selectedSurah ? lookupJuz(selectedSurah, 1) : '—')}
             {hizbDisplay ? ` • ${hizbDisplay}` : ''}
           </p>
         </div>
@@ -973,8 +971,8 @@ export function Quran() {
                     <span
                       key={ayah.numberInSurah}
                       data-ayah={ayah.numberInSurah}
-                      data-juz={ayah.juz}
-                      data-hizb={ayah.hizbQuarter}
+                      data-juz={ayah.juz ?? (selectedSurah ? lookupJuz(selectedSurah, ayah.numberInSurah) : undefined)}
+                      data-hizb={ayah.hizbQuarter ?? (selectedSurah ? lookupHizbQuarter(selectedSurah, ayah.numberInSurah) : undefined)}
                     >
                       {wordList.map((word, wi) => {
                         const wordKey = `${selectedSurah}:${ayah.numberInSurah}:${wi + 1}`;
@@ -1003,8 +1001,8 @@ export function Quran() {
                   <span
                     key={ayah.numberInSurah}
                     data-ayah={ayah.numberInSurah}
-                    data-juz={ayah.juz}
-                    data-hizb={ayah.hizbQuarter}
+                    data-juz={ayah.juz ?? (selectedSurah ? lookupJuz(selectedSurah, ayah.numberInSurah) : undefined)}
+                    data-hizb={ayah.hizbQuarter ?? (selectedSurah ? lookupHizbQuarter(selectedSurah, ayah.numberInSurah) : undefined)}
                     onClick={() => handleAyahClick(ayah.numberInSurah)}
                     className="inline cursor-pointer transition-all duration-200 rounded-sm"
                     style={{

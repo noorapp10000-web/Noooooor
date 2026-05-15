@@ -356,39 +356,7 @@ async function fetchQuranData(): Promise<Record<string, VerseData[]>> {
     }
   } catch {}
 
-  // 3. Try alquran.cloud (same source used in Quran page)
-  try {
-    const cloudRes = await fetch('https://api.alquran.cloud/v1/quran/quran-uthmani');
-    if (cloudRes.ok) {
-      const cloudData = await cloudRes.json();
-      const bySurah: Record<string, VerseData[]> = {};
-      let id = 1;
-      for (const surah of cloudData.data.surahs) {
-        const sNum = String(surah.number);
-        bySurah[sNum] = surah.ayahs.map((a: { numberInSurah: number; text: string }) => ({
-          id: id++,
-          verse_key: `${surah.number}:${a.numberInSurah}`,
-          text_uthmani: a.text,
-        }));
-      }
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(bySurah)); } catch {}
-      return bySurah;
-    }
-  } catch {}
-
-  // 4. Fallback: quran.com API
-  const res = await fetch('https://api.quran.com/api/v4/quran/verses/uthmani');
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  const data = await res.json();
-  const verses: VerseData[] = data.verses ?? [];
-  const bySurah: Record<string, VerseData[]> = {};
-  for (const v of verses) {
-    const sNum = v.verse_key.split(':')[0];
-    if (!bySurah[sNum]) bySurah[sNum] = [];
-    bySurah[sNum].push(v);
-  }
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(bySurah)); } catch {}
-  return bySurah;
+  throw new Error('ملف القرآن المحلي غير متوفر');
 }
 
 /* ═══════════════════════════════════════════════════════════════
