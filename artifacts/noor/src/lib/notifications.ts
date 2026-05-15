@@ -1,6 +1,12 @@
 /**
- * Noor Prayer Notifications — Capacitor LocalNotifications
- * Works on Android only (silently skipped in browser dev mode)
+ * Noor Prayer Notifications
+ *
+ * Two-layer approach:
+ *  1. Native Android (PrayerNotificationScheduler) — 100% offline, AlarmManager-based,
+ *     synced via PrayerWidget Capacitor plugin. Works even if the app was never opened online.
+ *  2. Capacitor LocalNotifications — JS-scheduled backup layer for when API timings are available.
+ *
+ * Settings are stored in localStorage AND synced to Android SharedPreferences.
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -11,7 +17,7 @@ export type PrayerKey = 'Fajr' | 'Sunrise' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha
 
 export type NotificationSettings = {
   enabled: boolean;
-  minutesBefore: number; // 0 = at prayer time
+  minutesBefore: number;
   prayers: Record<PrayerKey, boolean>;
 };
 
@@ -29,6 +35,9 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     Isha:    true,
   },
 };
+
+// Prayer order (index matches Android PRAYER_NAMES_AR array)
+const PRAYER_ORDER: PrayerKey[] = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +62,37 @@ export function saveNotificationSettings(s: NotificationSettings): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
   } catch {}
+  // Sync to Android native layer (offline notifications)
+  syncToNative(s);
+}
+
+// ─── Native sync ──────────────────────────────────────────────────────────────
+
+/**
+ * Push notification settings to the Android PrayerNotificationScheduler.
+ * This allows the native AlarmManager-based system to reschedule prayer alarms
+ * immediately without needing the app to reopen.
+ */
+async function syncToNative(s: NotificationSettings): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const { registerPlugin } = await import('@capacitor/core');
+    const PrayerWidgetPlugin = registerPlugin<{
+      updateNotificationSettings(opts: {
+        enabled: boolean;
+        minutesBefore: number;
+        prayers: boolean[];
+      }): Promise<void>;
+    }>('PrayerWidget');
+
+    await PrayerWidgetPlugin.updateNotificationSettings({
+      enabled:       s.enabled,
+      minutesBefore: s.minutesBefore,
+      prayers:       PRAYER_ORDER.map(k => s.prayers[k]),
+    });
+  } catch (e) {
+    console.warn('[Notifications] Native sync failed:', e);
+  }
 }
 
 // ─── Prayer metadata ──────────────────────────────────────────────────────────
@@ -74,7 +114,7 @@ function parseHHMM(timeStr: string): { h: number; m: number } | null {
   return { h: parseInt(match[1], 10), m: parseInt(match[2], 10) };
 }
 
-// ─── Core API (all calls are no-ops in browser) ───────────────────────────────
+// ─── Capacitor LocalNotifications layer ──────────────────────────────────────
 
 async function getPlugin() {
   if (!Capacitor.isNativePlatform()) return null;
@@ -107,9 +147,8 @@ export async function checkNotificationPermission(): Promise<boolean> {
 }
 
 /**
- * Schedule prayer time notifications for a given day.
- * @param timings  The timings object from the aladhan API
- * @param dayOffset 0 = today, 1 = tomorrow
+ * Schedule Capacitor LocalNotification prayer notifications for a given day.
+ * Acts as a backup layer alongside the native AlarmManager notifications.
  */
 export async function schedulePrayerNotifications(
   timings: Record<string, string>,
@@ -119,10 +158,7 @@ export async function schedulePrayerNotifications(
   if (!plugin) return;
 
   const settings = getNotificationSettings();
-
-  // Cancel existing notifications for this day before rescheduling
   await cancelPrayerNotificationsForDay(dayOffset);
-
   if (!settings.enabled) return;
 
   const hasPermission = await checkNotificationPermission();
@@ -136,22 +172,16 @@ export async function schedulePrayerNotifications(
 
   for (const meta of PRAYER_META) {
     if (!settings.prayers[meta.key]) continue;
-
     const timeStr = timings[meta.key];
     if (!timeStr) continue;
-
     const parsed = parseHHMM(timeStr);
     if (!parsed) continue;
 
     const triggerDate = new Date(baseDate);
     triggerDate.setHours(parsed.h, parsed.m - settings.minutesBefore, 0, 0);
-
-    // Skip notifications already in the past
     if (triggerDate <= now) continue;
 
-    // Notification ID = base id + dayOffset*10 for uniqueness
     const notifId = meta.id + dayOffset * 10;
-
     const atTime = settings.minutesBefore === 0;
     const body = atTime
       ? `حان وقت ${meta.name} ${meta.emoji}`
@@ -171,11 +201,10 @@ export async function schedulePrayerNotifications(
 
   if (notifications.length > 0) {
     await plugin.schedule({ notifications });
-    console.log(`[Notifications] Scheduled ${notifications.length} notifications for day+${dayOffset}`);
   }
 }
 
-/** Cancel all Noor prayer notifications for a specific day. */
+/** Cancel all Noor Capacitor notifications for a specific day. */
 export async function cancelPrayerNotificationsForDay(dayOffset = 0): Promise<void> {
   const plugin = await getPlugin();
   if (!plugin) return;
@@ -185,15 +214,15 @@ export async function cancelPrayerNotificationsForDay(dayOffset = 0): Promise<vo
   } catch {}
 }
 
-/** Cancel all Noor prayer notifications (today + tomorrow). */
+/** Cancel all Noor Capacitor notifications (today + tomorrow). */
 export async function cancelAllPrayerNotifications(): Promise<void> {
   await cancelPrayerNotificationsForDay(0);
   await cancelPrayerNotificationsForDay(1);
 }
 
 /**
- * Main entry point — call this whenever prayer times are loaded or settings change.
- * Schedules today's and (if available) tomorrow's notifications.
+ * Main entry point — call whenever prayer times are loaded or settings change.
+ * Schedules both the Capacitor layer (online timings) and syncs native layer settings.
  */
 export async function syncPrayerNotifications(
   todayTimings: Record<string, string>,
@@ -203,4 +232,6 @@ export async function syncPrayerNotifications(
   if (tomorrowTimings) {
     await schedulePrayerNotifications(tomorrowTimings, 1);
   }
+  // Also push current settings to native layer to ensure it's in sync
+  syncToNative(getNotificationSettings());
 }

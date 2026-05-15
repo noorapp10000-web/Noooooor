@@ -3,6 +3,7 @@ package com.noor.app;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -10,9 +11,13 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
- * Capacitor plugin bridge — called by the React app when it has fresh location data.
- * Saves lat/lng to SharedPreferences so the standalone widget can calculate
- * prayer times independently, even when the app is closed.
+ * Capacitor plugin bridge — called by the React app.
+ *
+ * Methods:
+ *  updateWidget(lat, lng)                     — update location, recalc widget + notifications
+ *  updateNotificationSettings(enabled, minutesBefore, prayers[6])
+ *                                              — sync notification settings from JS to Android
+ *  isSupported()                              — returns {supported: true}
  */
 @CapacitorPlugin(name = "PrayerWidget")
 public class PrayerWidgetPlugin extends Plugin {
@@ -24,7 +29,6 @@ public class PrayerWidgetPlugin extends Plugin {
             PrayerWidgetProvider.PREFS_NAME, Context.MODE_PRIVATE
         );
 
-        // Persist location so the widget can recalculate when the app is closed
         Double lat = call.getDouble("lat");
         Double lng = call.getDouble("lng");
 
@@ -35,9 +39,54 @@ public class PrayerWidgetPlugin extends Plugin {
                 .apply();
         }
 
-        // Immediately recalculate and update all widgets
+        // Recalculate widget + reschedule notifications
         WidgetUpdateReceiver.recalcAndUpdate(context);
         WidgetAlarmManager.scheduleNext(context);
+        // Also reschedule notifications from fresh prefs (location may have changed)
+        PrayerNotificationScheduler.scheduleAllFromPrefs(context);
+
+        call.resolve();
+    }
+
+    /**
+     * Called from Settings page whenever notification settings change.
+     * Persists to SharedPreferences and immediately reschedules alarms.
+     *
+     * Expected call params:
+     *   enabled       boolean
+     *   minutesBefore int
+     *   prayers       [boolean × 6]  index 0=Fajr 1=Sunrise 2=Dhuhr 3=Asr 4=Maghrib 5=Isha
+     */
+    @PluginMethod
+    public void updateNotificationSettings(PluginCall call) {
+        Context context = getContext();
+
+        Boolean enabled       = call.getBoolean("enabled", true);
+        Integer minutesBefore = call.getInt("minutesBefore", 10);
+
+        boolean[] prayerEnabled = { true, false, true, true, true, true }; // defaults
+        try {
+            JSArray prayers = call.getArray("prayers");
+            if (prayers != null) {
+                for (int i = 0; i < Math.min(6, prayers.length()); i++) {
+                    prayerEnabled[i] = prayers.getJSONArray().getBoolean(i);
+                }
+            }
+        } catch (Exception ignored) {}
+
+        PrayerNotificationScheduler.saveSettings(
+            context,
+            enabled  != null && enabled,
+            minutesBefore != null ? minutesBefore : 10,
+            prayerEnabled
+        );
+
+        // Reschedule (or cancel) alarms immediately
+        if (enabled != null && enabled) {
+            PrayerNotificationScheduler.scheduleAllFromPrefs(context);
+        } else {
+            PrayerNotificationScheduler.cancelAll(context);
+        }
 
         call.resolve();
     }

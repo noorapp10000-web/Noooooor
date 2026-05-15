@@ -34,7 +34,7 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- LocalNotifications: reschedule prayer alarms after reboot -->
+        <!-- LocalNotifications: reschedule Capacitor-scheduled notifications after reboot -->
         <receiver
             android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
             android:exported="false">
@@ -57,9 +57,8 @@
         </receiver>
 
         <!--
-            Standalone widget updater — fires every minute via AlarmManager.
-            Also handles BOOT_COMPLETED to restart the alarm after reboot.
-            Runs entirely without the app being open.
+            Standalone widget updater — fires every minute via AlarmManager chaining.
+            Also handles BOOT_COMPLETED to restart the alarm and reschedule notifications.
         -->
         <receiver
             android:name=".WidgetUpdateReceiver"
@@ -68,6 +67,18 @@
                 <action android:name="com.noor.app.WIDGET_UPDATE" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!--
+            Native prayer notification receiver — fired by AlarmManager at each prayer time.
+            Completely offline: shows notification without app being open or internet.
+        -->
+        <receiver
+            android:name=".PrayerNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.noor.app.PRAYER_NOTIF" />
             </intent-filter>
         </receiver>
 

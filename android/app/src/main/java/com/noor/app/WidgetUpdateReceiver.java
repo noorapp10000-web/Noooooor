@@ -34,8 +34,8 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
     private static final double DEFAULT_LAT = 30.0444; // Cairo fallback
     private static final double DEFAULT_LNG = 31.2357;
 
-    private static final String[] PRAYER_NAMES_EN = {
-        "Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"
+    static final String[] PRAYER_NAMES_AR = {
+        "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"
     };
 
     private static final String[] HIJRI_MONTH_NAMES = {
@@ -56,6 +56,14 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        String action = intent != null ? intent.getAction() : null;
+
+        // On boot/replace: reschedule both widget alarm AND prayer notifications
+        if ("android.intent.action.BOOT_COMPLETED".equals(action)
+                || "android.intent.action.MY_PACKAGE_REPLACED".equals(action)) {
+            PrayerNotificationScheduler.scheduleAllFromPrefs(context);
+        }
+
         recalcAndUpdate(context);
         WidgetAlarmManager.scheduleNext(context);
     }
@@ -100,7 +108,7 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
 
         for (int i = 0; i < times.length; i++) {
             if (times[i] != null && times[i].after(nowDate)) {
-                nextName = PRAYER_NAMES_EN[i];
+                nextName = PRAYER_NAMES_AR[i];
                 nextTime = times[i];
                 break;
             }
@@ -116,8 +124,15 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
                 tomorrow.get(Calendar.DAY_OF_MONTH)
             );
             PrayerTimes tp = new PrayerTimes(coords, tomorrowDate, params);
-            nextName = "Fajr";
+            nextName = "الفجر";
             nextTime = tp.fajr;
+        }
+
+        // ── Schedule prayer notifications (offline, native AlarmManager) ──
+        // Only reschedule when the next prayer epoch actually changes
+        long prevEpoch = prefs.getLong(PrayerWidgetProvider.KEY_PRAYER_EPOCH, 0L);
+        if (nextTime != null && nextTime.getTime() != prevEpoch) {
+            PrayerNotificationScheduler.scheduleAll(context, coords, params, tz);
         }
 
         if (nextTime == null) return;
