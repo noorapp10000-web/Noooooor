@@ -50,6 +50,7 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveDone, setSaveDone] = useState(false);
+  const [savedPath, setSavedPath] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   /* ── Build backup JSON ── */
@@ -60,29 +61,59 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
     return { json, fileName };
   }
 
-  /* ── Export + Share (Android: write to cache → open share sheet immediately) ── */
+  /* ── Export — save directly to Downloads (no internet, no share sheet) ── */
   async function handleExport() {
     setSaving(true);
+    setSavedPath(null);
     try {
       const { json, fileName } = await buildBackup();
 
       if (Capacitor.isNativePlatform()) {
-        // Write to app cache dir (always writable, no permissions needed)
-        const writeResult = await Filesystem.writeFile({
-          path: fileName,
-          data: json,
-          directory: Directory.Cache,
-          encoding: Encoding.UTF8,
-        });
-        // Open native share sheet — user picks: Save to Downloads, WhatsApp, Drive, etc.
-        await Share.share({
-          title: 'نسخة احتياطية - نور',
-          text: 'ملف النسخة الاحتياطية لتطبيق نور',
-          url: writeResult.uri,
-          dialogTitle: 'احفظ أو شارك النسخة الاحتياطية',
-        });
+        // 1st try: External storage Downloads folder (visible in file manager)
+        let written = false;
+        try {
+          await Filesystem.writeFile({
+            path: `Download/${fileName}`,
+            data: json,
+            directory: Directory.ExternalStorage,
+            encoding: Encoding.UTF8,
+            recursive: true,
+          } as Parameters<typeof Filesystem.writeFile>[0]);
+          setSavedPath(`التنزيلات ← ${fileName}`);
+          written = true;
+        } catch { /* external storage blocked — try Documents */ }
+
+        // 2nd try: App Documents folder (internal, always writable)
+        if (!written) {
+          try {
+            await Filesystem.writeFile({
+              path: fileName,
+              data: json,
+              directory: Directory.Documents,
+              encoding: Encoding.UTF8,
+            });
+            setSavedPath(`المستندات ← ${fileName}`);
+            written = true;
+          } catch { /* Documents failed — last resort: share sheet */ }
+        }
+
+        // Last resort: share sheet (user picks destination)
+        if (!written) {
+          const writeResult = await Filesystem.writeFile({
+            path: fileName,
+            data: json,
+            directory: Directory.Cache,
+            encoding: Encoding.UTF8,
+          });
+          await Share.share({
+            title: 'نسخة احتياطية - نور',
+            url: writeResult.uri,
+            dialogTitle: 'احفظ النسخة الاحتياطية',
+          });
+        }
+
         setSaveDone(true);
-        setTimeout(() => setSaveDone(false), 4000);
+        setTimeout(() => { setSaveDone(false); setSavedPath(null); }, 7000);
       } else {
         // Web: browser download
         const blob = new Blob([json], { type: 'application/json' });
@@ -94,10 +125,11 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        setSavedPath(fileName);
         setSaveDone(true);
-        setTimeout(() => setSaveDone(false), 3000);
+        setTimeout(() => { setSaveDone(false); setSavedPath(null); }, 4000);
       }
-    } catch { /* user cancelled share or write error */ }
+    } catch { /* user cancelled */ }
     finally { setSaving(false); }
   }
 
@@ -150,8 +182,8 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone ? '#22c55e' : textColor }}>
               {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير ✓' : (Capacitor.isNativePlatform() ? 'تصدير ومشاركة النسخة' : 'تصدير النسخة الاحتياطية')}
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              {Capacitor.isNativePlatform() ? 'يفتح قائمة المشاركة — احفظ في التنزيلات أو واتساب أو درايف' : 'تنزيل ملف noor-backup.json'}
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone && savedPath ? '#22c55e' : subText }}>
+              {savedPath ? `تم الحفظ في: ${savedPath}` : (Capacitor.isNativePlatform() ? 'يحفظ مباشرة في مجلد التنزيلات بدون نت' : 'تنزيل ملف noor-backup.json')}
             </p>
           </div>
         </button>

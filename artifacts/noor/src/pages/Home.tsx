@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
-import { getProfileCache } from '@/lib/rtdb';
+import { getProfileCache, updateProfileInRTDB, getCurrentUid } from '@/lib/rtdb';
 import { syncPrayerNotifications, getNotificationSettings } from '@/lib/notifications';
 import { updatePrayerWidget } from '@/lib/widget';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
@@ -92,7 +92,6 @@ function Clock3DIcon({ size = 20 }: { size?: number }) {
 
 export function Home() {
   const [dateOffset, setDateOffset] = useState(0);
-  const [tempGov, setTempGov] = useState<{ id: string; name: string; lat: number; lng: number } | null>(null);
   const [showGovPicker, setShowGovPicker] = useState(false);
 
   const [userProfile, setUserProfile] = useState(() => getProfileCache());
@@ -107,8 +106,8 @@ export function Home() {
     return () => window.removeEventListener('noor:profile-updated', handler);
   }, []);
 
-  const activeLat = (tempGov?.lat ?? userProfile?.lat) ?? null;
-  const activeLng = (tempGov?.lng ?? userProfile?.lng) ?? null;
+  const activeLat = userProfile?.lat ?? null;
+  const activeLng = userProfile?.lng ?? null;
   const lat = userProfile?.lat ?? null;
   const lng = userProfile?.lng ?? null;
 
@@ -282,8 +281,7 @@ export function Home() {
               style={{ fontFamily: '"Tajawal", sans-serif' }}
             >
               <MapPin className="w-3 h-3" />
-              {tempGov ? tempGov.name : userProfile.governorateName}
-              {tempGov && <span className="text-[10px] opacity-60 mr-0.5">(مؤقت)</span>}
+              {userProfile.governorateName}
             </button>
           )}
         </div>
@@ -331,7 +329,7 @@ export function Home() {
         </p>
       </div>
 
-      {/* ── Temp Governorate Picker Sheet ── */}
+      {/* ── Governorate Picker Sheet ── */}
       <AnimatePresence>
         {showGovPicker && (
           <>
@@ -353,36 +351,38 @@ export function Home() {
             >
               <div className="p-4 pb-2 flex items-center justify-between border-b border-border/40">
                 <h3 className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B' }}>
-                  اختر محافظة مؤقتاً
+                  اختر محافظتك
                 </h3>
-                <div className="flex items-center gap-2">
-                  {tempGov && (
-                    <button
-                      onClick={() => { setTempGov(null); setShowGovPicker(false); }}
-                      className="text-xs px-3 py-1.5 rounded-full"
-                      style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}
-                    >
-                      استعادة الأصلية
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowGovPicker(false)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ background: 'rgba(193,154,107,0.1)' }}
-                  >
-                    <X className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setShowGovPicker(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(193,154,107,0.1)' }}
+                >
+                  <X className="w-4 h-4 text-primary" />
+                </button>
               </div>
               <div className="overflow-y-auto" style={{ maxHeight: '55vh' }}>
                 <div className="grid grid-cols-3 gap-2 p-3">
                   {EGYPT_GOVERNORATES.map(gov => {
-                    const active = (tempGov?.id ?? userProfile?.governorateId) === gov.id;
+                    const active = userProfile?.governorateId === gov.id;
                     return (
                       <button
                         key={gov.id}
                         onClick={() => {
-                          setTempGov({ id: gov.id, name: gov.name, lat: gov.lat, lng: gov.lng });
+                          const uid = getCurrentUid();
+                          if (uid) {
+                            updateProfileInRTDB(uid, {
+                              governorateId: gov.id,
+                              governorateName: gov.name,
+                              lat: gov.lat,
+                              lng: gov.lng,
+                            });
+                          }
+                          setUserProfile(prev => prev
+                            ? { ...prev, governorateId: gov.id, governorateName: gov.name, lat: gov.lat, lng: gov.lng }
+                            : prev
+                          );
+                          window.dispatchEvent(new CustomEvent('noor:profile-updated'));
                           setShowGovPicker(false);
                         }}
                         className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 transition-all active:scale-95"
