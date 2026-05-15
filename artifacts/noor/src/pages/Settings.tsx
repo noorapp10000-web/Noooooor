@@ -1,51 +1,14 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
 import { useUserSetting } from '@/hooks/use-user-setting';
-import {
-  getNotificationSettings, saveNotificationSettings,
-  cancelAllPrayerNotifications, sendTestNotification,
-  getDailyReminderSettings, saveDailyReminderSettings, syncDailyReminder,
-  type NotificationSettings, type PrayerKey, type DailyReminderSettings,
-} from '@/lib/notifications';
-import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { flushRTDB, exportAllData, importAllData } from '@/lib/rtdb';
-
-const PRAYER_LIST: { key: PrayerKey; name: string }[] = [
-  { key: 'Fajr', name: 'الفجر' }, { key: 'Sunrise', name: 'الشروق' },
-  { key: 'Dhuhr', name: 'الظهر' }, { key: 'Asr', name: 'العصر' },
-  { key: 'Maghrib', name: 'المغرب' }, { key: 'Isha', name: 'العشاء' },
-];
-
-const MINUTES_OPTIONS = [
-  { value: 0, label: 'عند الأذان' }, { value: 5, label: 'قبل 5 دق' },
-  { value: 10, label: 'قبل 10 دق' }, { value: 15, label: 'قبل 15 دق' },
-  { value: 20, label: 'قبل 20 دق' },
-];
-
-function NativeOnlyNote({ subText }: { subText: string }) {
-  return (
-    <p className="text-xs text-center py-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
-      ⚠️ الإشعارات متاحة في تطبيق الموبايل فقط
-    </p>
-  );
-}
-
-function ToggleSwitch({ enabled, onToggle, accentColor = '#C19A6B' }: { enabled: boolean; onToggle: () => void; accentColor?: string }) {
-  return (
-    <button onClick={onToggle} className="relative flex-shrink-0 transition-all"
-      style={{ width: 44, height: 24, borderRadius: 12, background: enabled ? accentColor : 'rgba(120,120,120,0.3)', transition: 'background 0.25s' }}>
-      <span className="absolute top-[3px] rounded-full bg-white shadow-sm"
-        style={{ width: 18, height: 18, left: enabled ? 23 : 3, transition: 'left 0.25s' }} />
-    </button>
-  );
-}
 
 function BackupSection({ sectionBg, borderColor, textColor, subText }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
   const [importing, setImporting] = useState(false);
@@ -55,7 +18,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
-  /* ── Build backup JSON ── */
   async function buildBackup(): Promise<{ json: string; fileName: string }> {
     await flushRTDB();
     const json = exportAllData();
@@ -63,7 +25,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
     return { json, fileName };
   }
 
-  /* ── Export — save directly to Downloads (no internet, no share sheet) ── */
   async function handleExport() {
     setSaving(true);
     setSavedPath(null);
@@ -71,7 +32,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
       const { json, fileName } = await buildBackup();
 
       if (Capacitor.isNativePlatform()) {
-        // 1st try: External storage Downloads folder (visible in file manager)
         let written = false;
         try {
           await Filesystem.writeFile({
@@ -83,9 +43,8 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
           } as Parameters<typeof Filesystem.writeFile>[0]);
           setSavedPath(`التنزيلات ← ${fileName}`);
           written = true;
-        } catch { /* external storage blocked — try Documents */ }
+        } catch { }
 
-        // 2nd try: App Documents folder (internal, always writable)
         if (!written) {
           try {
             await Filesystem.writeFile({
@@ -96,10 +55,9 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             });
             setSavedPath(`المستندات ← ${fileName}`);
             written = true;
-          } catch { /* Documents failed — last resort: share sheet */ }
+          } catch { }
         }
 
-        // Last resort: share sheet (user picks destination)
         if (!written) {
           const writeResult = await Filesystem.writeFile({
             path: fileName,
@@ -117,7 +75,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
         setSaveDone(true);
         setTimeout(() => { setSaveDone(false); setSavedPath(null); }, 7000);
       } else {
-        // Web: browser download
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -131,11 +88,10 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
         setSaveDone(true);
         setTimeout(() => { setSaveDone(false); setSavedPath(null); }, 4000);
       }
-    } catch { /* user cancelled */ }
+    } catch { }
     finally { setSaving(false); }
   }
 
-  /* ── Local import ── */
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -159,7 +115,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
       className="rounded-2xl p-4"
       style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
     >
-      {/* Header */}
       <div className="flex items-center gap-2.5 mb-4">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(145deg, #C19A6B, #8B5E3C)' }}>
@@ -172,7 +127,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
       </div>
 
       <div className="space-y-2">
-        {/* Save to storage */}
         <button onClick={handleExport} disabled={saving}
           className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
           style={{ background: saveDone ? 'rgba(34,197,94,0.1)' : 'rgba(193,154,107,0.08)', border: `1.5px solid ${saveDone ? 'rgba(34,197,94,0.35)' : 'rgba(193,154,107,0.25)'}` }}>
@@ -216,42 +170,6 @@ export function Settings() {
 
   const { bgType, bgPreset, bgCustom, appFontScale, hasBg, cardOpacity, setBgType, setBgPreset, setBgCustom, setAppFontScale, setCardOpacity } = useAppSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(getNotificationSettings);
-  const isNative = Capacitor.isNativePlatform();
-  const [testNotifState, setTestNotifState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [testCountdown, setTestCountdown] = useState(0);
-  const [dailyReminder, setDailyReminder] = useState<DailyReminderSettings>(getDailyReminderSettings);
-
-  useEffect(() => {
-    saveNotificationSettings(notifSettings);
-    window.dispatchEvent(new CustomEvent('noor:notif-settings-changed'));
-  }, [notifSettings]);
-
-  function setEnabled(val: boolean) { setNotifSettings(s => ({ ...s, enabled: val })); if (!val) cancelAllPrayerNotifications(); }
-  function setMinutesBefore(val: number) { setNotifSettings(s => ({ ...s, minutesBefore: val })); }
-  function togglePrayer(key: PrayerKey) { setNotifSettings(s => ({ ...s, prayers: { ...s.prayers, [key]: !s.prayers[key] } })); }
-
-  useEffect(() => {
-    saveDailyReminderSettings(dailyReminder);
-    window.dispatchEvent(new CustomEvent('noor:daily-reminder-changed'));
-  }, [dailyReminder]);
-
-  async function handleTestNotification() {
-    if (testNotifState !== 'idle') return;
-    setTestNotifState('sending');
-    const DELAY = 5;
-    const ok = await sendTestNotification(DELAY);
-    if (!ok) { setTestNotifState('error'); setTimeout(() => setTestNotifState('idle'), 3000); return; }
-    setTestNotifState('sent');
-    setTestCountdown(DELAY);
-    const interval = setInterval(() => {
-      setTestCountdown(prev => {
-        if (prev <= 1) { clearInterval(interval); setTimeout(() => setTestNotifState('idle'), 1500); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -351,203 +269,8 @@ export function Settings() {
           </div>
         </motion.div>
 
-        {/* Prayer Notifications */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(145deg, #2ecc71, #1a7a44)' }}>
-              {notifSettings.enabled ? <Bell className="w-4 h-4 text-white" /> : <BellOff className="w-4 h-4 text-white" />}
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>إشعارات الصلاة</p>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>تنبيه قبل كل صلاة بدون نت</p>
-            </div>
-            <ToggleSwitch enabled={notifSettings.enabled} onToggle={() => setEnabled(!notifSettings.enabled)} accentColor="#2ecc71" />
-          </div>
-          {!isNative && <NativeOnlyNote subText={subText} />}
-          {notifSettings.enabled && (
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>وقت الإشعار</p>
-                <div className="flex flex-wrap gap-2">
-                  {MINUTES_OPTIONS.map(opt => {
-                    const selected = notifSettings.minutesBefore === opt.value;
-                    return (
-                      <button key={opt.value} onClick={() => setMinutesBefore(opt.value)}
-                        className="text-xs px-3 py-1.5 rounded-xl transition-all font-bold"
-                        style={{ fontFamily: '"Tajawal", sans-serif', background: selected ? '#2ecc71' : 'rgba(46,204,113,0.1)', color: selected ? '#fff' : subText, border: `1.5px solid ${selected ? '#2ecc71' : 'transparent'}` }}>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ height: 1, background: borderColor }} />
-              <div>
-                <p className="text-xs font-bold mb-3" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>اختر الصلوات التي تريد تنبيهها</p>
-                <div className="space-y-2.5">
-                  {PRAYER_LIST.map(prayer => {
-                    const enabled = notifSettings.prayers[prayer.key];
-                    return (
-                      <div key={prayer.key} className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all"
-                        style={{ background: enabled ? 'rgba(46,204,113,0.08)' : (dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'), border: `1px solid ${enabled ? 'rgba(46,204,113,0.3)' : borderColor}` }}>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: enabled ? textColor : subText }}>{prayer.name}</span>
-                        </div>
-                        <ToggleSwitch enabled={enabled} onToggle={() => togglePrayer(prayer.key)} accentColor="#2ecc71" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              {isNative && (
-                <div className="space-y-2">
-                  <button onClick={() => { resetPermissionsFlag(); requestAllPermissionsOnce(); }}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold transition-all"
-                    style={{ fontFamily: '"Tajawal", sans-serif', background: 'rgba(46,204,113,0.1)', color: '#2ecc71', border: '1px solid rgba(46,204,113,0.3)' }}>
-                    🔔 طلب إذن الإشعارات مجدداً
-                  </button>
-
-                  {/* Test notification button */}
-                  <button
-                    data-testid="button-test-notification"
-                    onClick={handleTestNotification}
-                    disabled={testNotifState !== 'idle'}
-                    className="w-full rounded-xl p-3 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-70"
-                    style={{
-                      fontFamily: '"Tajawal", sans-serif',
-                      background: testNotifState === 'sent'
-                        ? 'rgba(46,204,113,0.12)'
-                        : testNotifState === 'error'
-                        ? 'rgba(239,68,68,0.1)'
-                        : 'rgba(193,154,107,0.08)',
-                      border: `1.5px solid ${
-                        testNotifState === 'sent'
-                          ? 'rgba(46,204,113,0.4)'
-                          : testNotifState === 'error'
-                          ? 'rgba(239,68,68,0.3)'
-                          : 'rgba(193,154,107,0.25)'
-                      }`,
-                    }}
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: testNotifState === 'sent'
-                          ? 'rgba(46,204,113,0.2)'
-                          : testNotifState === 'error'
-                          ? 'rgba(239,68,68,0.15)'
-                          : 'rgba(193,154,107,0.15)',
-                      }}>
-                      <span className="text-lg leading-none">
-                        {testNotifState === 'sending' ? '⏳' : testNotifState === 'sent' ? '✅' : testNotifState === 'error' ? '❌' : '🧪'}
-                      </span>
-                    </div>
-                    <div className="text-right flex-1">
-                      <p className="font-bold text-sm"
-                        style={{
-                          color: testNotifState === 'sent' ? '#2ecc71'
-                            : testNotifState === 'error' ? '#ef4444'
-                            : textColor,
-                        }}>
-                        {testNotifState === 'sending' && 'جاري الإرسال...'}
-                        {testNotifState === 'sent' && testCountdown > 0 && `سيصلك الإشعار خلال ${testCountdown} ثانية`}
-                        {testNotifState === 'sent' && testCountdown === 0 && 'وصل الإشعار! ✓'}
-                        {testNotifState === 'error' && 'تأكد من منح إذن الإشعارات'}
-                        {testNotifState === 'idle' && 'إشعار تجريبي'}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: subText }}>
-                        {testNotifState === 'idle' ? 'اضغط لاختبار وصول الإشعارات' : testNotifState === 'sent' ? 'اغلق التطبيق لترى الإشعار' : ''}
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Daily Reminder */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-          className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
-          {/* Header */}
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="flex-1">
-              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>التذكير اليومي</p>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>حديث أو آية يومياً في وقت تختاره</p>
-            </div>
-            <ToggleSwitch
-              enabled={dailyReminder.enabled}
-              onToggle={() => setDailyReminder(s => ({ ...s, enabled: !s.enabled }))}
-              accentColor="#C19A6B"
-            />
-          </div>
-
-          {!isNative && <NativeOnlyNote subText={subText} />}
-
-          {dailyReminder.enabled && (
-            <div className="space-y-4">
-              {/* Time preset picker */}
-              <div>
-                <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>وقت الإشعار</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'بعد الفجر', hour: 6,  minute: 0 },
-                    { label: 'الصباح',    hour: 8,  minute: 0 },
-                    { label: 'الضحى',     hour: 10, minute: 0 },
-                    { label: 'بعد الظهر', hour: 14, minute: 0 },
-                    { label: 'العصر',     hour: 17, minute: 0 },
-                    { label: 'الليل',     hour: 21, minute: 0 },
-                  ].map(opt => {
-                    const selected = dailyReminder.hour === opt.hour && dailyReminder.minute === opt.minute;
-                    const displayHour = opt.hour > 12 ? opt.hour - 12 : opt.hour === 0 ? 12 : opt.hour;
-                    const ampm = opt.hour >= 12 ? 'م' : 'ص';
-                    return (
-                      <button
-                        key={opt.label}
-                        onClick={() => setDailyReminder(s => ({ ...s, hour: opt.hour, minute: opt.minute }))}
-                        className="rounded-xl py-2.5 px-1 flex flex-col items-center gap-0.5 transition-all"
-                        style={{
-                          fontFamily: '"Tajawal", sans-serif',
-                          background: selected ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.06)',
-                          border: `1.5px solid ${selected ? '#C19A6B' : borderColor}`,
-                        }}>
-                        <span className="text-xs font-bold" style={{ color: selected ? '#C19A6B' : textColor }}>{opt.label}</span>
-                        <span className="text-[10px]" style={{ color: selected ? '#C19A6B' : subText }}>{displayHour}:00 {ampm}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div style={{ height: 1, background: borderColor }} />
-
-              {/* Notification preview */}
-              <div>
-                <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>معاينة الإشعار</p>
-                <div className="rounded-xl p-3 flex items-start gap-3"
-                  style={{ background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: `1px solid ${borderColor}` }}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'linear-gradient(145deg, #C19A6B, #7B4F2E)' }}>
-                    <span className="text-base">✨</span>
-                  </div>
-                  <div className="flex-1 text-right">
-                    <p className="text-xs font-bold mb-1" style={{ color: textColor, fontFamily: '"Tajawal", sans-serif' }}>تذكير يومي — نُور</p>
-                    <p className="text-xs leading-relaxed" style={{ color: textColor, fontFamily: '"Amiri", serif', fontSize: 13 }}>
-                      أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ
-                    </p>
-                    <p className="text-[10px] mt-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>— سورة الرعد: 28</p>
-                  </div>
-                </div>
-                <p className="text-[11px] text-center mt-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
-                  يتغير النص كل يوم — 40 حديثاً وآية مختارة
-                </p>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
         {/* Background */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(145deg, #4a6fa5, #2d4a7a)' }}>

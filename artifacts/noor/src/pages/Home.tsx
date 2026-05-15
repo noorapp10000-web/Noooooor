@@ -3,8 +3,6 @@ import { MapPin, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache, updateProfileInRTDB, getCurrentUid } from '@/lib/rtdb';
-import { syncPrayerNotifications, syncDailyReminder } from '@/lib/notifications';
-import { updatePrayerWidget } from '@/lib/widget';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -118,26 +116,6 @@ export function Home() {
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time24: string } | null>(null);
   const [countdown, setCountdown] = useState('');
 
-  // ── Schedule prayer notifications (offline — adhan library, no API needed) ──
-  useEffect(() => {
-    syncPrayerNotifications();
-    syncDailyReminder();
-  }, [activeLat, activeLng]); // re-schedule when location changes
-
-  // Re-schedule when notification settings change from the Settings page
-  useEffect(() => {
-    const handler = () => syncPrayerNotifications();
-    window.addEventListener('noor:notif-settings-changed', handler);
-    return () => window.removeEventListener('noor:notif-settings-changed', handler);
-  }, []);
-
-  // Re-schedule daily reminder when its settings change
-  useEffect(() => {
-    const handler = () => syncDailyReminder();
-    window.addEventListener('noor:daily-reminder-changed', handler);
-    return () => window.removeEventListener('noor:daily-reminder-changed', handler);
-  }, []);
-
   useEffect(() => {
     if (!times || dateOffset !== 0) return;
     // Use Cairo timezone for current time comparison (all supported govs are Egypt)
@@ -164,14 +142,10 @@ export function Home() {
       nextName = 'الفجر';
       nextTime = times['Fajr'].substring(0, 5);
     }
-    if (nextName && nextTime) {
-      updatePrayerWidget(nextName, fmt12(nextTime), '--:--', activeLat ?? undefined, activeLng ?? undefined);
-    }
   }, [times, dateOffset]);
 
   useEffect(() => {
     if (!nextPrayer || dateOffset !== 0) return;
-    let lastWidgetMinute = -1;
     const tick = () => {
       // Compute countdown entirely in Egypt timezone (handles UTC+2/UTC+3 DST)
       const nowCairoParts = new Intl.DateTimeFormat('en-US', {
@@ -188,12 +162,6 @@ export function Home() {
       const mm = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
       const ss = (diff % 60).toString().padStart(2, '0');
       setCountdown(`${hh}:${mm}:${ss}`);
-      // Update the home-screen widget once per minute (avoids flooding native bridge)
-      const currentMinute = Math.floor(diff / 60);
-      if (currentMinute !== lastWidgetMinute) {
-        lastWidgetMinute = currentMinute;
-        updatePrayerWidget(nextPrayer.name, fmt12(nextPrayer.time24), `${hh}:${mm}`, activeLat ?? undefined, activeLng ?? undefined);
-      }
     };
     tick();
     const id = setInterval(tick, 1000);

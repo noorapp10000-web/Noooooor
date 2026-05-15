@@ -34,70 +34,12 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- LocalNotifications: reschedule Capacitor-scheduled notifications after reboot -->
-        <receiver
-            android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-
-        <!-- Prayer Times Home Screen Widget -->
-        <receiver
-            android:name=".PrayerWidgetProvider"
-            android:exported="true"
-            android:label="ويدجت الصلاة القادمة">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/prayer_widget_info" />
-        </receiver>
-
-        <!--
-            Standalone widget updater — fires every minute via AlarmManager chaining.
-            Also handles BOOT_COMPLETED to restart the alarm and reschedule notifications.
-        -->
-        <receiver
-            android:name=".WidgetUpdateReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.noor.app.WIDGET_UPDATE" />
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
-
-        <!--
-            Native prayer notification receiver — fired by AlarmManager at each prayer time.
-            Completely offline: shows notification without app being open or internet.
-        -->
-        <receiver
-            android:name=".PrayerNotificationReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.noor.app.PRAYER_NOTIF" />
-            </intent-filter>
-        </receiver>
-
     </application>
 
     <!-- ── Permissions ─────────────────────────────────────────────────── -->
 
     <!-- Network -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Notifications (Android 13+ = API 33+) -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- Exact alarms — required for on-time prayer notifications and widget -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-
-    <!-- Receive boot broadcast to reschedule alarms after device restart -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Location — for prayer times and Qibla direction -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

@@ -41,7 +41,6 @@ import {
   getOrCreateLocalUid,
   getProfileCache,
 } from "@/lib/rtdb";
-import { requestAllPermissionsOnce } from "@/lib/permissions";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -158,7 +157,6 @@ function App() {
     const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
     document.documentElement.classList.toggle('dark', theme === 'dark');
     setIsLoggedIn(true);
-    requestAllPermissionsOnce();
   }, []);
 
   useEffect(() => {
@@ -176,7 +174,6 @@ function App() {
           const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
           document.documentElement.classList.toggle('dark', theme === 'dark');
           setIsLoggedIn(true);
-          requestAllPermissionsOnce();
         } else {
           setIsLoggedIn(false);
         }
@@ -192,7 +189,6 @@ function App() {
           const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
           document.documentElement.classList.toggle('dark', theme === 'dark');
           setIsLoggedIn(true);
-          requestAllPermissionsOnce();
           return;
         }
       }
