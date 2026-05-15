@@ -73,7 +73,7 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
         );
 
         Coordinates           coords = new Coordinates(lat, lng);
-        CalculationParameters params = CalculationMethod.EGYPTIAN.get();
+        CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
         PrayerTimes           pt     = new PrayerTimes(coords, today, params);
 
         String[] names = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
