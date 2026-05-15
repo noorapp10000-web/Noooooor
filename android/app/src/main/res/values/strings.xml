@@ -4,4 +4,5 @@
     <string name="title_activity_main">Noor</string>
     <string name="package_name">com.noor.app</string>
     <string name="custom_url_scheme">com.noor.app</string>
+    <string name="widget_description">ويدجت الصلاة القادمة — تطبيق نور</string>
 </resources>

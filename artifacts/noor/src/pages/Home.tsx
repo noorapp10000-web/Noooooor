@@ -4,6 +4,7 @@ import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache } from '@/lib/rtdb';
 import { syncPrayerNotifications, getNotificationSettings } from '@/lib/notifications';
+import { updatePrayerWidget } from '@/lib/widget';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -140,19 +141,32 @@ export function Home() {
 
   useEffect(() => {
     if (!times || dateOffset !== 0) return;
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
+    // Use Cairo timezone for current time comparison (all supported govs are Egypt)
+    const nowCairo = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Cairo',
+    }).format(new Date());
+    const [nowH, nowM] = nowCairo.split(':').map(Number);
+    const nowMins = (nowH === 24 ? 0 : nowH) * 60 + nowM;
     let found = false;
+    let nextName = '';
+    let nextTime = '';
     for (const p of PRAYERS) {
       const t24 = (times[p.id] ?? '').substring(0, 5);
       if (t24 && toMins(t24) > nowMins) {
         setNextPrayer({ name: p.name, time24: t24 });
+        nextName = p.name;
+        nextTime = t24;
         found = true;
         break;
       }
     }
     if (!found && times['Fajr']) {
       setNextPrayer({ name: 'الفجر', time24: times['Fajr'].substring(0, 5) });
+      nextName = 'الفجر';
+      nextTime = times['Fajr'].substring(0, 5);
+    }
+    if (nextName && nextTime) {
+      updatePrayerWidget(nextName, fmt12(nextTime));
     }
   }, [times, dateOffset]);
 

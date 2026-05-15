@@ -50,12 +50,14 @@ type PrayerTimesResult = {
 function _ptIsoDate(offset: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().split('T')[0]; // YYYY-MM-DD
+  // Use Egypt timezone so the date matches Cairo's current date (not UTC)
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(d);
 }
 
 
 function _ptCacheKey(lat: number, lng: number, isoDate: string): string {
-  return `noor_pt_${lat.toFixed(4)}_${lng.toFixed(4)}_${isoDate}`;
+  // _v2 suffix busts old UTC-based cache entries
+  return `noor_pt2_${lat.toFixed(4)}_${lng.toFixed(4)}_${isoDate}`;
 }
 
 function _ptLoad(lat: number, lng: number, isoDate: string): PrayerTimesResult | null {
@@ -73,13 +75,15 @@ function _ptLoad(lat: number, lng: number, isoDate: string): PrayerTimesResult |
 function _ptSave(lat: number, lng: number, isoDate: string, result: PrayerTimesResult): void {
   try {
     localStorage.setItem(_ptCacheKey(lat, lng, isoDate), JSON.stringify({ isoDate, result }));
-    // Purge entries older than 14 days to keep storage tidy
+    // Purge entries older than 14 days and any old v1 UTC-based entries
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 14);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    const cutoffStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(cutoff);
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k?.startsWith('noor_pt_')) {
+      if (!k) continue;
+      if (k.startsWith('noor_pt_')) { localStorage.removeItem(k); continue; } // old UTC format
+      if (k.startsWith('noor_pt2_')) {
         const datePart = k.split('_').pop() ?? '';
         if (datePart < cutoffStr) localStorage.removeItem(k);
       }
@@ -181,6 +185,17 @@ export function useVerseWords(surah: number, ayah: number) {
 // Hijri date: enriched from aladhan API in background if network available.
 // • City/day changes → different query key → instant recompute via adhan.js
 // • Works 100% offline forever, no first-fetch requirement
+// Format a Date in Egypt timezone (Africa/Cairo = UTC+2, all supported govs are in Egypt)
+function _fmtEgypt(date: Date | undefined): string {
+  if (!date) return '00:00';
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Cairo',
+  }).formatToParts(date);
+  const h = parts.find(p => p.type === 'hour')?.value ?? '00';
+  const m = parts.find(p => p.type === 'minute')?.value ?? '00';
+  return `${h === '24' ? '00' : h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+}
+
 function _computePrayerTimes(lat: number, lng: number, dateOffset: number): PrayerTimesResult {
   const isoDate = _ptIsoDate(dateOffset);
   const cached = _ptLoad(lat, lng, isoDate);
@@ -190,8 +205,7 @@ function _computePrayerTimes(lat: number, lng: number, dateOffset: number): Pray
   const d = new Date();
   d.setDate(d.getDate() + dateOffset);
   const pt = new PrayerTimes(coords, d, params);
-  const fmt = (date: Date | undefined) =>
-    date ? `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}` : '00:00';
+  const fmt = _fmtEgypt;
   const midnight = (pt as unknown as { midnight?: Date }).midnight;
   const result: PrayerTimesResult = {
     timings: {
@@ -228,8 +242,7 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
       const d = new Date();
       d.setDate(d.getDate() + dateOffset);
       const pt = new PrayerTimes(coords, d, params);
-      const fmtD = (date: Date | undefined) =>
-        date ? `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}` : '00:00';
+      const fmtD = _fmtEgypt;
       const midnight = (pt as unknown as { midnight?: Date }).midnight;
       const result: PrayerTimesResult = {
         timings: {
