@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 
 import com.batoulapps.adhan.CalculationMethod;
 import com.batoulapps.adhan.CalculationParameters;
@@ -22,20 +23,36 @@ import java.util.TimeZone;
 /**
  * Standalone BroadcastReceiver — runs every minute via AlarmManager chaining.
  *
- * It uses Adhan (pure math) to compute the next prayer time and stores the
- * result in SharedPreferences. PrayerWidgetProvider then feeds the prayer
- * epoch into a Chronometer which counts down every second automatically,
- * so no per-second alarms are needed.
+ * Uses Adhan (pure math) to compute next prayer time and stores the result in
+ * SharedPreferences. PrayerWidgetProvider reads those values and updates the widget.
  *
- * Triggered by:
- *  - WidgetAlarmManager (every minute, exact)
- *  - BOOT_COMPLETED / MY_PACKAGE_REPLACED
- *  - Widget onEnabled / onUpdate
+ * DST is handled automatically: we use TimeZone.getDefault() which reflects the
+ * device's current timezone rules (including any DST offset).
  */
 public class WidgetUpdateReceiver extends BroadcastReceiver {
 
     private static final double DEFAULT_LAT = 30.0444; // Cairo fallback
     private static final double DEFAULT_LNG = 31.2357;
+
+    private static final String[] PRAYER_NAMES_EN = {
+        "Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"
+    };
+
+    private static final String[] HIJRI_MONTH_NAMES = {
+        "Muharram", "Safar", "Rabi' I", "Rabi' II",
+        "Jumada I", "Jumada II", "Rajab", "Sha'ban",
+        "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"
+    };
+
+    private static final String[] GREGORIAN_MONTH_NAMES = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+
+    private static final String[] DAY_NAMES = {
+        "Sunday", "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday"
+    };
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -45,8 +62,7 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
 
     /**
      * Pure Java prayer-time calculation — no internet, no app required.
-     * Reads saved lat/lng → calculates next prayer → saves epoch to prefs →
-     * refreshes all widget instances on screen.
+     * Uses device timezone for DST-safe calculation.
      */
     static void recalcAndUpdate(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(
@@ -61,30 +77,30 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
             prefs.getLong("widget_lng", Double.doubleToLongBits(DEFAULT_LNG))
         );
 
-        TimeZone cairoTZ = TimeZone.getTimeZone("Africa/Cairo");
-        Calendar nowCal  = Calendar.getInstance(cairoTZ);
-        Date     now     = nowCal.getTime();
+        // Use device timezone — automatically handles DST
+        TimeZone tz  = TimeZone.getDefault();
+        Calendar now = Calendar.getInstance(tz);
+        Date nowDate = now.getTime();
 
-        // ── Calculate today's prayer times (Adhan, Egyptian method) ───────
+        // ── Today's prayer times (Adhan, Egyptian method) ─────────────────
         DateComponents today = new DateComponents(
-            nowCal.get(Calendar.YEAR),
-            nowCal.get(Calendar.MONTH) + 1,
-            nowCal.get(Calendar.DAY_OF_MONTH)
+            now.get(Calendar.YEAR),
+            now.get(Calendar.MONTH) + 1,
+            now.get(Calendar.DAY_OF_MONTH)
         );
 
         Coordinates           coords = new Coordinates(lat, lng);
         CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
         PrayerTimes           pt     = new PrayerTimes(coords, today, params);
 
-        String[] names = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
-        Date[]   times = { pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha };
+        Date[] times = { pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha };
 
-        String nextName = null;
-        Date   nextTime = null;
+        String nextName  = null;
+        Date   nextTime  = null;
 
         for (int i = 0; i < times.length; i++) {
-            if (times[i] != null && times[i].after(now)) {
-                nextName = names[i];
+            if (times[i] != null && times[i].after(nowDate)) {
+                nextName = PRAYER_NAMES_EN[i];
                 nextTime = times[i];
                 break;
             }
@@ -92,7 +108,7 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
 
         // All today's prayers passed → tomorrow's Fajr
         if (nextName == null) {
-            Calendar tomorrow = Calendar.getInstance(cairoTZ);
+            Calendar tomorrow = Calendar.getInstance(tz);
             tomorrow.add(Calendar.DAY_OF_MONTH, 1);
             DateComponents tomorrowDate = new DateComponents(
                 tomorrow.get(Calendar.YEAR),
@@ -100,35 +116,113 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
                 tomorrow.get(Calendar.DAY_OF_MONTH)
             );
             PrayerTimes tp = new PrayerTimes(coords, tomorrowDate, params);
-            nextName = "الفجر";
+            nextName = "Fajr";
             nextTime = tp.fajr;
         }
 
         if (nextTime == null) return;
 
-        // ── Format prayer time label (Arabic 12-h) ───────────────────────
-        SimpleDateFormat sdf = new SimpleDateFormat("h:mm", Locale.ENGLISH);
-        sdf.setTimeZone(cairoTZ);
-        Calendar pCal = Calendar.getInstance(cairoTZ);
-        pCal.setTime(nextTime);
-        String amPm    = pCal.get(Calendar.HOUR_OF_DAY) >= 12 ? "م" : "ص";
-        String timeFmt = sdf.format(nextTime) + " " + amPm;
+        // ── Format prayer time label (12-h English) ───────────────────────
+        SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.ENGLISH);
+        sdf.setTimeZone(tz);
+        String timeFmt = "At " + sdf.format(nextTime);
+
+        // ── Compute countdown H / M / S ───────────────────────────────────
+        long remainingMs = Math.max(0L, nextTime.getTime() - System.currentTimeMillis());
+        long totalSec    = remainingMs / 1000L;
+        int  hours       = (int)(totalSec / 3600);
+        int  minutes     = (int)((totalSec % 3600) / 60);
+        int  seconds     = (int)(totalSec % 60);
+
+        // ── Gregorian date string ─────────────────────────────────────────
+        int dayOfWeek = now.get(Calendar.DAY_OF_WEEK) - 1; // 0=Sun
+        String gregorianDate = DAY_NAMES[dayOfWeek] + ", "
+            + now.get(Calendar.DAY_OF_MONTH) + " "
+            + GREGORIAN_MONTH_NAMES[now.get(Calendar.MONTH)] + " "
+            + now.get(Calendar.YEAR);
+
+        // ── Hijri date string (offline, device ICU for API 24+) ──────────
+        String hijriDate = buildHijriDate(now);
 
         // ── Persist for PrayerWidgetProvider ─────────────────────────────
-        // Store the prayer time as an epoch (ms) — the Chronometer base is
-        // derived from this at draw time, giving live per-second countdown.
         prefs.edit()
-            .putString(PrayerWidgetProvider.KEY_PRAYER_NAME,  nextName)
-            .putString(PrayerWidgetProvider.KEY_PRAYER_TIME,  timeFmt)
-            .putLong(PrayerWidgetProvider.KEY_PRAYER_EPOCH,   nextTime.getTime())
+            .putString(PrayerWidgetProvider.KEY_PRAYER_NAME,      nextName)
+            .putString(PrayerWidgetProvider.KEY_PRAYER_TIME,      timeFmt)
+            .putLong(PrayerWidgetProvider.KEY_PRAYER_EPOCH,       nextTime.getTime())
+            .putInt(PrayerWidgetProvider.KEY_COUNTDOWN_H,         hours)
+            .putInt(PrayerWidgetProvider.KEY_COUNTDOWN_M,         minutes)
+            .putInt(PrayerWidgetProvider.KEY_COUNTDOWN_S,         seconds)
+            .putString(PrayerWidgetProvider.KEY_HIJRI_DATE,       hijriDate)
+            .putString(PrayerWidgetProvider.KEY_GREGORIAN_DATE,   gregorianDate)
             .apply();
 
-        // ── Refresh all widget instances on screen ────────────────────────
+        // ── Refresh all widget instances ──────────────────────────────────
         AppWidgetManager manager   = AppWidgetManager.getInstance(context);
         ComponentName    component = new ComponentName(context, PrayerWidgetProvider.class);
         int[]            ids       = manager.getAppWidgetIds(component);
         for (int id : ids) {
             PrayerWidgetProvider.updateWidget(context, manager, id);
         }
+    }
+
+    /**
+     * Returns Hijri date string like "17 Dhul Qadah 1447".
+     * Uses Android ICU library (API 24+) which correctly implements Umm Al-Qura.
+     * Falls back to tabular arithmetic calendar on API 22-23.
+     */
+    @SuppressWarnings("NewApi")
+    private static String buildHijriDate(Calendar gregorianCal) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                // android.icu is available from API 24 — uses Umm Al-Qura calendar
+                android.icu.util.IslamicCalendar ic = new android.icu.util.IslamicCalendar();
+                ic.setTimeInMillis(gregorianCal.getTimeInMillis());
+                int hYear  = ic.get(android.icu.util.Calendar.YEAR);
+                int hMonth = ic.get(android.icu.util.Calendar.MONTH); // 0 = Muharram
+                int hDay   = ic.get(android.icu.util.Calendar.DAY_OF_MONTH);
+                return hDay + " " + HIJRI_MONTH_NAMES[hMonth] + " " + hYear;
+            }
+        } catch (Exception ignored) {
+            // fall through to tabular calculation
+        }
+
+        // Tabular Hijri calendar fallback (arithmetic, accurate within ±1 day)
+        int y = gregorianCal.get(Calendar.YEAR);
+        int m = gregorianCal.get(Calendar.MONTH) + 1;
+        int d = gregorianCal.get(Calendar.DAY_OF_MONTH);
+        int[] h = tabularGregorianToHijri(y, m, d);
+        return h[2] + " " + HIJRI_MONTH_NAMES[h[1] - 1] + " " + h[0];
+    }
+
+    /**
+     * Arithmetic (tabular) Gregorian → Hijri conversion.
+     * Returns int[]{hYear, hMonth (1-12), hDay}.
+     */
+    static int[] tabularGregorianToHijri(int y, int m, int d) {
+        if (m < 3) { y--; m += 12; }
+        int a  = y / 100;
+        int b  = 2 - a + (a / 4);
+        int jd = (int)(365.25f * (y + 4716)) + (int)(30.6001f * (m + 1)) + d + b - 1524;
+
+        int L  = jd - 1948440 + 10632;
+        int n  = (L - 1) / 10631;
+        L      = L - 10631 * n + 354;
+        int j  = ((10985 - L) / 5316) * ((50 * L) / 17719)
+                 + (L / 5670) * ((43 * L) / 15238);
+        L      = L - ((32 - j) / 5316) * ((52 * L) / 179)
+                 - (j / 28) * ((182 * j) / 5170);
+
+        int hYear  = 30 * n + j - 30;
+        int hMonth = (8 * L + 51) / 15 + 1;
+        int hDay   = L - (59 * (hMonth - 1)) / 2;
+
+        // Sanity clamp
+        if (hDay   < 1)  { hMonth--; hDay += 30; }
+        if (hMonth < 1)  { hYear--;  hMonth = 12; }
+        if (hMonth > 12) { hYear++;  hMonth = 1;  }
+        if (hDay   < 1)  hDay = 1;
+        if (hDay   > 30) hDay = 30;
+
+        return new int[]{hYear, hMonth, hDay};
     }
 }

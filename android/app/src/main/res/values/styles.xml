@@ -16,16 +16,14 @@
     </style>
 
     <!--
-        Launch theme — Android 12+ SplashScreen API.
-        Shows the full Noor logo without any cropping.
-        windowSplashScreenIconBackgroundColor = same as splash background
-        so the adaptive-icon mask blends into the background seamlessly.
+        Launch theme — shows the full Noor logo full-screen without any cropping.
+        We use android:windowBackground with a layer-list drawable (cream bg + logo),
+        bypassing the SplashScreen API circle mask on Android 12+.
+        The Capacitor SplashScreen plugin handles its own overlay independently.
     -->
-    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/splash_background</item>
-        <item name="postSplashScreenTheme">@style/AppTheme</item>
+    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+        <item name="android:windowFullscreen">true</item>
     </style>
 
 </resources>
