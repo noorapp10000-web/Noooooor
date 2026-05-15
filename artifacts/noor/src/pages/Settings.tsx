@@ -7,7 +7,8 @@ import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContex
 import { useUserSetting } from '@/hooks/use-user-setting';
 import {
   getNotificationSettings, saveNotificationSettings,
-  cancelAllPrayerNotifications, type NotificationSettings, type PrayerKey,
+  cancelAllPrayerNotifications, sendTestNotification,
+  type NotificationSettings, type PrayerKey,
 } from '@/lib/notifications';
 import { requestAllPermissionsOnce, resetPermissionsFlag } from '@/lib/permissions';
 import { Capacitor } from '@capacitor/core';
@@ -217,6 +218,8 @@ export function Settings() {
 
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>(getNotificationSettings);
   const isNative = Capacitor.isNativePlatform();
+  const [testNotifState, setTestNotifState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [testCountdown, setTestCountdown] = useState(0);
 
   useEffect(() => {
     saveNotificationSettings(notifSettings);
@@ -226,6 +229,22 @@ export function Settings() {
   function setEnabled(val: boolean) { setNotifSettings(s => ({ ...s, enabled: val })); if (!val) cancelAllPrayerNotifications(); }
   function setMinutesBefore(val: number) { setNotifSettings(s => ({ ...s, minutesBefore: val })); }
   function togglePrayer(key: PrayerKey) { setNotifSettings(s => ({ ...s, prayers: { ...s.prayers, [key]: !s.prayers[key] } })); }
+
+  async function handleTestNotification() {
+    if (testNotifState !== 'idle') return;
+    setTestNotifState('sending');
+    const DELAY = 5;
+    const ok = await sendTestNotification(DELAY);
+    if (!ok) { setTestNotifState('error'); setTimeout(() => setTestNotifState('idle'), 3000); return; }
+    setTestNotifState('sent');
+    setTestCountdown(DELAY);
+    const interval = setInterval(() => {
+      setTestCountdown(prev => {
+        if (prev <= 1) { clearInterval(interval); setTimeout(() => setTestNotifState('idle'), 1500); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -375,11 +394,66 @@ export function Settings() {
                 </div>
               </div>
               {isNative && (
-                <button onClick={() => { resetPermissionsFlag(); requestAllPermissionsOnce(); }}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold transition-all"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'rgba(46,204,113,0.1)', color: '#2ecc71', border: '1px solid rgba(46,204,113,0.3)' }}>
-                  🔔 طلب إذن الإشعارات مجدداً
-                </button>
+                <div className="space-y-2">
+                  <button onClick={() => { resetPermissionsFlag(); requestAllPermissionsOnce(); }}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold transition-all"
+                    style={{ fontFamily: '"Tajawal", sans-serif', background: 'rgba(46,204,113,0.1)', color: '#2ecc71', border: '1px solid rgba(46,204,113,0.3)' }}>
+                    🔔 طلب إذن الإشعارات مجدداً
+                  </button>
+
+                  {/* Test notification button */}
+                  <button
+                    data-testid="button-test-notification"
+                    onClick={handleTestNotification}
+                    disabled={testNotifState !== 'idle'}
+                    className="w-full rounded-xl p-3 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-70"
+                    style={{
+                      fontFamily: '"Tajawal", sans-serif',
+                      background: testNotifState === 'sent'
+                        ? 'rgba(46,204,113,0.12)'
+                        : testNotifState === 'error'
+                        ? 'rgba(239,68,68,0.1)'
+                        : 'rgba(193,154,107,0.08)',
+                      border: `1.5px solid ${
+                        testNotifState === 'sent'
+                          ? 'rgba(46,204,113,0.4)'
+                          : testNotifState === 'error'
+                          ? 'rgba(239,68,68,0.3)'
+                          : 'rgba(193,154,107,0.25)'
+                      }`,
+                    }}
+                  >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: testNotifState === 'sent'
+                          ? 'rgba(46,204,113,0.2)'
+                          : testNotifState === 'error'
+                          ? 'rgba(239,68,68,0.15)'
+                          : 'rgba(193,154,107,0.15)',
+                      }}>
+                      <span className="text-lg leading-none">
+                        {testNotifState === 'sending' ? '⏳' : testNotifState === 'sent' ? '✅' : testNotifState === 'error' ? '❌' : '🧪'}
+                      </span>
+                    </div>
+                    <div className="text-right flex-1">
+                      <p className="font-bold text-sm"
+                        style={{
+                          color: testNotifState === 'sent' ? '#2ecc71'
+                            : testNotifState === 'error' ? '#ef4444'
+                            : textColor,
+                        }}>
+                        {testNotifState === 'sending' && 'جاري الإرسال...'}
+                        {testNotifState === 'sent' && testCountdown > 0 && `سيصلك الإشعار خلال ${testCountdown} ثانية`}
+                        {testNotifState === 'sent' && testCountdown === 0 && 'وصل الإشعار! ✓'}
+                        {testNotifState === 'error' && 'تأكد من منح إذن الإشعارات'}
+                        {testNotifState === 'idle' && 'إشعار تجريبي'}
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: subText }}>
+                        {testNotifState === 'idle' ? 'اضغط لاختبار وصول الإشعارات' : testNotifState === 'sent' ? 'اغلق التطبيق لترى الإشعار' : ''}
+                      </p>
+                    </div>
+                  </button>
+                </div>
               )}
             </div>
           )}

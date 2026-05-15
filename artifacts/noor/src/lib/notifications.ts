@@ -247,6 +247,44 @@ async function _syncToNative(s: NotificationSettings): Promise<void> {
   }
 }
 
+// ─── Test notification ────────────────────────────────────────────────────────
+
+/**
+ * Fires a single test notification after `delaySeconds` (default 5).
+ * Returns true if the notification was scheduled, false if unavailable.
+ */
+export async function sendTestNotification(delaySeconds = 5): Promise<boolean> {
+  const plugin = await _getPlugin();
+  if (!plugin) return false;
+
+  const hasPermission = await checkNotificationPermission();
+  if (!hasPermission) {
+    const granted = await requestNotificationPermission();
+    if (!granted) return false;
+  }
+
+  const triggerDate = new Date(Date.now() + delaySeconds * 1_000);
+
+  try {
+    await plugin.schedule({
+      notifications: [
+        {
+          id: 9001,
+          title: '🕌 تطبيق نُور — إشعار تجريبي',
+          body: `الإشعارات تعمل بشكل صحيح ✅`,
+          schedule: { at: triggerDate, allowWhileIdle: true },
+          channelId: 'prayer_channel',
+          iconColor: '#C19A6B',
+          sound: 'default',
+        },
+      ],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
