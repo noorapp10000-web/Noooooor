@@ -2,7 +2,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -13,25 +13,27 @@ import { SplashScreen } from "@/components/SplashScreen";
 
 import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
-import { Quran } from "@/pages/Quran";
-import { Azkar } from "@/pages/Azkar";
-import { Tasbih } from "@/pages/Tasbih";
-import { Rankings } from "@/pages/Rankings";
-import { MoreMenu } from "@/pages/MoreMenu";
-import { Settings } from "@/pages/Settings";
-import { Asma } from "@/pages/Asma";
-import { Reciters } from "@/pages/Reciters";
-import { SpeedReader } from "@/pages/SpeedReader";
-import { EgyptianRadio } from "@/pages/EgyptianRadio";
-import { Qibla } from "@/pages/Qibla";
-import { Hadith } from "@/pages/Hadith";
-import { IslamicHistory } from "@/pages/IslamicHistory";
-import { ProphetStories } from "@/pages/ProphetStories";
-import { IslamicQuizzes } from "@/pages/IslamicQuizzes";
-import { Sunnah } from "@/pages/Sunnah";
-import { IslamicTV } from "@/pages/IslamicTV";
-import { VoiceComparison } from "@/pages/VoiceComparison";
-import { HifzTest } from "@/pages/HifzTest";
+
+// ── Lazy-loaded pages (loaded only when navigated to) ───────────────────────
+const Quran         = lazy(() => import("@/pages/Quran").then(m => ({ default: m.Quran })));
+const Azkar         = lazy(() => import("@/pages/Azkar").then(m => ({ default: m.Azkar })));
+const Tasbih        = lazy(() => import("@/pages/Tasbih").then(m => ({ default: m.Tasbih })));
+const Rankings      = lazy(() => import("@/pages/Rankings").then(m => ({ default: m.Rankings })));
+const MoreMenu      = lazy(() => import("@/pages/MoreMenu").then(m => ({ default: m.MoreMenu })));
+const Settings      = lazy(() => import("@/pages/Settings").then(m => ({ default: m.Settings })));
+const Asma          = lazy(() => import("@/pages/Asma").then(m => ({ default: m.Asma })));
+const Reciters      = lazy(() => import("@/pages/Reciters").then(m => ({ default: m.Reciters })));
+const SpeedReader   = lazy(() => import("@/pages/SpeedReader").then(m => ({ default: m.SpeedReader })));
+const EgyptianRadio = lazy(() => import("@/pages/EgyptianRadio").then(m => ({ default: m.EgyptianRadio })));
+const Qibla         = lazy(() => import("@/pages/Qibla").then(m => ({ default: m.Qibla })));
+const Hadith        = lazy(() => import("@/pages/Hadith").then(m => ({ default: m.Hadith })));
+const IslamicHistory= lazy(() => import("@/pages/IslamicHistory").then(m => ({ default: m.IslamicHistory })));
+const ProphetStories= lazy(() => import("@/pages/ProphetStories").then(m => ({ default: m.ProphetStories })));
+const IslamicQuizzes= lazy(() => import("@/pages/IslamicQuizzes").then(m => ({ default: m.IslamicQuizzes })));
+const Sunnah        = lazy(() => import("@/pages/Sunnah").then(m => ({ default: m.Sunnah })));
+const IslamicTV     = lazy(() => import("@/pages/IslamicTV").then(m => ({ default: m.IslamicTV })));
+const VoiceComparison=lazy(() => import("@/pages/VoiceComparison").then(m => ({ default: m.VoiceComparison })));
+const HifzTest      = lazy(() => import("@/pages/HifzTest").then(m => ({ default: m.HifzTest })));
 
 import {
   initUserSyncFast,
@@ -41,22 +43,35 @@ import {
 } from "@/lib/rtdb";
 import { requestAllPermissionsOnce } from "@/lib/permissions";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+/* ── Page loading fallback ─────────────────────────────────────────────────── */
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}>
+      <div className="w-8 h-8 border-[3px] border-[#C19A6B]/30 border-t-[#C19A6B] rounded-full animate-spin" />
+    </div>
+  );
+}
 
 /* ── Try to migrate old Firebase localStorage cache ────────── */
 function tryMigrateFirebaseCache(): boolean {
   try {
-    // Look for any old Firebase-based cache key
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('noor_rtdb_cache_') && !localStorage.getItem('noor_uid')) {
         const uid = key.replace('noor_rtdb_cache_', '');
-        // Check if this cache has a profile
         const raw = localStorage.getItem(key);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed?.profile) {
-            // Migrate: set noor_uid to this uid (data already in place)
             localStorage.setItem('noor_uid', uid);
             console.info('[Noor] تمت الهجرة من Firebase تلقائياً');
             return true;
@@ -100,29 +115,31 @@ function FullScreenShell({ children }: { children: React.ReactNode }) {
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/"><AppShell><Home /></AppShell></Route>
-      <Route path="/quran"><AppShell><Quran /></AppShell></Route>
-      <Route path="/azkar"><AppShell><Azkar /></AppShell></Route>
-      <Route path="/tasbih"><AppShell><Tasbih /></AppShell></Route>
-      <Route path="/ranking"><AppShell><Rankings /></AppShell></Route>
-      <Route path="/more"><AppShell><MoreMenu /></AppShell></Route>
-      <Route path="/settings"><AppShell><Settings /></AppShell></Route>
-      <Route path="/asma"><FullScreenShell><Asma /></FullScreenShell></Route>
-      <Route path="/reciters"><FullScreenShell><Reciters /></FullScreenShell></Route>
-      <Route path="/speed-reader"><FullScreenShell><SpeedReader /></FullScreenShell></Route>
-      <Route path="/radio"><FullScreenShell><EgyptianRadio /></FullScreenShell></Route>
-      <Route path="/qibla"><FullScreenShell><Qibla /></FullScreenShell></Route>
-      <Route path="/hadith"><FullScreenShell><Hadith /></FullScreenShell></Route>
-      <Route path="/history"><FullScreenShell><IslamicHistory /></FullScreenShell></Route>
-      <Route path="/prophets"><FullScreenShell><ProphetStories /></FullScreenShell></Route>
-      <Route path="/quizzes"><FullScreenShell><IslamicQuizzes /></FullScreenShell></Route>
-      <Route path="/sunnah"><FullScreenShell><Sunnah /></FullScreenShell></Route>
-      <Route path="/tv"><FullScreenShell><IslamicTV /></FullScreenShell></Route>
-      <Route path="/voice-comparison"><FullScreenShell><VoiceComparison /></FullScreenShell></Route>
-      <Route path="/hifz-test"><FullScreenShell><HifzTest /></FullScreenShell></Route>
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        <Route path="/"><AppShell><Home /></AppShell></Route>
+        <Route path="/quran"><AppShell><Quran /></AppShell></Route>
+        <Route path="/azkar"><AppShell><Azkar /></AppShell></Route>
+        <Route path="/tasbih"><AppShell><Tasbih /></AppShell></Route>
+        <Route path="/ranking"><AppShell><Rankings /></AppShell></Route>
+        <Route path="/more"><AppShell><MoreMenu /></AppShell></Route>
+        <Route path="/settings"><AppShell><Settings /></AppShell></Route>
+        <Route path="/asma"><FullScreenShell><Asma /></FullScreenShell></Route>
+        <Route path="/reciters"><FullScreenShell><Reciters /></FullScreenShell></Route>
+        <Route path="/speed-reader"><FullScreenShell><SpeedReader /></FullScreenShell></Route>
+        <Route path="/radio"><FullScreenShell><EgyptianRadio /></FullScreenShell></Route>
+        <Route path="/qibla"><FullScreenShell><Qibla /></FullScreenShell></Route>
+        <Route path="/hadith"><FullScreenShell><Hadith /></FullScreenShell></Route>
+        <Route path="/history"><FullScreenShell><IslamicHistory /></FullScreenShell></Route>
+        <Route path="/prophets"><FullScreenShell><ProphetStories /></FullScreenShell></Route>
+        <Route path="/quizzes"><FullScreenShell><IslamicQuizzes /></FullScreenShell></Route>
+        <Route path="/sunnah"><FullScreenShell><Sunnah /></FullScreenShell></Route>
+        <Route path="/tv"><FullScreenShell><IslamicTV /></FullScreenShell></Route>
+        <Route path="/voice-comparison"><FullScreenShell><VoiceComparison /></FullScreenShell></Route>
+        <Route path="/hifz-test"><FullScreenShell><HifzTest /></FullScreenShell></Route>
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
@@ -136,7 +153,6 @@ function App() {
   }, []);
 
   const handleLoginComplete = useCallback(() => {
-    // After onboarding, reload state
     const uid = getOrCreateLocalUid();
     initUserSyncFast(uid);
     const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
@@ -150,12 +166,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Check for existing local profile
     const checkProfile = () => {
       const uid = localStorage.getItem('noor_uid');
 
       if (uid) {
-        // Has local identity — check if profile is complete
         initUserSyncFast(uid);
         const profile = getProfileCache();
         if (profile?.governorateId) {
@@ -169,7 +183,6 @@ function App() {
         return;
       }
 
-      // No local uid — try to migrate from old Firebase cache
       const migrated = tryMigrateFirebaseCache();
       if (migrated) {
         const newUid = localStorage.getItem('noor_uid')!;
@@ -184,7 +197,6 @@ function App() {
         }
       }
 
-      // New user — show onboarding
       setIsLoggedIn(false);
     };
 

@@ -17,9 +17,8 @@
 
     <!--
         Launch theme — uses Android 12+ SplashScreen API.
-        Dark background (#060810) matches the first frame of the React SplashScreen
-        so there's NO white flash before the Dome of the Rock image appears.
-        The app icon is shown centered during cold start.
+        Warm cream background (#F5E6CC) matches the app icon background.
+        Logo foreground icon is centered on the cream splash.
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>

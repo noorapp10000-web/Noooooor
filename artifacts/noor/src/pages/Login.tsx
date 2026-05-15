@@ -7,6 +7,18 @@ import { initUserSync, saveProfileToRTDB, getOrCreateLocalUid, importAllData, ty
 interface LoginProps { onComplete: () => void; }
 type Step = 'name' | 'city';
 
+// ─── Profanity Filter ──────────────────────────────────────────────────────────
+const BLOCKED_PATTERNS = [
+  // Arabic offensive/sexual words
+  /كس|كوس|طيز|زب(?:ي|ك|ه)?|نيك|ينيك|تنتاك|متناك|منيوك|شرموط|عاهر|قحب|بتاع كس|ابن.*?(كلب|حمار|شرموط|عاهر|قحب)|يلعن|كسمك|كسم|اتناك|هبل|أهبل|مجنون.*جنس|تسحق|لواط|شاذ|خنثى|عرص|مخنث|فاسق.*جنس/i,
+  // English offensive/sexual words
+  /\b(fuck|shit|bitch|cunt|dick|pussy|cock|ass(?:hole)?|whore|slut|bastard|nigger|faggot|retard|rape|porn|sex(?:y)?|nude|naked|boobs?|penis|vagina|tits?)\b/i,
+];
+
+function isProfane(name: string): boolean {
+  return BLOCKED_PATTERNS.some(p => p.test(name));
+}
+
 function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string) => void }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.65)', border: '1.5px solid rgba(139,99,64,0.2)', boxShadow: '0 2px 8px rgba(93,48,16,0.06)' }}>
@@ -49,6 +61,7 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
 export function Login({ onComplete }: LoginProps) {
   const [step, setStep] = useState<Step>('name');
   const [name, setName] = useState('');
+  const [nameError, setNameError] = useState('');
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -70,6 +83,17 @@ export function Login({ onComplete }: LoginProps) {
     };
     reader.readAsText(file);
     e.target.value = '';
+  }
+
+  function handleNameNext() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (isProfane(trimmed)) {
+      setNameError('هذا الاسم غير مقبول، الرجاء اختيار اسم مناسب');
+      return;
+    }
+    setNameError('');
+    setStep('city');
   }
 
   const slide = {
@@ -162,30 +186,43 @@ export function Login({ onComplete }: LoginProps) {
                   className="relative w-full rounded-2xl transition-all duration-200"
                   style={{
                     background: focused ? '#fff' : 'rgba(255,255,255,0.8)',
-                    border: focused ? '1.5px solid #C19A6B' : '1.5px solid rgba(139,99,64,0.25)',
-                    boxShadow: focused ? '0 0 0 3px rgba(193,154,107,0.15)' : '0 1px 4px rgba(93,48,16,0.08)',
+                    border: nameError ? '1.5px solid #ef4444' : focused ? '1.5px solid #C19A6B' : '1.5px solid rgba(139,99,64,0.25)',
+                    boxShadow: nameError ? '0 0 0 3px rgba(239,68,68,0.1)' : focused ? '0 0 0 3px rgba(193,154,107,0.15)' : '0 1px 4px rgba(93,48,16,0.08)',
                   }}
                 >
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: focused ? '#C19A6B' : 'rgba(139,99,64,0.45)' }}>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: nameError ? '#ef4444' : focused ? '#C19A6B' : 'rgba(139,99,64,0.45)' }}>
                     <User className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={e => { setName(e.target.value); if (nameError) setNameError(''); }}
                     placeholder="اسمك..."
                     autoFocus
+                    maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
                     style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    onKeyDown={e => e.key === 'Enter' && name.trim() && setStep('city')}
+                    onKeyDown={e => e.key === 'Enter' && name.trim() && handleNameNext()}
                   />
                 </div>
+
+                {/* Profanity error */}
+                {nameError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs mt-2 text-center font-bold"
+                    style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}
+                  >
+                    ⚠️ {nameError}
+                  </motion.p>
+                )}
               </div>
 
               <button
-                onClick={() => name.trim() && setStep('city')}
+                onClick={handleNameNext}
                 disabled={!name.trim()}
                 className="w-full py-4 rounded-2xl transition-all disabled:opacity-30 flex items-center justify-center gap-2"
                 style={BTN_GOLD}
