@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Sparkles } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, Bell, BellOff, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
@@ -471,10 +471,6 @@ export function Settings() {
           className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
           {/* Header */}
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(145deg, #C19A6B, #7B4F2E)' }}>
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
             <div className="flex-1">
               <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>التذكير اليومي</p>
               <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>حديث أو آية يومياً في وقت تختاره</p>

@@ -119,14 +119,49 @@ async function _getPlugin() {
   return LocalNotifications;
 }
 
+/**
+ * Creates the notification channel via the Capacitor plugin (required on Android 8+).
+ * Must be called before any schedule() call — the native Java channel is not enough.
+ */
+async function _ensureChannel(): Promise<void> {
+  const plugin = await _getPlugin();
+  if (!plugin) return;
+  try {
+    await plugin.createChannel({
+      id: 'prayer_channel',
+      name: 'تنبيهات الصلاة',
+      description: 'تذكير بمواقيت الصلاة والتذكير اليومي',
+      importance: 4,   // IMPORTANCE_HIGH
+      visibility: 1,   // VISIBILITY_PUBLIC
+      vibration: true,
+      lights: true,
+      lightColor: '#C19A6B',
+      sound: 'default',
+    });
+  } catch { /* channel may already exist — safe to ignore */ }
+}
+
+/**
+ * Wraps requestPermissions() with a timeout so it never hangs forever
+ * (Huawei/Honor EMUI sometimes silently blocks the permission dialog).
+ */
+async function _requestPermWithTimeout(
+  plugin: NonNullable<Awaited<ReturnType<typeof _getPlugin>>>,
+  timeoutMs = 10_000,
+): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(false), timeoutMs);
+    plugin.requestPermissions()
+      .then(res => { clearTimeout(timer); resolve(res.display === 'granted'); })
+      .catch(() => { clearTimeout(timer); resolve(false); });
+  });
+}
+
 /** Ask the OS for notification permission. Returns true if granted. */
 export async function requestNotificationPermission(): Promise<boolean> {
   const plugin = await _getPlugin();
   if (!plugin) return false;
-  try {
-    const res = await plugin.requestPermissions();
-    return res.display === 'granted';
-  } catch { return false; }
+  return _requestPermWithTimeout(plugin);
 }
 
 /** Check current notification permission status. */
@@ -337,6 +372,8 @@ export async function syncDailyReminder(): Promise<void> {
   const plugin = await _getPlugin();
   if (!plugin) return;
 
+  await _ensureChannel();
+
   const s = getDailyReminderSettings();
 
   if (!s.enabled) {
@@ -390,6 +427,9 @@ export async function sendTestNotification(delaySeconds = 5): Promise<boolean> {
   const plugin = await _getPlugin();
   if (!plugin) return false;
 
+  // Always create the channel first — required on Android 8+
+  await _ensureChannel();
+
   const hasPermission = await checkNotificationPermission();
   if (!hasPermission) {
     const granted = await requestNotificationPermission();
@@ -428,6 +468,8 @@ export async function sendTestNotification(delaySeconds = 5): Promise<boolean> {
 export async function syncPrayerNotifications(): Promise<void> {
   const plugin = await _getPlugin();
   if (!plugin) return;
+
+  await _ensureChannel();
 
   const settings = getNotificationSettings();
 

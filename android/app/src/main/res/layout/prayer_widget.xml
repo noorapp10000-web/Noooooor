@@ -186,13 +186,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Hidden Chronometer for driving live second updates (invisible, just fires) -->
-    <Chronometer
-        android:id="@+id/widget_countdown"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
-
     <!-- Prayer time -->
     <TextView
         android:id="@+id/widget_prayer_time"
