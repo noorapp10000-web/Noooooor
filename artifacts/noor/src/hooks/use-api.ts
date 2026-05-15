@@ -47,13 +47,33 @@ type PrayerTimesResult = {
   hijri: { day: string; month: { ar: string }; year: string } | undefined;
 };
 
-function _ptIsoDate(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  // Use Egypt timezone so the date matches Cairo's current date (not UTC)
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(d);
+// ── Egypt timezone helper ──────────────────────────────────────────────────
+// All 27 Egyptian governorates share a single IANA timezone: Africa/Cairo
+// DST rules (since Egypt reinstated DST in 2023):
+//   Summer (EEST): last Friday of April  → last Thursday of October  = UTC+3
+//   Winter (EET):  last Thursday of Oct  → last Friday of April      = UTC+2
+// Intl.DateTimeFormat with timeZone:'Africa/Cairo' handles DST automatically.
+// ──────────────────────────────────────────────────────────────────────────
+const EGYPT_TZ = 'Africa/Cairo';
+
+/**
+ * Returns the current date in Egypt timezone as {y, mo, da}.
+ * Safe regardless of server UTC offset or DST state.
+ */
+function _egyptDate(dateOffset = 0): Date {
+  const nowStr = new Intl.DateTimeFormat('en-CA', { timeZone: EGYPT_TZ }).format(new Date());
+  const [y, mo, da] = nowStr.split('-').map(Number);
+  // new Date(y, mo-1, da+offset, 12) → local-constructor at noon
+  // adhan extracts year/month/day via getFullYear/getMonth/getDate (local methods)
+  // → always sees Egypt's correct day, not the server's UTC day
+  return new Date(y, mo - 1, da + dateOffset, 12, 0, 0);
 }
 
+function _ptIsoDate(dateOffset = 0): string {
+  const d = _egyptDate(dateOffset);
+  // Format back in Egypt TZ to get the authoritative YYYY-MM-DD for that offset
+  return new Intl.DateTimeFormat('en-CA', { timeZone: EGYPT_TZ }).format(d);
+}
 
 function _ptCacheKey(lat: number, lng: number, isoDate: string): string {
   // _v2 suffix busts old UTC-based cache entries
@@ -185,11 +205,11 @@ export function useVerseWords(surah: number, ayah: number) {
 // Hijri date: enriched from aladhan API in background if network available.
 // • City/day changes → different query key → instant recompute via adhan.js
 // • Works 100% offline forever, no first-fetch requirement
-// Format a Date in Egypt timezone (Africa/Cairo = UTC+2, all supported govs are in Egypt)
+// Format a Date object into HH:MM using Egypt timezone (handles UTC+2/UTC+3 DST)
 function _fmtEgypt(date: Date | undefined): string {
   if (!date) return '00:00';
   const parts = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Cairo',
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: EGYPT_TZ,
   }).formatToParts(date);
   const h = parts.find(p => p.type === 'hour')?.value ?? '00';
   const m = parts.find(p => p.type === 'minute')?.value ?? '00';
@@ -202,8 +222,9 @@ function _computePrayerTimes(lat: number, lng: number, dateOffset: number): Pray
   if (cached) return cached;
   const coords = new Coordinates(lat, lng);
   const params = CalculationMethod.Egyptian();
-  const d = new Date();
-  d.setDate(d.getDate() + dateOffset);
+  // Use Egypt's calendar date (not UTC) so adhan sees the correct local day
+  // Works for all 27 Egyptian governorates + DST transitions
+  const d = _egyptDate(dateOffset);
   const pt = new PrayerTimes(coords, d, params);
   const fmt = _fmtEgypt;
   const midnight = (pt as unknown as { midnight?: Date }).midnight;
@@ -239,8 +260,8 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
       // ── 2. Compute with adhan.js (static import — always bundled, no network) ─
       const coords = new Coordinates(lat, lng);
       const params = CalculationMethod.Egyptian();
-      const d = new Date();
-      d.setDate(d.getDate() + dateOffset);
+      // _egyptDate: uses Egypt's current calendar day (all 27 govs, auto-DST)
+      const d = _egyptDate(dateOffset);
       const pt = new PrayerTimes(coords, d, params);
       const fmtD = _fmtEgypt;
       const midnight = (pt as unknown as { midnight?: Date }).midnight;

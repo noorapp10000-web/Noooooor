@@ -173,15 +173,20 @@ export function Home() {
   useEffect(() => {
     if (!nextPrayer || dateOffset !== 0) return;
     const tick = () => {
-      const now = new Date();
+      // Compute countdown entirely in Egypt timezone (handles UTC+2/UTC+3 DST)
+      const nowCairoParts = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false, timeZone: 'Africa/Cairo',
+      }).format(new Date()).split(':').map(Number);
+      const nowCairoH = nowCairoParts[0] === 24 ? 0 : nowCairoParts[0];
+      const nowSecs = nowCairoH * 3600 + nowCairoParts[1] * 60 + nowCairoParts[2];
       const [ph, pm] = nextPrayer.time24.split(':').map(Number);
-      const target = new Date();
-      target.setHours(ph, pm, 0, 0);
-      if (target <= now) target.setDate(target.getDate() + 1);
-      const totalSecs = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000));
-      const hh = Math.floor(totalSecs / 3600).toString().padStart(2, '0');
-      const mm = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
-      const ss = (totalSecs % 60).toString().padStart(2, '0');
+      const targetSecs = ph * 3600 + pm * 60;
+      let diff = targetSecs - nowSecs;
+      if (diff < 0) diff += 86400; // prayer is tomorrow
+      const hh = Math.floor(diff / 3600).toString().padStart(2, '0');
+      const mm = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+      const ss = (diff % 60).toString().padStart(2, '0');
       setCountdown(`${hh}:${mm}:${ss}`);
     };
     tick();
