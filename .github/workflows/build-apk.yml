@@ -28,29 +28,23 @@ jobs:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # ── 2. Java 17 (required by Android Gradle Plugin 8) ─────────────────────
+      # ── 2. Java 17 ───────────────────────────────────────────────────────────
       - name: ☕ Setup Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # ── 3. Accept pre-installed Android SDK licenses ─────────────────────────
-      # ubuntu-latest already ships with Android SDK 34 + build-tools 34.0.0
+      # ── 3. Accept Android SDK licenses ───────────────────────────────────────
       - name: 🤖 Accept Android SDK licenses
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -f "$SDKMANAGER" ]; then
-            SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name "sdkmanager" 2>/dev/null | head -1)
-          fi
-          if [ -n "$SDKMANAGER" ]; then
-            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          else
-            echo "sdkmanager not found, skipping license acceptance"
-          fi
+          [ ! -f "$SDKMANAGER" ] && SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name "sdkmanager" 2>/dev/null | head -1)
+          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms/" 2>/dev/null | grep "android-34" && echo "✅ android-34 found" || echo "⚠️ android-34 NOT found"
+          ls "$ANDROID_HOME/build-tools/" 2>/dev/null | grep "34" && echo "✅ build-tools 34 found" || echo "⚠️ build-tools 34 NOT found"
 
       # ── 4. pnpm ───────────────────────────────────────────────────────────────
       - name: 📦 Setup pnpm
@@ -73,8 +67,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+          restore-keys: gradle-${{ runner.os }}-
 
       # ── 7. Install dependencies ───────────────────────────────────────────────
       - name: 📚 Install dependencies
@@ -94,35 +87,71 @@ jobs:
           BASE_PATH: /
           NODE_ENV: production
 
-      # ── 9. Sync Capacitor → copies web assets + generates Android files ───────
+      # ── 9. Sync Capacitor ─────────────────────────────────────────────────────
       - name: 🔄 Sync Capacitor to Android
         run: pnpm exec cap sync android
 
-      # ── 10. Verify cap sync output ────────────────────────────────────────────
-      - name: 🔍 Verify Android project structure
+      # ── 10. Ensure capacitor-cordova-android-plugins exists ──────────────────
+      # This dir is gitignored but required by Gradle. cap sync creates it,
+      # but we create a minimal fallback in case cap sync skipped it.
+      - name: 🔧 Ensure capacitor-cordova-android-plugins is ready
         run: |
+          PLUGINS_DIR="android/capacitor-cordova-android-plugins"
+          mkdir -p "$PLUGINS_DIR/src/main"
+
+          # cordova.variables.gradle — referenced by capacitor.build.gradle
+          if [ ! -f "$PLUGINS_DIR/cordova.variables.gradle" ]; then
+            echo "⚠️ cordova.variables.gradle missing — creating fallback"
+            echo "ext {}" > "$PLUGINS_DIR/cordova.variables.gradle"
+          else
+            echo "✅ cordova.variables.gradle exists"
+          fi
+
+          # build.gradle — required for Gradle project compilation
+          if [ ! -f "$PLUGINS_DIR/build.gradle" ]; then
+            echo "⚠️ build.gradle missing — creating fallback"
+            cat > "$PLUGINS_DIR/build.gradle" << 'GRADLE'
+apply plugin: 'com.android.library'
+android {
+    namespace "cordovaplugins"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+GRADLE
+          else
+            echo "✅ build.gradle exists"
+          fi
+
+          # AndroidManifest.xml
+          if [ ! -f "$PLUGINS_DIR/src/main/AndroidManifest.xml" ]; then
+            echo "⚠️ AndroidManifest.xml missing — creating fallback"
+            cat > "$PLUGINS_DIR/src/main/AndroidManifest.xml" << 'XML'
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+</manifest>
+XML
+          else
+            echo "✅ AndroidManifest.xml exists"
+          fi
+
+          echo ""
           echo "=== capacitor.settings.gradle ==="
           cat android/capacitor.settings.gradle
           echo ""
-          echo "=== capacitor-cordova-android-plugins exists? ==="
-          ls android/capacitor-cordova-android-plugins/ 2>/dev/null && echo "EXISTS" || echo "MISSING"
-          echo ""
-          echo "=== Web assets copied? ==="
-          ls android/app/src/main/assets/public/ 2>/dev/null | head -5 && echo "EXISTS" || echo "MISSING"
-          echo ""
-          echo "=== node_modules/@capacitor/android path ==="
-          find node_modules -path "*/capacitor/android/capacitor" -type d 2>/dev/null | head -3 || echo "NOT FOUND"
+          echo "=== web assets copied? ==="
+          [ -d android/app/src/main/assets/public ] && echo "✅ YES" || echo "❌ NO"
 
-      # ── 11. Create local.properties (required by Gradle to find Android SDK) ──
+      # ── 11. Create local.properties ───────────────────────────────────────────
       - name: 📝 Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-          echo "Created local.properties with sdk.dir=$ANDROID_HOME"
-          echo "Verify SDK exists:"
-          ls "$ANDROID_HOME/platforms/" 2>/dev/null | grep "android-34" || echo "WARNING: android-34 not found!"
-          ls "$ANDROID_HOME/build-tools/" 2>/dev/null | grep "34" || echo "WARNING: build-tools 34 not found!"
+        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      # ── 12. Make Gradle wrapper executable ────────────────────────────────────
+      # ── 12. Gradle permissions ────────────────────────────────────────────────
       - name: 🔧 Fix Gradle permissions
         run: chmod +x android/gradlew
 
@@ -130,39 +159,57 @@ jobs:
       - name: 🔨 Build Debug APK
         if: ${{ github.event.inputs.build_type != 'release' }}
         run: |
-          set -o pipefail
           cd android
           ./gradlew assembleDebug \
             --no-daemon \
             --stacktrace \
-            --info \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
-            2>&1 | tee /tmp/gradle.log
-          grep -E "FAILURE|ERROR|error:|Exception|Could not" /tmp/gradle.log | tail -50 || true
+            2>&1 | tee /tmp/gradle.log; RC=${PIPESTATUS[0]}
+
+          if [ $RC -ne 0 ]; then
+            echo ""
+            echo "╔══════════════ BUILD FAILURE ══════════════╗"
+            grep -A 40 "What went wrong:" /tmp/gradle.log | head -80 || true
+            echo "╚═══════════════════════════════════════════╝"
+            exit $RC
+          fi
 
       - name: 🔐 Build Release APK
         if: ${{ github.event.inputs.build_type == 'release' }}
         run: |
-          set -o pipefail
           cd android
           ./gradlew assembleRelease \
             --no-daemon \
             --stacktrace \
-            --info \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
-            2>&1 | tee /tmp/gradle.log
-          grep -E "FAILURE|ERROR|error:|Exception|Could not" /tmp/gradle.log | tail -50 || true
+            2>&1 | tee /tmp/gradle.log; RC=${PIPESTATUS[0]}
 
-      # ── 14. Find APK ──────────────────────────────────────────────────────────
+          if [ $RC -ne 0 ]; then
+            echo ""
+            echo "╔══════════════ BUILD FAILURE ══════════════╗"
+            grep -A 40 "What went wrong:" /tmp/gradle.log | head -80 || true
+            echo "╚═══════════════════════════════════════════╝"
+            exit $RC
+          fi
+
+      # ── 14. Upload full Gradle log (always, for debugging) ────────────────────
+      - name: 📋 Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-log
+          path: /tmp/gradle.log
+          if-no-files-found: ignore
+
+      # ── 15. Find APK ──────────────────────────────────────────────────────────
       - name: 📋 Locate APK
         id: find_apk
         run: |
           APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          echo "✅ APK found: $APK_PATH"
           ls -lh "$APK_PATH"
 
-      # ── 15. Upload APK ────────────────────────────────────────────────────────
+      # ── 16. Upload APK ────────────────────────────────────────────────────────
       - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -171,21 +218,12 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      # ── 16. Summary ───────────────────────────────────────────────────────────
+      # ── 17. Summary ───────────────────────────────────────────────────────────
       - name: 📊 Build Summary
         run: |
           APK_PATH="${{ steps.find_apk.outputs.apk_path }}"
           APK_SIZE=$(du -sh "$APK_PATH" | cut -f1)
-          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
-          VERSION="${{ github.event.inputs.version || '2.2' }}"
           echo "## 🕌 تطبيق نُور — تم البناء بنجاح ✅" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| التفصيل | القيمة |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| الإصدار | v${VERSION} |" >> $GITHUB_STEP_SUMMARY
-          echo "| حجم الـ APK | ${APK_SIZE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Package ID | com.noor.app |" >> $GITHUB_STEP_SUMMARY
-          echo "| نوع البناء | ${BUILD_TYPE} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ⬇️ لتحميل الـ APK:" >> $GITHUB_STEP_SUMMARY
-          echo "اذهب إلى **Actions → هذا الـ workflow → Artifacts** وحمّل الملف" >> $GITHUB_STEP_SUMMARY
+          echo "| APK Size | $APK_SIZE |" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | com.noor.app |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ github.event.inputs.build_type || 'debug' }} |" >> $GITHUB_STEP_SUMMARY
