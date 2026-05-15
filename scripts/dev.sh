@@ -12,7 +12,7 @@ echo "Root dir: $ROOT_DIR"
 echo "API server dev port: $API_SERVER_PORT"
 echo "Vite port: $VITE_PORT"
 
-# Resolve tsx binary
+# Resolve tsx binary - check artifact-level first, then root
 TSX_BIN="$ROOT_DIR/artifacts/api-server/node_modules/.bin/tsx"
 if [ ! -f "$TSX_BIN" ]; then
   TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
@@ -40,5 +40,4 @@ echo "Starting API server (dev) on port $API_SERVER_PORT..."
   "$TSX_BIN" ./src/index.ts 2>&1) &
 
 echo "Starting Vite dev server on port $VITE_PORT..."
-cd "$ROOT_DIR/artifacts/noor" && exec env VITE_PORT=$VITE_PORT PORT=$VITE_PORT API_SERVER_PORT=$API_SERVER_PORT \
-  "$VITE_BIN" --config "$ROOT_DIR/artifacts/noor/vite.config.ts"
+cd "$ROOT_DIR/artifacts/noor" && export VITE_PORT=$VITE_PORT PORT=$VITE_PORT API_SERVER_PORT=$API_SERVER_PORT && exec "$VITE_BIN" --config "$ROOT_DIR/artifacts/noor/vite.config.ts"
