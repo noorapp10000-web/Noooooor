@@ -38,11 +38,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ── 3. Accept Android SDK licenses + install required components ──────────
-      - name: 🤖 Setup Android SDK components
+      # ── 3. Accept pre-installed Android SDK licenses ─────────────────────────
+      # ubuntu-latest already ships with Android SDK 34 + build-tools 34.0.0
+      - name: 🤖 Accept Android SDK licenses
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name "sdkmanager" 2>/dev/null | head -1)
+          fi
+          if [ -n "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          else
+            echo "sdkmanager not found, skipping license acceptance"
+          fi
 
       # ── 4. pnpm ───────────────────────────────────────────────────────────────
       - name: 📦 Setup pnpm
