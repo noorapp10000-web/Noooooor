@@ -31,70 +31,31 @@
         android:fontFamily="sans-serif-medium"
         android:layout_marginTop="2dp" />
 
-    <!-- Countdown row: [HH] : [MM] -->
+    <!-- Countdown: live HH:MM:SS via Chronometer (updates every second, no battery drain) -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="6dp"
-        android:layoutDirection="ltr">
+        android:background="@drawable/widget_digit_bg"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:gravity="center"
+        android:layout_marginTop="6dp">
 
-        <LinearLayout
+        <Chronometer
+            android:id="@+id/widget_countdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/widget_digit_bg"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:gravity="center">
-            <TextView
-                android:id="@+id/widget_countdown_hh"
-                android:layout_width="36dp"
-                android:layout_height="wrap_content"
-                android:text="00"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:fontFamily="sans-serif-medium"
-                android:gravity="center" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=":"
-            android:textColor="#99FFFFFF"
-            android:textSize="20sp"
-            android:paddingStart="5dp"
-            android:paddingEnd="5dp"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
             android:fontFamily="sans-serif-medium"
             android:gravity="center"
-            android:paddingBottom="3dp" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/widget_digit_bg"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:gravity="center">
-            <TextView
-                android:id="@+id/widget_countdown_mm"
-                android:layout_width="36dp"
-                android:layout_height="wrap_content"
-                android:text="00"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:fontFamily="sans-serif-medium"
-                android:gravity="center" />
-        </LinearLayout>
+            android:layoutDirection="ltr" />
 
     </LinearLayout>
 
-    <!-- Prayer time -->
+    <!-- Prayer time in gold -->
     <TextView
         android:id="@+id/widget_prayer_time"
         android:layout_width="match_parent"

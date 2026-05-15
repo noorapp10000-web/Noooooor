@@ -20,40 +20,40 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Standalone BroadcastReceiver that:
- *  1. Calculates the next prayer time using Adhan (pure math, no internet).
- *  2. Writes the prayer name, time, and countdown to SharedPreferences.
- *  3. Refreshes every widget on screen.
- *  4. Chains the next AlarmManager tick (every minute).
+ * Standalone BroadcastReceiver — runs every minute via AlarmManager chaining.
+ *
+ * It uses Adhan (pure math) to compute the next prayer time and stores the
+ * result in SharedPreferences. PrayerWidgetProvider then feeds the prayer
+ * epoch into a Chronometer which counts down every second automatically,
+ * so no per-second alarms are needed.
  *
  * Triggered by:
  *  - WidgetAlarmManager (every minute, exact)
- *  - BOOT_COMPLETED (restart alarm after reboot)
- *  - Widget onEnabled / first added
+ *  - BOOT_COMPLETED / MY_PACKAGE_REPLACED
+ *  - Widget onEnabled / onUpdate
  */
 public class WidgetUpdateReceiver extends BroadcastReceiver {
 
-    // Default fallback: Cairo, Egypt
-    private static final double DEFAULT_LAT = 30.0444;
+    private static final double DEFAULT_LAT = 30.0444; // Cairo fallback
     private static final double DEFAULT_LNG = 31.2357;
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        // Run the update logic then schedule the next minute alarm
         recalcAndUpdate(context);
         WidgetAlarmManager.scheduleNext(context);
     }
 
     /**
-     * Core logic — completely independent of the app being open.
-     * Reads saved lat/lng → calculates prayer times → updates all widgets.
+     * Pure Java prayer-time calculation — no internet, no app required.
+     * Reads saved lat/lng → calculates next prayer → saves epoch to prefs →
+     * refreshes all widget instances on screen.
      */
     static void recalcAndUpdate(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(
             PrayerWidgetProvider.PREFS_NAME, Context.MODE_PRIVATE
         );
 
-        // Load location (saved by the app on first open, fallback = Cairo)
+        // Location (saved by app on first open; fallback = Cairo)
         double lat = Double.longBitsToDouble(
             prefs.getLong("widget_lat", Double.doubleToLongBits(DEFAULT_LAT))
         );
@@ -65,16 +65,16 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
         Calendar nowCal  = Calendar.getInstance(cairoTZ);
         Date     now     = nowCal.getTime();
 
-        // ── Calculate today's prayer times using Adhan ────────────────────
+        // ── Calculate today's prayer times (Adhan, Egyptian method) ───────
         DateComponents today = new DateComponents(
             nowCal.get(Calendar.YEAR),
             nowCal.get(Calendar.MONTH) + 1,
             nowCal.get(Calendar.DAY_OF_MONTH)
         );
 
-        Coordinates         coords = new Coordinates(lat, lng);
+        Coordinates           coords = new Coordinates(lat, lng);
         CalculationParameters params = CalculationMethod.EGYPTIAN.get();
-        PrayerTimes         pt     = new PrayerTimes(coords, today, params);
+        PrayerTimes           pt     = new PrayerTimes(coords, today, params);
 
         String[] names = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
         Date[]   times = { pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha };
@@ -90,7 +90,7 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
             }
         }
 
-        // All today's prayers passed → use tomorrow's Fajr
+        // All today's prayers passed → tomorrow's Fajr
         if (nextName == null) {
             Calendar tomorrow = Calendar.getInstance(cairoTZ);
             tomorrow.add(Calendar.DAY_OF_MONTH, 1);
@@ -99,36 +99,31 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
                 tomorrow.get(Calendar.MONTH) + 1,
                 tomorrow.get(Calendar.DAY_OF_MONTH)
             );
-            PrayerTimes tomorrowPt = new PrayerTimes(coords, tomorrowDate, params);
+            PrayerTimes tp = new PrayerTimes(coords, tomorrowDate, params);
             nextName = "الفجر";
-            nextTime = tomorrowPt.fajr;
+            nextTime = tp.fajr;
         }
 
         if (nextTime == null) return;
 
-        // ── Countdown ─────────────────────────────────────────────────────
-        long diffMs   = Math.max(0, nextTime.getTime() - now.getTime());
-        long diffSecs = diffMs / 1000L;
-        long hh       = diffSecs / 3600L;
-        long mm       = (diffSecs % 3600L) / 60L;
-        String countdown = String.format(Locale.US, "%02d:%02d", hh, mm);
-
-        // ── Format prayer time in Arabic 12-h ────────────────────────────
+        // ── Format prayer time label (Arabic 12-h) ───────────────────────
         SimpleDateFormat sdf = new SimpleDateFormat("h:mm", Locale.ENGLISH);
         sdf.setTimeZone(cairoTZ);
         Calendar pCal = Calendar.getInstance(cairoTZ);
         pCal.setTime(nextTime);
-        String amPm             = pCal.get(Calendar.HOUR_OF_DAY) >= 12 ? "م" : "ص";
-        String prayerTimeFormatted = sdf.format(nextTime) + " " + amPm;
+        String amPm    = pCal.get(Calendar.HOUR_OF_DAY) >= 12 ? "م" : "ص";
+        String timeFmt = sdf.format(nextTime) + " " + amPm;
 
-        // ── Persist so PrayerWidgetProvider.updateWidget() can read them ─
+        // ── Persist for PrayerWidgetProvider ─────────────────────────────
+        // Store the prayer time as an epoch (ms) — the Chronometer base is
+        // derived from this at draw time, giving live per-second countdown.
         prefs.edit()
-            .putString(PrayerWidgetProvider.KEY_PRAYER_NAME, nextName)
-            .putString(PrayerWidgetProvider.KEY_PRAYER_TIME, prayerTimeFormatted)
-            .putString(PrayerWidgetProvider.KEY_COUNTDOWN,   countdown)
+            .putString(PrayerWidgetProvider.KEY_PRAYER_NAME,  nextName)
+            .putString(PrayerWidgetProvider.KEY_PRAYER_TIME,  timeFmt)
+            .putLong(PrayerWidgetProvider.KEY_PRAYER_EPOCH,   nextTime.getTime())
             .apply();
 
-        // ── Refresh every widget instance on screen ───────────────────────
+        // ── Refresh all widget instances on screen ────────────────────────
         AppWidgetManager manager   = AppWidgetManager.getInstance(context);
         ComponentName    component = new ComponentName(context, PrayerWidgetProvider.class);
         int[]            ids       = manager.getAppWidgetIds(component);
