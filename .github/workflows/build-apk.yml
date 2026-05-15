@@ -31,21 +31,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ── 2. Java 17 (required by Android Gradle 8) ────────────────────────────
+      # ── 2. Java 17 (required by Android Gradle Plugin 8) ─────────────────────
       - name: ☕ Setup Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      # ── 3. Android SDK 34 ─────────────────────────────────────────────────────
-      - name: 🤖 Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 📲 Install SDK platform 34 + build-tools
+      # ── 3. Accept Android SDK licenses + install required components ──────────
+      - name: 🤖 Setup Android SDK components
         run: |
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" --sdk_root=$ANDROID_SDK_ROOT
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
       # ── 4. pnpm ───────────────────────────────────────────────────────────────
       - name: 📦 Setup pnpm
@@ -60,33 +57,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      # ── 6. Install dependencies ───────────────────────────────────────────────
-      - name: 📚 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ── 7. Build the web app (Vite) ───────────────────────────────────────────
-      - name: 🏗️ Build web app
-        run: cd artifacts/noor && pnpm build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY || 'AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074' }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'noooooor-app.firebaseapp.com' }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'noooooor-app' }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'noooooor-app.firebasestorage.app' }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '230599694330' }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID || '1:230599694330:web:8780636368d1469591f643' }}
-          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID || 'G-P96TYMPZQF' }}
-          BASE_PATH: /
-          NODE_ENV: production
-
-      # ── 8. Sync Capacitor → copies web assets + plugins into Android project ──
-      - name: 🔄 Sync Capacitor to Android
-        run: pnpm exec cap sync android
-
-      # ── 9. Make Gradle wrapper executable ─────────────────────────────────────
-      - name: 🔧 Fix Gradle permissions
-        run: chmod +x android/gradlew
-
-      # ── 10. Cache Gradle ───────────────────────────────────────────────────────
+      # ── 6. Cache Gradle ───────────────────────────────────────────────────────
       - name: 💾 Cache Gradle
         uses: actions/cache@v4
         with:
@@ -97,7 +68,37 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      # ── 11. Build APK ─────────────────────────────────────────────────────────
+      # ── 7. Install dependencies ───────────────────────────────────────────────
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── 8. Build the web app (Vite) ───────────────────────────────────────────
+      - name: 🏗️ Build web app
+        run: pnpm --filter @workspace/noor run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY != '' && secrets.VITE_FIREBASE_API_KEY || 'AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074' }}
+          VITE_FIREBASE_AUTH_DOMAIN: 'noooooor-app.firebaseapp.com'
+          VITE_FIREBASE_PROJECT_ID: 'noooooor-app'
+          VITE_FIREBASE_STORAGE_BUCKET: 'noooooor-app.firebasestorage.app'
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '230599694330'
+          VITE_FIREBASE_APP_ID: '1:230599694330:web:8780636368d1469591f643'
+          VITE_FIREBASE_MEASUREMENT_ID: 'G-P96TYMPZQF'
+          BASE_PATH: /
+          NODE_ENV: production
+
+      # ── 9. Sync Capacitor → copies web assets + generates Android files ───────
+      - name: 🔄 Sync Capacitor to Android
+        run: pnpm exec cap sync android --deployment
+
+      # ── 10. Create local.properties (required by Gradle to find Android SDK) ──
+      - name: 📝 Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
+      # ── 11. Make Gradle wrapper executable ────────────────────────────────────
+      - name: 🔧 Fix Gradle permissions
+        run: chmod +x android/gradlew
+
+      # ── 12. Build APK ─────────────────────────────────────────────────────────
       - name: 🔨 Build Debug APK
         if: ${{ github.event.inputs.build_type != 'release' }}
         run: |
@@ -116,7 +117,7 @@ jobs:
             --stacktrace \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
 
-      # ── 12. Find APK ──────────────────────────────────────────────────────────
+      # ── 13. Find APK ──────────────────────────────────────────────────────────
       - name: 📋 Locate APK
         id: find_apk
         run: |
@@ -125,16 +126,16 @@ jobs:
           echo "✅ APK found: $APK_PATH"
           ls -lh "$APK_PATH"
 
-      # ── 13. Upload APK ────────────────────────────────────────────────────────
+      # ── 14. Upload APK ────────────────────────────────────────────────────────
       - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: نور-v${{ github.event.inputs.version || '2.3' }}-${{ github.event.inputs.build_type || 'debug' }}
+          name: noor-v${{ github.event.inputs.version || '2.2' }}-${{ github.event.inputs.build_type || 'debug' }}
           path: ${{ steps.find_apk.outputs.apk_path }}
           retention-days: 30
           if-no-files-found: error
 
-      # ── 14. Summary ───────────────────────────────────────────────────────────
+      # ── 15. Summary ───────────────────────────────────────────────────────────
       - name: 📊 Build Summary
         run: |
           APK_PATH="${{ steps.find_apk.outputs.apk_path }}"
@@ -149,11 +150,6 @@ jobs:
           echo "| حجم الـ APK | ${APK_SIZE} |" >> $GITHUB_STEP_SUMMARY
           echo "| Package ID | com.noor.app |" >> $GITHUB_STEP_SUMMARY
           echo "| نوع البناء | ${BUILD_TYPE} |" >> $GITHUB_STEP_SUMMARY
-          echo "| الإشعارات | ✅ مفعّلة (Capacitor LocalNotifications) |" >> $GITHUB_STEP_SUMMARY
-          echo "| صلاحيات الإشعارات | POST_NOTIFICATIONS + SCHEDULE_EXACT_ALARM |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ⬇️ لتحميل الـ APK:" >> $GITHUB_STEP_SUMMARY
           echo "اذهب إلى **Actions → هذا الـ workflow → Artifacts** وحمّل الملف" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔔 ملاحظة عن الإشعارات:" >> $GITHUB_STEP_SUMMARY
-          echo "بعد تثبيت APK، التطبيق سيطلب إذن الإشعارات عند أول فتح. على Android 12+ قد تحتاج لتفعيل 'التنبيهات الدقيقة' يدوياً من إعدادات التطبيق." >> $GITHUB_STEP_SUMMARY
