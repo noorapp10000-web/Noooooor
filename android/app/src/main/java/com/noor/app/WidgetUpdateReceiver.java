@@ -1,0 +1,139 @@
+package com.noor.app;
+
+import android.appwidget.AppWidgetManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+
+import com.batoulapps.adhan.CalculationMethod;
+import com.batoulapps.adhan.CalculationParameters;
+import com.batoulapps.adhan.Coordinates;
+import com.batoulapps.adhan.PrayerTimes;
+import com.batoulapps.adhan.data.DateComponents;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+ * Standalone BroadcastReceiver that:
+ *  1. Calculates the next prayer time using Adhan (pure math, no internet).
+ *  2. Writes the prayer name, time, and countdown to SharedPreferences.
+ *  3. Refreshes every widget on screen.
+ *  4. Chains the next AlarmManager tick (every minute).
+ *
+ * Triggered by:
+ *  - WidgetAlarmManager (every minute, exact)
+ *  - BOOT_COMPLETED (restart alarm after reboot)
+ *  - Widget onEnabled / first added
+ */
+public class WidgetUpdateReceiver extends BroadcastReceiver {
+
+    // Default fallback: Cairo, Egypt
+    private static final double DEFAULT_LAT = 30.0444;
+    private static final double DEFAULT_LNG = 31.2357;
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        // Run the update logic then schedule the next minute alarm
+        recalcAndUpdate(context);
+        WidgetAlarmManager.scheduleNext(context);
+    }
+
+    /**
+     * Core logic — completely independent of the app being open.
+     * Reads saved lat/lng → calculates prayer times → updates all widgets.
+     */
+    static void recalcAndUpdate(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+            PrayerWidgetProvider.PREFS_NAME, Context.MODE_PRIVATE
+        );
+
+        // Load location (saved by the app on first open, fallback = Cairo)
+        double lat = Double.longBitsToDouble(
+            prefs.getLong("widget_lat", Double.doubleToLongBits(DEFAULT_LAT))
+        );
+        double lng = Double.longBitsToDouble(
+            prefs.getLong("widget_lng", Double.doubleToLongBits(DEFAULT_LNG))
+        );
+
+        TimeZone cairoTZ = TimeZone.getTimeZone("Africa/Cairo");
+        Calendar nowCal  = Calendar.getInstance(cairoTZ);
+        Date     now     = nowCal.getTime();
+
+        // ── Calculate today's prayer times using Adhan ────────────────────
+        DateComponents today = new DateComponents(
+            nowCal.get(Calendar.YEAR),
+            nowCal.get(Calendar.MONTH) + 1,
+            nowCal.get(Calendar.DAY_OF_MONTH)
+        );
+
+        Coordinates         coords = new Coordinates(lat, lng);
+        CalculationParameters params = CalculationMethod.EGYPTIAN.get();
+        PrayerTimes         pt     = new PrayerTimes(coords, today, params);
+
+        String[] names = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
+        Date[]   times = { pt.fajr, pt.sunrise, pt.dhuhr, pt.asr, pt.maghrib, pt.isha };
+
+        String nextName = null;
+        Date   nextTime = null;
+
+        for (int i = 0; i < times.length; i++) {
+            if (times[i] != null && times[i].after(now)) {
+                nextName = names[i];
+                nextTime = times[i];
+                break;
+            }
+        }
+
+        // All today's prayers passed → use tomorrow's Fajr
+        if (nextName == null) {
+            Calendar tomorrow = Calendar.getInstance(cairoTZ);
+            tomorrow.add(Calendar.DAY_OF_MONTH, 1);
+            DateComponents tomorrowDate = new DateComponents(
+                tomorrow.get(Calendar.YEAR),
+                tomorrow.get(Calendar.MONTH) + 1,
+                tomorrow.get(Calendar.DAY_OF_MONTH)
+            );
+            PrayerTimes tomorrowPt = new PrayerTimes(coords, tomorrowDate, params);
+            nextName = "الفجر";
+            nextTime = tomorrowPt.fajr;
+        }
+
+        if (nextTime == null) return;
+
+        // ── Countdown ─────────────────────────────────────────────────────
+        long diffMs   = Math.max(0, nextTime.getTime() - now.getTime());
+        long diffSecs = diffMs / 1000L;
+        long hh       = diffSecs / 3600L;
+        long mm       = (diffSecs % 3600L) / 60L;
+        String countdown = String.format(Locale.US, "%02d:%02d", hh, mm);
+
+        // ── Format prayer time in Arabic 12-h ────────────────────────────
+        SimpleDateFormat sdf = new SimpleDateFormat("h:mm", Locale.ENGLISH);
+        sdf.setTimeZone(cairoTZ);
+        Calendar pCal = Calendar.getInstance(cairoTZ);
+        pCal.setTime(nextTime);
+        String amPm             = pCal.get(Calendar.HOUR_OF_DAY) >= 12 ? "م" : "ص";
+        String prayerTimeFormatted = sdf.format(nextTime) + " " + amPm;
+
+        // ── Persist so PrayerWidgetProvider.updateWidget() can read them ─
+        prefs.edit()
+            .putString(PrayerWidgetProvider.KEY_PRAYER_NAME, nextName)
+            .putString(PrayerWidgetProvider.KEY_PRAYER_TIME, prayerTimeFormatted)
+            .putString(PrayerWidgetProvider.KEY_COUNTDOWN,   countdown)
+            .apply();
+
+        // ── Refresh every widget instance on screen ───────────────────────
+        AppWidgetManager manager   = AppWidgetManager.getInstance(context);
+        ComponentName    component = new ComponentName(context, PrayerWidgetProvider.class);
+        int[]            ids       = manager.getAppWidgetIds(component);
+        for (int id : ids) {
+            PrayerWidgetProvider.updateWidget(context, manager, id);
+        }
+    }
+}

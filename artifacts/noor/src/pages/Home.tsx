@@ -166,7 +166,7 @@ export function Home() {
       nextTime = times['Fajr'].substring(0, 5);
     }
     if (nextName && nextTime) {
-      updatePrayerWidget(nextName, fmt12(nextTime));
+      updatePrayerWidget(nextName, fmt12(nextTime), '--:--', activeLat ?? undefined, activeLng ?? undefined);
     }
   }, [times, dateOffset]);
 
@@ -193,7 +193,7 @@ export function Home() {
       const currentMinute = Math.floor(diff / 60);
       if (currentMinute !== lastWidgetMinute) {
         lastWidgetMinute = currentMinute;
-        updatePrayerWidget(nextPrayer.name, fmt12(nextPrayer.time24), `${hh}:${mm}`);
+        updatePrayerWidget(nextPrayer.name, fmt12(nextPrayer.time24), `${hh}:${mm}`, activeLat ?? undefined, activeLng ?? undefined);
       }
     };
     tick();

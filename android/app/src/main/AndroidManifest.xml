@@ -34,7 +34,7 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- LocalNotifications: receive boot to reschedule alarms after reboot -->
+        <!-- LocalNotifications: reschedule prayer alarms after reboot -->
         <receiver
             android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
             android:exported="false">
@@ -56,6 +56,21 @@
                 android:resource="@xml/prayer_widget_info" />
         </receiver>
 
+        <!--
+            Standalone widget updater — fires every minute via AlarmManager.
+            Also handles BOOT_COMPLETED to restart the alarm after reboot.
+            Runs entirely without the app being open.
+        -->
+        <receiver
+            android:name=".WidgetUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.noor.app.WIDGET_UPDATE" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
     <!-- ── Permissions ─────────────────────────────────────────────────── -->
@@ -66,11 +81,11 @@
     <!-- Notifications (Android 13+ = API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Exact alarms — required for on-time prayer notifications -->
+    <!-- Exact alarms — required for on-time prayer notifications and widget -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
-    <!-- Receive boot broadcast to reschedule notifications after device restart -->
+    <!-- Receive boot broadcast to reschedule alarms after device restart -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Location — for prayer times and Qibla direction -->
