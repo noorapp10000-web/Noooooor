@@ -1,0 +1,105 @@
+name: Build Noor Windows EXE
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 2.3)'
+        required: false
+        default: '2.3'
+
+jobs:
+  build-exe:
+    name: Build Noor Windows EXE
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install monorepo dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app (relative base for Electron file://)
+        run: pnpm --filter @workspace/noor run build
+        env:
+          VITE_FIREBASE_API_KEY: 'AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074'
+          VITE_FIREBASE_AUTH_DOMAIN: 'noooooor-app.firebaseapp.com'
+          VITE_FIREBASE_PROJECT_ID: 'noooooor-app'
+          VITE_FIREBASE_STORAGE_BUCKET: 'noooooor-app.firebasestorage.app'
+          VITE_FIREBASE_MESSAGING_SENDER_ID: '230599694330'
+          VITE_FIREBASE_APP_ID: '1:230599694330:web:8780636368d1469591f643'
+          VITE_FIREBASE_MEASUREMENT_ID: 'G-P96TYMPZQF'
+          BASE_PATH: './'
+          NODE_ENV: production
+
+      - name: Prepare Electron bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path electron\www | Out-Null
+          Copy-Item -Recurse -Force artifacts\noor\dist\public\* electron\www\
+          Copy-Item -Force artifacts\noor\public\icon-512.png electron\icon.png
+          Write-Output "Web assets copied: $(Get-ChildItem electron\www -Recurse | Measure-Object).Count files"
+
+      - name: Write electron package.json
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version || '2.3' }}"
+          $pkg = [ordered]@{
+            name        = "noor-app"
+            version     = $version
+            description = "Noor Islamic Companion App - نور"
+            main        = "main.js"
+            author      = "Noor App"
+            license     = "ISC"
+          } | ConvertTo-Json
+          $pkg | Out-File -FilePath electron\package.json -Encoding UTF8
+          Write-Output "electron/package.json written"
+
+      - name: Install Electron & electron-builder
+        shell: pwsh
+        run: |
+          Set-Location electron
+          npm install --save-dev electron@latest electron-builder@latest --prefer-offline
+
+      - name: Build Windows installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Set-Location electron
+          npx electron-builder --win --x64 --config ..\electron-builder.yml
+
+      - name: Upload Windows EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-v${{ github.event.inputs.version || '2.3' }}-windows-setup
+          path: dist-electron/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Build Summary
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist-electron -Filter "*.exe" | Select-Object -First 1
+          $sizeMB = [math]::Round($exe.Length / 1MB, 1)
+          $version = "${{ github.event.inputs.version || '2.3' }}"
+          "## Noor Windows EXE - Build OK" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| File | $($exe.Name) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Size | ${sizeMB} MB |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Version | $version |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Arch | x64 |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
