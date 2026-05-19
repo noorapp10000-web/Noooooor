@@ -206,7 +206,7 @@ export function Home() {
           <h1 className="text-3xl mb-3" style={{ fontFamily: '"Amiri", "Scheherazade New", serif' }}>تطبيق نُـور</h1>
 
           {dateOffset === 0 && nextPrayer ? (
-            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 w-full border border-white/10">
+            <div className="rounded-2xl p-4 w-full border border-white/15" style={{ background: 'rgba(0,0,0,0.30)' }}>
               <p className="text-xs text-primary-foreground/60 mb-1 tracking-widest" style={{ fontFamily: '"Tajawal", sans-serif' }}>الصلاة القادمة</p>
               <p className="text-2xl font-bold mb-2" style={{ fontFamily: '"Amiri", serif', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>{nextPrayer.name}</p>
               <div className="flex items-center justify-center gap-1 mb-1" style={{ direction: 'ltr' }}>
