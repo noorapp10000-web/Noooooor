@@ -1,7 +1,6 @@
 /**
- * store.ts — Pure localStorage persistence (no Firebase)
+ * store.ts — Pure localStorage persistence
  *
- * نفس الـ API القديمة — كل الملفات التانية مش محتاجة تتغير.
  * البيانات محفوظة في localStorage فقط على الجهاز.
  */
 

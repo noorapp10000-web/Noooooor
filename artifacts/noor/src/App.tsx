@@ -60,28 +60,6 @@ function PageLoader() {
   );
 }
 
-/* ── Try to migrate old Firebase localStorage cache ────────── */
-function tryMigrateFirebaseCache(): boolean {
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('noor_rtdb_cache_') && !localStorage.getItem('noor_uid')) {
-        const uid = key.replace('noor_rtdb_cache_', '');
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.profile) {
-            localStorage.setItem('noor_uid', uid);
-            console.info('[Noor] تمت الهجرة من Firebase تلقائياً');
-            return true;
-          }
-        }
-      }
-    }
-  } catch {}
-  return false;
-}
-
 function GlobalBackground() {
   const { activeBgSrc } = useAppSettings();
   if (!activeBgSrc) return null;
@@ -178,19 +156,6 @@ function App() {
           setIsLoggedIn(false);
         }
         return;
-      }
-
-      const migrated = tryMigrateFirebaseCache();
-      if (migrated) {
-        const newUid = localStorage.getItem('noor_uid')!;
-        initUserSyncFast(newUid);
-        const profile = getProfileCache();
-        if (profile?.governorateId) {
-          const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
-          document.documentElement.classList.toggle('dark', theme === 'dark');
-          setIsLoggedIn(true);
-          return;
-        }
       }
 
       setIsLoggedIn(false);

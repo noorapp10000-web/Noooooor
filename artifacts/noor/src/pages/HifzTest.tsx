@@ -500,7 +500,6 @@ export function HifzTest() {
   const [audioEnded, setAudioEnded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Ratings from Firebase cache
   const [ratingsVersion, setRatingsVersion] = useState(0);
 
   // Load Quran data once
