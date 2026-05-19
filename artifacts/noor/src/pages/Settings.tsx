@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff } from 'lucide-react';
 
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
@@ -17,6 +17,34 @@ import {
   scheduleAllNotifications,
 } from '@/lib/notifications';
 
+// Hours available for daily notification: 1م (13) .. 9م (21)
+const DAILY_HOURS = [
+  { label: '1م',  hour: 13 },
+  { label: '2م',  hour: 14 },
+  { label: '3م',  hour: 15 },
+  { label: '4م',  hour: 16 },
+  { label: '5م',  hour: 17 },
+  { label: '6م',  hour: 18 },
+  { label: '7م',  hour: 19 },
+  { label: '8م',  hour: 20 },
+  { label: '9م',  hour: 21 },
+];
+
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-12 h-6 rounded-full transition-all duration-200 relative flex-shrink-0"
+      style={{ background: on ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)' : 'rgba(150,150,150,0.25)' }}
+    >
+      <div
+        className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
+        style={{ right: on ? '2px' : 'calc(100% - 22px)' }}
+      />
+    </button>
+  );
+}
+
 function NotificationSection({
   sectionBg, borderColor, textColor, subText,
 }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
@@ -24,26 +52,23 @@ function NotificationSection({
   const [permGranted, setPermGranted] = useState<boolean | null>(null);
   const [requesting, setRequesting] = useState(false);
 
-  const [dailyEnabled, setDailyEnabledRaw] = useUserSetting<string>('notif_daily', 'on');
+  // Daily settings
+  const [dailyEnabled, setDailyEnabled] = useUserSetting<string>('notif_daily', 'on');
+  const [dailyHour, setDailyHour]       = useUserSetting<string>('notif_daily_hour', '17');
 
-  // Prayer notification settings — must be top-level hooks (no loops)
-  const [fajrOn,    setFajrOn]    = useUserSetting<string>('notif_fajr',          'on');
-  const [fajrSnd,   setFajrSnd]   = useUserSetting<string>('notif_fajr_sound',    'sound');
-  const [dhuhrOn,   setDhuhrOn]   = useUserSetting<string>('notif_dhuhr',         'on');
-  const [dhuhrSnd,  setDhuhrSnd]  = useUserSetting<string>('notif_dhuhr_sound',   'sound');
-  const [asrOn,     setAsrOn]     = useUserSetting<string>('notif_asr',            'on');
-  const [asrSnd,    setAsrSnd]    = useUserSetting<string>('notif_asr_sound',     'sound');
-  const [maghribOn, setMaghribOn] = useUserSetting<string>('notif_maghrib',       'on');
-  const [maghribSnd,setMaghribSnd]= useUserSetting<string>('notif_maghrib_sound', 'sound');
-  const [ishaOn,    setIshaOn]    = useUserSetting<string>('notif_isha',           'on');
-  const [ishaSnd,   setIshaSnd]   = useUserSetting<string>('notif_isha_sound',    'sound');
+  // Prayer on/off — all default 'on' (enabled on first install)
+  const [fajrOn,    setFajrOn]    = useUserSetting<string>('notif_fajr',    'on');
+  const [dhuhrOn,   setDhuhrOn]   = useUserSetting<string>('notif_dhuhr',   'on');
+  const [asrOn,     setAsrOn]     = useUserSetting<string>('notif_asr',     'on');
+  const [maghribOn, setMaghribOn] = useUserSetting<string>('notif_maghrib', 'on');
+  const [ishaOn,    setIshaOn]    = useUserSetting<string>('notif_isha',    'on');
 
   const prayerSettings = [
-    { id: 'fajr',    name: 'الفجر',  enabled: fajrOn,    setEnabled: setFajrOn,    sound: fajrSnd,    setSound: setFajrSnd },
-    { id: 'dhuhr',   name: 'الظهر',  enabled: dhuhrOn,   setEnabled: setDhuhrOn,   sound: dhuhrSnd,   setSound: setDhuhrSnd },
-    { id: 'asr',     name: 'العصر',  enabled: asrOn,     setEnabled: setAsrOn,     sound: asrSnd,     setSound: setAsrSnd },
-    { id: 'maghrib', name: 'المغرب', enabled: maghribOn, setEnabled: setMaghribOn, sound: maghribSnd, setSound: setMaghribSnd },
-    { id: 'isha',    name: 'العشاء', enabled: ishaOn,    setEnabled: setIshaOn,    sound: ishaSnd,    setSound: setIshaSnd },
+    { id: 'fajr',    name: 'الفجر',  enabled: fajrOn,    setEnabled: setFajrOn    },
+    { id: 'dhuhr',   name: 'الظهر',  enabled: dhuhrOn,   setEnabled: setDhuhrOn   },
+    { id: 'asr',     name: 'العصر',  enabled: asrOn,     setEnabled: setAsrOn     },
+    { id: 'maghrib', name: 'المغرب', enabled: maghribOn, setEnabled: setMaghribOn },
+    { id: 'isha',    name: 'العشاء', enabled: ishaOn,    setEnabled: setIshaOn    },
   ];
 
   useEffect(() => {
@@ -64,7 +89,7 @@ function NotificationSection({
     }
   }
 
-  async function handlePrayerToggle(prayerId: string, setter: (v: string) => void, current: string) {
+  function handlePrayerToggle(setter: (v: string) => void, current: string) {
     const next = current === 'on' ? 'off' : 'on';
     setter(next);
     if (permGranted) {
@@ -75,24 +100,18 @@ function NotificationSection({
     }
   }
 
-  async function handleSoundToggle(prayerId: string, setter: (v: string) => void, current: string) {
-    const next = current === 'sound' ? 'silent' : 'sound';
-    setter(next);
-    if (permGranted) {
-      const profile = getProfileCache();
-      if (profile?.lat && profile?.lng) {
-        setTimeout(() => reschedulePrayerNotifications(profile.lat, profile.lng), 300);
-      }
-    }
+  function handleDailyToggle() {
+    const next = dailyEnabled === 'on' ? 'off' : 'on';
+    setDailyEnabled(next);
+    if (permGranted) setTimeout(() => rescheduleDailyNotifications(), 300);
   }
 
-  async function handleDailyToggle() {
-    const next = dailyEnabled === 'on' ? 'off' : 'on';
-    setDailyEnabledRaw(next);
-    if (permGranted) {
-      setTimeout(() => rescheduleDailyNotifications(), 300);
-    }
+  function handleHourSelect(hour: number) {
+    setDailyHour(String(hour));
+    if (permGranted) setTimeout(() => rescheduleDailyNotifications(), 300);
   }
+
+  const selectedHour = parseInt(dailyHour, 10) || 17;
 
   if (!isNative) {
     return (
@@ -133,7 +152,7 @@ function NotificationSection({
         <div className="flex-1">
           <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
           <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-            مجدولة لمدة 35 يوم — تعمل بدون نت
+            مجدولة لمدة 35 يوم — تعمل بدون نت وبدون انترنت
           </p>
         </div>
       </div>
@@ -157,7 +176,7 @@ function NotificationSection({
               {requesting ? 'جاري طلب الاذن...' : 'اذن الاشعارات مطلوب'}
             </p>
             <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              اضغط للسماح للتطبيق بارسال الاشعارات
+              اضغط هنا للسماح للتطبيق بارسال الاشعارات
             </p>
           </div>
         </button>
@@ -165,107 +184,87 @@ function NotificationSection({
 
       {permGranted === true && (
         <div className="flex items-center gap-2 px-1">
-          <div className="w-2 h-2 rounded-full" style={{ background: '#22c55e' }} />
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#22c55e' }} />
           <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>
-            الاشعارات مفعّلة ومجدولة
+            الاشعارات مفعّلة ومجدولة بنجاح
           </p>
         </div>
       )}
 
-      {/* Prayer Notifications */}
+      {/* ── Prayer Notifications ── */}
       <div>
         <p className="text-xs font-bold mb-2 px-1" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-          اشعارات الصلاة (قبل 20 دقيقة — قبل 10 دقائق — عند الاذان)
+          اشعارات الصلاة — قبل 20 دقيقة، قبل 10 دقائق، عند الاذان
         </p>
         <div className="space-y-2">
           {prayerSettings.map(prayer => (
             <div
               key={prayer.id}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
               style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}
             >
-              {/* Prayer Name */}
               <p className="font-bold text-sm flex-1" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
                 {prayer.name}
               </p>
-
-              {/* Sound / Silent Toggle — only show if prayer is enabled */}
-              {prayer.enabled === 'on' && (
-                <button
-                  onClick={() => handleSoundToggle(prayer.id, prayer.setSound, prayer.sound)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all active:scale-95"
-                  style={{
-                    background: prayer.sound === 'sound' ? 'rgba(193,154,107,0.15)' : 'rgba(100,100,100,0.1)',
-                    border: `1px solid ${prayer.sound === 'sound' ? 'rgba(193,154,107,0.4)' : borderColor}`,
-                  }}
-                >
-                  {prayer.sound === 'sound'
-                    ? <Volume2 className="w-3.5 h-3.5" style={{ color: '#C19A6B' }} />
-                    : <VolumeX className="w-3.5 h-3.5" style={{ color: subText }} />}
-                  <span className="text-xs font-bold" style={{
-                    fontFamily: '"Tajawal", sans-serif',
-                    color: prayer.sound === 'sound' ? '#C19A6B' : subText,
-                  }}>
-                    {prayer.sound === 'sound' ? 'صوت' : 'صامت'}
-                  </span>
-                </button>
-              )}
-
-              {/* On / Off Toggle */}
-              <button
-                onClick={() => handlePrayerToggle(prayer.id, prayer.setEnabled, prayer.enabled)}
-                className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
-                style={{
-                  background: prayer.enabled === 'on'
-                    ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)'
-                    : 'rgba(150,150,150,0.2)',
-                }}
-              >
-                <div
-                  className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
-                  style={{ right: prayer.enabled === 'on' ? '2px' : 'calc(100% - 22px)' }}
-                />
-              </button>
+              <Toggle
+                on={prayer.enabled === 'on'}
+                onToggle={() => handlePrayerToggle(prayer.setEnabled, prayer.enabled)}
+              />
             </div>
           ))}
         </div>
       </div>
 
-      {/* Daily Notifications */}
+      {/* ── Daily Notification ── */}
       <div>
-        <p className="text-xs font-bold mb-2 px-1" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-          الاشعار اليومي
-        </p>
-        <div
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-          style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}
-        >
-          <div className="flex-1">
-            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
-              اية او حديث او ذكر يومي
+        <div className="flex items-center justify-between mb-2 px-1">
+          <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            الاشعار اليومي — اية او حديث او ذكر
+          </p>
+          <Toggle on={dailyEnabled === 'on'} onToggle={handleDailyToggle} />
+        </div>
+
+        {dailyEnabled === 'on' && (
+          <div className="rounded-xl p-3" style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}>
+            <p className="text-xs mb-2.5 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+              اختر الساعة التي تريد استقبال الاشعار فيها يومياً
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-              وقت عشوائي بين 1 م و 9 م — 365 رسالة متنوعة
+            <div className="grid grid-cols-9 gap-1">
+              {DAILY_HOURS.map(({ label, hour }) => {
+                const isSelected = selectedHour === hour;
+                return (
+                  <button
+                    key={hour}
+                    onClick={() => handleHourSelect(hour)}
+                    className="flex items-center justify-center rounded-lg py-2 transition-all active:scale-95"
+                    style={{
+                      background: isSelected
+                        ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)'
+                        : 'rgba(193,154,107,0.08)',
+                      border: `1.5px solid ${isSelected ? '#7B5EA7' : borderColor}`,
+                    }}
+                  >
+                    <span
+                      className="text-xs font-bold"
+                      style={{
+                        fontFamily: '"Tajawal", sans-serif',
+                        color: isSelected ? '#fff' : subText,
+                        fontSize: '10px',
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs mt-2.5 text-center font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#7B5EA7' }}>
+              سيصلك الاشعار كل يوم الساعة {DAILY_HOURS.find(h => h.hour === selectedHour)?.label} بالضبط
             </p>
           </div>
-          <button
-            onClick={handleDailyToggle}
-            className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
-            style={{
-              background: dailyEnabled === 'on'
-                ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)'
-                : 'rgba(150,150,150,0.2)',
-            }}
-          >
-            <div
-              className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
-              style={{ right: dailyEnabled === 'on' ? '2px' : 'calc(100% - 22px)' }}
-            />
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Info note */}
       <p className="text-xs text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
         الاشعارات مجدولة محليا — تشتغل حتى لو التطبيق مقفول
       </p>

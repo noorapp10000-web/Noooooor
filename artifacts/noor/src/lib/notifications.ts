@@ -31,11 +31,7 @@ function egyptCalendarDate(dayOffset = 0): Date {
   return new Date(y, mo - 1, da + dayOffset, 12, 0, 0);
 }
 
-function computePrayerTimesForDay(
-  lat: number,
-  lng: number,
-  dayOffset: number,
-): Record<string, Date> {
+function computePrayerTimesForDay(lat: number, lng: number, dayOffset: number): Record<string, Date> {
   const d = egyptCalendarDate(dayOffset);
   const coords = new Coordinates(lat, lng);
   const params = CalculationMethod.Egyptian();
@@ -53,34 +49,26 @@ function addMinutes(date: Date, mins: number): Date {
   return new Date(date.getTime() + mins * 60 * 1000);
 }
 
-// ── Channels ──────────────────────────────────────────────────────────────────
+// ── Single notification channel ───────────────────────────────────────────────
 async function setupChannels(): Promise<void> {
   try {
     await LocalNotifications.createChannel({
-      id: 'prayer_sound',
+      id: 'prayers',
       name: 'إشعارات الصلاة',
-      description: 'إشعارات مواقيت الصلاة مع الصوت',
+      description: 'تذكير بمواقيت الصلاة',
       importance: 5,
       visibility: 1,
       vibration: true,
     });
     await LocalNotifications.createChannel({
-      id: 'prayer_silent',
-      name: 'إشعارات الصلاة (صامت)',
-      description: 'إشعارات مواقيت الصلاة بدون صوت',
-      importance: 4,
-      visibility: 1,
-      vibration: false,
-    });
-    await LocalNotifications.createChannel({
       id: 'daily',
       name: 'الإشعار اليومي',
       description: 'آيات وأحاديث وأذكار يومية',
-      importance: 3,
+      importance: 4,
       visibility: 1,
       vibration: true,
     });
-  } catch { /* channels may already exist */ }
+  } catch { /* channels may already exist on re-install */ }
 }
 
 // ── Permission ────────────────────────────────────────────────────────────────
@@ -104,15 +92,13 @@ export async function checkNotificationPermission(): Promise<boolean> {
   }
 }
 
-// ── Cancel ────────────────────────────────────────────────────────────────────
+// ── Cancel helpers ────────────────────────────────────────────────────────────
 export async function cancelAllPrayerNotifications(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
     const pending = await LocalNotifications.getPending();
     const prayerIds = pending.notifications.filter(n => n.id < 500000);
-    if (prayerIds.length > 0) {
-      await LocalNotifications.cancel({ notifications: prayerIds });
-    }
+    if (prayerIds.length > 0) await LocalNotifications.cancel({ notifications: prayerIds });
   } catch { /* ignore */ }
 }
 
@@ -121,9 +107,7 @@ export async function cancelAllDailyNotifications(): Promise<void> {
   try {
     const pending = await LocalNotifications.getPending();
     const dailyIds = pending.notifications.filter(n => n.id >= 500000);
-    if (dailyIds.length > 0) {
-      await LocalNotifications.cancel({ notifications: dailyIds });
-    }
+    if (dailyIds.length > 0) await LocalNotifications.cancel({ notifications: dailyIds });
   } catch { /* ignore */ }
 }
 
@@ -145,11 +129,12 @@ async function scheduleBatch(
   for (let i = 0; i < notifications.length; i += BATCH) {
     try {
       await LocalNotifications.schedule({ notifications: notifications.slice(i, i + BATCH) });
-    } catch { /* skip batch on error */ }
+    } catch { /* skip bad batch */ }
   }
 }
 
 // ── Prayer Notifications ──────────────────────────────────────────────────────
+// Default = 'on' for all 5 prayers (set automatically on first install)
 export async function schedulePrayerNotifications(lat: number, lng: number): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
@@ -160,12 +145,9 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
     const times = computePrayerTimesForDay(lat, lng, day);
 
     for (const prayer of NOTIF_PRAYERS) {
+      // Default 'on' — all prayers enabled unless user explicitly turned off
       const enabled = getSettingCache<string>(`notif_${prayer.id.toLowerCase()}`, 'on') === 'on';
       if (!enabled) continue;
-
-      const isSilent =
-        getSettingCache<string>(`notif_${prayer.id.toLowerCase()}_sound`, 'sound') === 'silent';
-      const channelId = isSilent ? 'prayer_silent' : 'prayer_sound';
 
       const prayerTime = times[prayer.id];
       if (!prayerTime || isNaN(prayerTime.getTime())) continue;
@@ -176,13 +158,12 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
         notifications.push({
           id: prayerNotifId(day, prayer.idx, 0),
           title: 'نُور',
-          body: `صلاة ${prayer.name} بعد 20 دقيقة استعد لها ♥️`,
+          body: `صلاة ${prayer.name} بعد 20 دقيقة ♥️`,
           schedule: { at: t20, allowWhileIdle: true },
-          channelId,
+          channelId: 'prayers',
           extra: { route: '/' },
           smallIcon: 'ic_stat_noor',
           iconColor: '#C19A6B',
-          sound: isSilent ? undefined : 'default',
         });
       }
 
@@ -192,13 +173,12 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
         notifications.push({
           id: prayerNotifId(day, prayer.idx, 1),
           title: 'نُور',
-          body: `صلاة ${prayer.name} بعد 10 دقائق استعد لها ♥️`,
+          body: `صلاة ${prayer.name} بعد 10 دقائق ♥️`,
           schedule: { at: t10, allowWhileIdle: true },
-          channelId,
+          channelId: 'prayers',
           extra: { route: '/' },
           smallIcon: 'ic_stat_noor',
           iconColor: '#C19A6B',
-          sound: isSilent ? undefined : 'default',
         });
       }
 
@@ -207,13 +187,12 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
         notifications.push({
           id: prayerNotifId(day, prayer.idx, 2),
           title: 'نُور',
-          body: `حان الآن موعد صلاة ${prayer.name} قم للصلاة ♥️`,
+          body: `حان الآن موعد صلاة ${prayer.name} — قم للصلاة ♥️`,
           schedule: { at: prayerTime, allowWhileIdle: true },
-          channelId,
+          channelId: 'prayers',
           extra: { route: '/' },
           smallIcon: 'ic_stat_noor',
           iconColor: '#C19A6B',
-          sound: isSilent ? undefined : 'default',
         });
       }
     }
@@ -223,30 +202,30 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
 }
 
 // ── Daily Inspirational Notifications ────────────────────────────────────────
+// Sends at EXACTLY the hour chosen by user (default 17 = 5:00 PM), 00 minutes
 export async function scheduleDailyNotifications(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
   const enabled = getSettingCache<string>('notif_daily', 'on') === 'on';
   if (!enabled) return;
 
+  // notif_daily_hour is stored as a string '13'..'21', default '17' (5 PM)
+  const hourStr = getSettingCache<string>('notif_daily_hour', '17');
+  const hour = Math.min(21, Math.max(13, parseInt(hourStr, 10) || 17));
+
   const now = new Date();
   const todayMidnight = new Date();
   todayMidnight.setHours(0, 0, 0, 0);
 
-  // Deterministic day seed (days since Unix epoch)
+  // Day seed for message rotation
   const epochDay = Math.floor(todayMidnight.getTime() / 86400000);
 
   const notifications: Parameters<typeof LocalNotifications.schedule>[0]['notifications'] = [];
 
   for (let slot = 0; slot < 365; slot++) {
+    // Build the target Date for this slot at exactly HH:00:00
     const dayDate = new Date(todayMidnight.getTime() + slot * 86400000);
-
-    // Deterministic "random" time between 13:00–21:00 using day seed
-    const seed = (epochDay + slot) * 1000003 + 7919;
-    const minutesOffset = ((seed % 480) + 480) % 480; // 0..479 minutes in 8h window
-    const hours = 13 + Math.floor(minutesOffset / 60);
-    const mins = minutesOffset % 60;
-    dayDate.setHours(hours, mins, 0, 0);
+    dayDate.setHours(hour, 0, 0, 0);
 
     if (dayDate <= now) continue;
 
@@ -262,7 +241,6 @@ export async function scheduleDailyNotifications(): Promise<void> {
       extra: { route: msg.route },
       smallIcon: 'ic_stat_noor',
       iconColor: '#C19A6B',
-      sound: 'default',
     });
   }
 
@@ -278,48 +256,38 @@ export function setupNotificationTapHandler(navigate: (route: string) => void): 
 
   LocalNotifications.addListener('localNotificationActionPerformed', (event) => {
     const route: string = event.notification?.extra?.route ?? '/';
-    try { navigate(route); } catch { /* ignore navigation errors */ }
+    try { navigate(route); } catch { /* ignore */ }
   });
 }
 
 // ── Main Entry Points ─────────────────────────────────────────────────────────
 
 /**
- * Full schedule: cancel everything and reschedule all notifications.
- * Call on app start and when governorate changes.
+ * Full schedule: channels → cancel all → reschedule prayers + daily.
+ * Call on first install, app startup, and when governorate changes.
  */
 export async function scheduleAllNotifications(lat: number, lng: number): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
-
   const granted = await requestNotificationPermission();
   if (!granted) return;
-
   await setupChannels();
   await cancelAllNotifications();
   await schedulePrayerNotifications(lat, lng);
   await scheduleDailyNotifications();
 }
 
-/**
- * Reschedule only prayer notifications (faster, for sound/enable setting changes).
- */
+/** Re-schedule only prayers (called when user toggles a prayer on/off). */
 export async function reschedulePrayerNotifications(lat: number, lng: number): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
-  const granted = await checkNotificationPermission();
-  if (!granted) return;
-
+  if (!(await checkNotificationPermission())) return;
   await cancelAllPrayerNotifications();
   await schedulePrayerNotifications(lat, lng);
 }
 
-/**
- * Reschedule only daily notifications (for daily notification toggle changes).
- */
+/** Re-schedule only daily (called when user toggles daily or changes hour). */
 export async function rescheduleDailyNotifications(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
-  const granted = await checkNotificationPermission();
-  if (!granted) return;
-
+  if (!(await checkNotificationPermission())) return;
   await cancelAllDailyNotifications();
   await scheduleDailyNotifications();
 }
