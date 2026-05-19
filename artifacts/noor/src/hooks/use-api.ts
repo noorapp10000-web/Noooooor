@@ -183,22 +183,6 @@ export function useTafsir(surah: number, ayah: number) {
   });
 }
 
-export function useVerseWords(surah: number, ayah: number) {
-  return useQuery({
-    queryKey: ['verse-words', surah, ayah],
-    queryFn: async () => {
-      const res = await fetch(
-        `https://api.quran.com/api/v4/verses/by_key/${surah}:${ayah}?words=true&word_fields=text_uthmani,audio_url&per_page=1`
-      );
-      if (!res.ok) throw new Error('Failed to fetch words');
-      const data = await res.json();
-      const words = data.verses?.[0]?.words ?? [];
-      return words.filter((w: any) => w.char_type_name !== 'end');
-    },
-    enabled: !!surah && !!ayah,
-    staleTime: Infinity,
-  });
-}
 
 // --- PRAYER TIMES — Offline-first via adhan.js + API for Hijri enrichment ---
 // Priority: 1) localStorage cache  2) adhan.js (instant, always offline)
