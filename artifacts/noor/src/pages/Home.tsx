@@ -5,6 +5,37 @@ import { HomeTracker } from '@/components/HomeTracker';
 import { getProfileCache, updateProfileInRTDB, getCurrentUid } from '@/lib/rtdb';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
+import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
+import NoorWidget from '@/lib/widget-bridge';
+
+const WIDGET_PRAYERS: Array<{ key: keyof PrayerTimes; name: string }> = [
+  { key: 'fajr',    name: 'الفجر'  },
+  { key: 'dhuhr',   name: 'الظهر'  },
+  { key: 'asr',     name: 'العصر'  },
+  { key: 'maghrib', name: 'المغرب' },
+  { key: 'isha',    name: 'العشاء' },
+];
+
+function buildWidgetPayload(lat: number, lng: number) {
+  const coords = new Coordinates(lat, lng);
+  const params = CalculationMethod.Egyptian();
+  const entries: Array<{ name: string; timeMs: number; timeStr: string }> = [];
+  for (let offset = 0; offset <= 2; offset++) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    const pt = new PrayerTimes(coords, d, params);
+    for (const { key, name } of WIDGET_PRAYERS) {
+      const t = pt[key] as Date;
+      if (!(t instanceof Date)) continue;
+      const h = t.getHours(), m = t.getMinutes();
+      const h12 = h % 12 || 12;
+      const ampm = h < 12 ? 'ص' : 'م';
+      entries.push({ name, timeMs: t.getTime(), timeStr: `${h12}:${String(m).padStart(2, '0')} ${ampm}` });
+    }
+  }
+  return entries.sort((a, b) => a.timeMs - b.timeMs);
+}
 
 const PRAYERS = [
   { id: 'Fajr',    name: 'الفجر'  },
@@ -115,6 +146,16 @@ export function Home() {
 
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time24: string } | null>(null);
   const [countdown, setCountdown] = useState('');
+
+  // ── Android Widget Bridge ────────────────────────────────────────────────
+  // Runs on the native APK only. Sends 3 days of prayer timestamps to SharedPreferences
+  // so the home screen widget countdown works even when the app is fully closed.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    if (!lat || !lng) return;
+    const prayers = buildWidgetPayload(lat, lng);
+    NoorWidget.setPrayerTimes({ prayers, lat, lng }).catch(() => {});
+  }, [lat, lng]);
 
   useEffect(() => {
     if (!times || dateOffset !== 0) return;

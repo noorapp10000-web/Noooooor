@@ -44,6 +44,7 @@ const LOCAL_SURAHS = Array.from({ length: 114 }, (_, i) => ({
 
 type PrayerTimesResult = {
   timings: Record<string, string>;
+  timingsMs: Record<string, number>;
   hijri: { day: string; month: { ar: string }; year: string } | undefined;
 };
 
@@ -222,6 +223,13 @@ function _computePrayerTimes(lat: number, lng: number, dateOffset: number): Pray
       Isha:     fmt(pt.isha),
       Midnight: fmt(midnight),
     },
+    timingsMs: {
+      Fajr:    pt.fajr.getTime(),
+      Dhuhr:   pt.dhuhr.getTime(),
+      Asr:     pt.asr.getTime(),
+      Maghrib: pt.maghrib.getTime(),
+      Isha:    pt.isha.getTime(),
+    },
     hijri: undefined,
   };
   _ptSave(lat, lng, isoDate, result);
@@ -258,6 +266,13 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
           Maghrib:  fmtD(pt.maghrib),
           Isha:     fmtD(pt.isha),
           Midnight: fmtD(midnight),
+        },
+        timingsMs: {
+          Fajr:    pt.fajr.getTime(),
+          Dhuhr:   pt.dhuhr.getTime(),
+          Asr:     pt.asr.getTime(),
+          Maghrib: pt.maghrib.getTime(),
+          Isha:    pt.isha.getTime(),
         },
         hijri: undefined,
       };
