@@ -18,10 +18,10 @@ if [ ! -f "$TSX_BIN" ]; then
   TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
 fi
 
-# Resolve vite binary - check root node_modules first (pnpm hoist), then artifact-level
-VITE_BIN="$ROOT_DIR/node_modules/.bin/vite"
+# Resolve vite binary - check artifact-level first, then root node_modules (pnpm hoist)
+VITE_BIN="$ROOT_DIR/artifacts/noor/node_modules/.bin/vite"
 if [ ! -f "$VITE_BIN" ]; then
-  VITE_BIN="$ROOT_DIR/artifacts/noor/node_modules/.bin/vite"
+  VITE_BIN="$ROOT_DIR/node_modules/.bin/vite"
 fi
 
 echo "Using tsx: $TSX_BIN"
