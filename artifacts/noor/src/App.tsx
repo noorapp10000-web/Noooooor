@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +39,8 @@ import {
   getOrCreateLocalUid,
   getProfileCache,
 } from "@/lib/rtdb";
+import { scheduleAllNotifications, setupNotificationTapHandler } from "@/lib/notifications";
+import { Capacitor } from "@capacitor/core";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,8 +93,19 @@ function FullScreenShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function NotificationTapHandler() {
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    setupNotificationTapHandler((route) => navigate(route));
+  }, [navigate]);
+  return null;
+}
+
 function Router() {
   return (
+    <>
+    <NotificationTapHandler />
     <Switch>
       <Route path="/"><AppShell><Home /></AppShell></Route>
       <Route path="/quran"><AppShell><Quran /></AppShell></Route>
@@ -116,6 +129,7 @@ function Router() {
       <Route path="/hifz-test"><FullScreenShell><HifzTest /></FullScreenShell></Route>
       <Route component={NotFound} />
     </Switch>
+    </>
   );
 }
 
@@ -134,6 +148,15 @@ function App() {
     const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
     document.documentElement.classList.toggle('dark', theme === 'dark');
     setIsLoggedIn(true);
+    // Schedule notifications after first login
+    if (Capacitor.isNativePlatform()) {
+      setTimeout(() => {
+        const profile = getProfileCache();
+        if (profile?.lat && profile?.lng) {
+          scheduleAllNotifications(profile.lat, profile.lng).catch(() => {});
+        }
+      }, 2000);
+    }
   }, []);
 
   useEffect(() => {
@@ -149,12 +172,31 @@ function App() {
         const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
         document.documentElement.classList.toggle('dark', theme === 'dark');
         setIsLoggedIn(true);
+        // Schedule notifications on app startup (existing user)
+        if (Capacitor.isNativePlatform() && profile.lat && profile.lng) {
+          setTimeout(() => {
+            scheduleAllNotifications(profile.lat, profile.lng).catch(() => {});
+          }, 3000);
+        }
       } else {
         setIsLoggedIn(false);
       }
     } else {
       setIsLoggedIn(false);
     }
+  }, []);
+
+  // Listen for governorate changes and reschedule notifications
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const handler = () => {
+      const profile = getProfileCache();
+      if (profile?.lat && profile?.lng) {
+        scheduleAllNotifications(profile.lat, profile.lng).catch(() => {});
+      }
+    };
+    window.addEventListener('noor:profile-updated', handler);
+    return () => window.removeEventListener('noor:profile-updated', handler);
   }, []);
 
   const LoadingScreen = (

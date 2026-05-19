@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, Volume2, VolumeX } from 'lucide-react';
 
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
@@ -8,7 +8,270 @@ import { useUserSetting } from '@/hooks/use-user-setting';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
-import { flushRTDB, exportAllData, importAllData } from '@/lib/rtdb';
+import { flushRTDB, exportAllData, importAllData, getProfileCache } from '@/lib/rtdb';
+import {
+  requestNotificationPermission,
+  checkNotificationPermission,
+  reschedulePrayerNotifications,
+  rescheduleDailyNotifications,
+  scheduleAllNotifications,
+} from '@/lib/notifications';
+
+function NotificationSection({
+  sectionBg, borderColor, textColor, subText,
+}: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
+  const isNative = Capacitor.isNativePlatform();
+  const [permGranted, setPermGranted] = useState<boolean | null>(null);
+  const [requesting, setRequesting] = useState(false);
+
+  const [dailyEnabled, setDailyEnabledRaw] = useUserSetting<string>('notif_daily', 'on');
+
+  // Prayer notification settings — must be top-level hooks (no loops)
+  const [fajrOn,    setFajrOn]    = useUserSetting<string>('notif_fajr',          'on');
+  const [fajrSnd,   setFajrSnd]   = useUserSetting<string>('notif_fajr_sound',    'sound');
+  const [dhuhrOn,   setDhuhrOn]   = useUserSetting<string>('notif_dhuhr',         'on');
+  const [dhuhrSnd,  setDhuhrSnd]  = useUserSetting<string>('notif_dhuhr_sound',   'sound');
+  const [asrOn,     setAsrOn]     = useUserSetting<string>('notif_asr',            'on');
+  const [asrSnd,    setAsrSnd]    = useUserSetting<string>('notif_asr_sound',     'sound');
+  const [maghribOn, setMaghribOn] = useUserSetting<string>('notif_maghrib',       'on');
+  const [maghribSnd,setMaghribSnd]= useUserSetting<string>('notif_maghrib_sound', 'sound');
+  const [ishaOn,    setIshaOn]    = useUserSetting<string>('notif_isha',           'on');
+  const [ishaSnd,   setIshaSnd]   = useUserSetting<string>('notif_isha_sound',    'sound');
+
+  const prayerSettings = [
+    { id: 'fajr',    name: 'الفجر',  enabled: fajrOn,    setEnabled: setFajrOn,    sound: fajrSnd,    setSound: setFajrSnd },
+    { id: 'dhuhr',   name: 'الظهر',  enabled: dhuhrOn,   setEnabled: setDhuhrOn,   sound: dhuhrSnd,   setSound: setDhuhrSnd },
+    { id: 'asr',     name: 'العصر',  enabled: asrOn,     setEnabled: setAsrOn,     sound: asrSnd,     setSound: setAsrSnd },
+    { id: 'maghrib', name: 'المغرب', enabled: maghribOn, setEnabled: setMaghribOn, sound: maghribSnd, setSound: setMaghribSnd },
+    { id: 'isha',    name: 'العشاء', enabled: ishaOn,    setEnabled: setIshaOn,    sound: ishaSnd,    setSound: setIshaSnd },
+  ];
+
+  useEffect(() => {
+    if (!isNative) return;
+    checkNotificationPermission().then(setPermGranted);
+  }, [isNative]);
+
+  async function handleRequestPermission() {
+    setRequesting(true);
+    const granted = await requestNotificationPermission();
+    setPermGranted(granted);
+    setRequesting(false);
+    if (granted) {
+      const profile = getProfileCache();
+      if (profile?.lat && profile?.lng) {
+        await scheduleAllNotifications(profile.lat, profile.lng);
+      }
+    }
+  }
+
+  async function handlePrayerToggle(prayerId: string, setter: (v: string) => void, current: string) {
+    const next = current === 'on' ? 'off' : 'on';
+    setter(next);
+    if (permGranted) {
+      const profile = getProfileCache();
+      if (profile?.lat && profile?.lng) {
+        setTimeout(() => reschedulePrayerNotifications(profile.lat, profile.lng), 300);
+      }
+    }
+  }
+
+  async function handleSoundToggle(prayerId: string, setter: (v: string) => void, current: string) {
+    const next = current === 'sound' ? 'silent' : 'sound';
+    setter(next);
+    if (permGranted) {
+      const profile = getProfileCache();
+      if (profile?.lat && profile?.lng) {
+        setTimeout(() => reschedulePrayerNotifications(profile.lat, profile.lng), 300);
+      }
+    }
+  }
+
+  async function handleDailyToggle() {
+    const next = dailyEnabled === 'on' ? 'off' : 'on';
+    setDailyEnabledRaw(next);
+    if (permGranted) {
+      setTimeout(() => rescheduleDailyNotifications(), 300);
+    }
+  }
+
+  if (!isNative) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+        className="rounded-2xl p-4"
+        style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
+      >
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(145deg, #7B5EA7, #5B3E8A)' }}>
+            <Bell className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
+            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>متاحة على تطبيق الاندرويد فقط</p>
+          </div>
+        </div>
+        <p className="text-xs text-center py-2" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+          الاشعارات تعمل على النسخة المثبتة (APK)
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+      className="rounded-2xl p-4 space-y-4"
+      style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'linear-gradient(145deg, #7B5EA7, #5B3E8A)' }}>
+          <Bell className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            مجدولة لمدة 35 يوم — تعمل بدون نت
+          </p>
+        </div>
+      </div>
+
+      {/* Permission Banner */}
+      {permGranted === false && (
+        <button
+          onClick={handleRequestPermission}
+          disabled={requesting}
+          className="w-full flex items-center gap-3 p-3 rounded-xl transition-all active:scale-[0.97]"
+          style={{ background: 'rgba(239,68,68,0.08)', border: '1.5px solid rgba(239,68,68,0.3)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(239,68,68,0.12)' }}>
+            {requesting
+              ? <RefreshCw className="w-4 h-4 animate-spin" style={{ color: '#ef4444' }} />
+              : <BellOff className="w-4 h-4" style={{ color: '#ef4444' }} />}
+          </div>
+          <div className="text-right flex-1">
+            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>
+              {requesting ? 'جاري طلب الاذن...' : 'اذن الاشعارات مطلوب'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+              اضغط للسماح للتطبيق بارسال الاشعارات
+            </p>
+          </div>
+        </button>
+      )}
+
+      {permGranted === true && (
+        <div className="flex items-center gap-2 px-1">
+          <div className="w-2 h-2 rounded-full" style={{ background: '#22c55e' }} />
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>
+            الاشعارات مفعّلة ومجدولة
+          </p>
+        </div>
+      )}
+
+      {/* Prayer Notifications */}
+      <div>
+        <p className="text-xs font-bold mb-2 px-1" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+          اشعارات الصلاة (قبل 20 دقيقة — قبل 10 دقائق — عند الاذان)
+        </p>
+        <div className="space-y-2">
+          {prayerSettings.map(prayer => (
+            <div
+              key={prayer.id}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}
+            >
+              {/* Prayer Name */}
+              <p className="font-bold text-sm flex-1" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
+                {prayer.name}
+              </p>
+
+              {/* Sound / Silent Toggle — only show if prayer is enabled */}
+              {prayer.enabled === 'on' && (
+                <button
+                  onClick={() => handleSoundToggle(prayer.id, prayer.setSound, prayer.sound)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all active:scale-95"
+                  style={{
+                    background: prayer.sound === 'sound' ? 'rgba(193,154,107,0.15)' : 'rgba(100,100,100,0.1)',
+                    border: `1px solid ${prayer.sound === 'sound' ? 'rgba(193,154,107,0.4)' : borderColor}`,
+                  }}
+                >
+                  {prayer.sound === 'sound'
+                    ? <Volume2 className="w-3.5 h-3.5" style={{ color: '#C19A6B' }} />
+                    : <VolumeX className="w-3.5 h-3.5" style={{ color: subText }} />}
+                  <span className="text-xs font-bold" style={{
+                    fontFamily: '"Tajawal", sans-serif',
+                    color: prayer.sound === 'sound' ? '#C19A6B' : subText,
+                  }}>
+                    {prayer.sound === 'sound' ? 'صوت' : 'صامت'}
+                  </span>
+                </button>
+              )}
+
+              {/* On / Off Toggle */}
+              <button
+                onClick={() => handlePrayerToggle(prayer.id, prayer.setEnabled, prayer.enabled)}
+                className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
+                style={{
+                  background: prayer.enabled === 'on'
+                    ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)'
+                    : 'rgba(150,150,150,0.2)',
+                }}
+              >
+                <div
+                  className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
+                  style={{ right: prayer.enabled === 'on' ? '2px' : 'calc(100% - 22px)' }}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily Notifications */}
+      <div>
+        <p className="text-xs font-bold mb-2 px-1" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+          الاشعار اليومي
+        </p>
+        <div
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+          style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}
+        >
+          <div className="flex-1">
+            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
+              اية او حديث او ذكر يومي
+            </p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+              وقت عشوائي بين 1 م و 9 م — 365 رسالة متنوعة
+            </p>
+          </div>
+          <button
+            onClick={handleDailyToggle}
+            className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
+            style={{
+              background: dailyEnabled === 'on'
+                ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)'
+                : 'rgba(150,150,150,0.2)',
+            }}
+          >
+            <div
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
+              style={{ right: dailyEnabled === 'on' ? '2px' : 'calc(100% - 22px)' }}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Info note */}
+      <p className="text-xs text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+        الاشعارات مجدولة محليا — تشتغل حتى لو التطبيق مقفول
+      </p>
+    </motion.div>
+  );
+}
 
 function BackupSection({ sectionBg, borderColor, textColor, subText }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
   const [importing, setImporting] = useState(false);
@@ -41,7 +304,7 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             encoding: Encoding.UTF8,
             recursive: true,
           } as Parameters<typeof Filesystem.writeFile>[0]);
-          setSavedPath(`التنزيلات ← ${fileName}`);
+          setSavedPath(`التنزيلات — ${fileName}`);
           written = true;
         } catch { }
 
@@ -53,7 +316,7 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
               directory: Directory.Documents,
               encoding: Encoding.UTF8,
             });
-            setSavedPath(`المستندات ← ${fileName}`);
+            setSavedPath(`المستندات — ${fileName}`);
             written = true;
           } catch { }
         }
@@ -136,10 +399,10 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
           </div>
           <div className="text-right flex-1">
             <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone ? '#22c55e' : textColor }}>
-              {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير ✓' : (Capacitor.isNativePlatform() ? 'تصدير ومشاركة النسخة' : 'تصدير النسخة الاحتياطية')}
+              {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير' : (Capacitor.isNativePlatform() ? 'تصدير ومشاركة النسخة' : 'تصدير النسخة الاحتياطية')}
             </p>
             <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone && savedPath ? '#22c55e' : subText }}>
-              {savedPath ? `تم الحفظ في: ${savedPath}` : (Capacitor.isNativePlatform() ? 'يحفظ مباشرة في مجلد التنزيلات بدون نت' : 'تنزيل ملف noor-backup.json')}
+              {savedPath ? `تم الحفظ في: ${savedPath}` : (Capacitor.isNativePlatform() ? 'يحفظ مباشرة في مجلد التنزيلات' : 'تنزيل ملف noor-backup.json')}
             </p>
           </div>
         </button>
@@ -203,6 +466,9 @@ export function Settings() {
       </div>
 
       <div className="px-4 pt-5 space-y-5 max-w-lg mx-auto">
+
+        {/* Notification Section */}
+        <NotificationSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
 
         {/* Font Size */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
