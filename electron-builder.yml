@@ -3,7 +3,7 @@ productName: "Noor - نور"
 copyright: "Copyright © 2024 Noor App"
 
 directories:
-  app: electron
+  app: .
   output: ../dist-electron
 
 files:
