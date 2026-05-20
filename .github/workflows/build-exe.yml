@@ -17,11 +17,9 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      # ── 1. Checkout ───────────────────────────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ── 2. pnpm + Node ────────────────────────────────────────────────────
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -33,36 +31,29 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      # ── 3. Create build-logs directory ────────────────────────────────────
       - name: Create build-logs directory
         shell: pwsh
         run: New-Item -ItemType Directory -Force -Path build-logs | Out-Null
 
-      # ── 4. Install monorepo dependencies ──────────────────────────────────
       - name: Install monorepo dependencies
         run: pnpm install --frozen-lockfile
 
-      # ── 5. Build web app ──────────────────────────────────────────────────
-      - name: Build web app (relative paths for Electron file://)
+      - name: Build web app
         run: pnpm --filter @workspace/noor run build
         env:
           BASE_PATH: './'
           NODE_ENV: production
 
-      # ── 6. Prepare Electron bundle ────────────────────────────────────────
       - name: Prepare Electron bundle
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path electron\www | Out-Null
           Copy-Item -Recurse -Force artifacts\noor\dist\public\* electron\www\
-          # Use the Noor logo as app icon
           Copy-Item -Force attached_assets\IMG-20260325-WA0030_1779245908593.jpg electron\icon.jpg
           Copy-Item -Force attached_assets\IMG-20260325-WA0030_1779245908593.jpg electron\icon.png
           $count = (Get-ChildItem electron\www -Recurse | Measure-Object).Count
           Write-Output "Web assets copied: $count files"
-          Write-Output "Icon: $(Get-Item electron\icon.png | Select-Object -ExpandProperty Length) bytes"
 
-      # ── 7. Write electron package.json ────────────────────────────────────
       - name: Write electron package.json
         shell: pwsh
         run: |
@@ -71,7 +62,7 @@ jobs:
             name        = "noor-app"
             productName = "Noor - نور"
             version     = $version
-            description = "نور — رفيقك الإسلامي الشامل | Noor Islamic Companion App"
+            description = "Noor Islamic Companion App"
             main        = "main.js"
             author      = "Noor App"
             license     = "ISC"
@@ -79,59 +70,50 @@ jobs:
           $pkg | Out-File -FilePath electron\package.json -Encoding UTF8
           Write-Output "electron/package.json written (v$version)"
 
-      # ── 8. Install Electron dependencies ──────────────────────────────────
-      - name: Install Electron & electron-builder
+      - name: Install Electron and electron-builder
         shell: pwsh
         run: |
           Set-Location electron
           npm install --save-dev electron@latest electron-builder@latest
-          Write-Output "Installed: electron $(npx electron --version), electron-builder $(npx electron-builder --version)"
 
-      # ── 9. Build Windows installer ────────────────────────────────────────
       - name: Build Windows Setup EXE
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Set-Location electron
-          npx electron-builder --win --x64 --config ..\electron-builder.yml 2>&1 | `
-            Tee-Object -FilePath ..\build-logs\exe-build.log
+          npx electron-builder --win --x64 --config ..\electron-builder.yml 2>&1 | Tee-Object -FilePath ..\build-logs\exe-build.log
           if ($LASTEXITCODE -ne 0) {
             Write-Error "electron-builder failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
           }
 
-      # ── 10. Collect build environment info ────────────────────────────────
       - name: Collect build environment info
         if: always()
         shell: pwsh
         run: |
           $version = "${{ github.event.inputs.version || '2.3' }}"
+          $logFile = "build-logs\build-environment.txt"
           $exe = Get-ChildItem dist-electron -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-          @"
-=== Noor Windows EXE Build Log ===
-Date        : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC' -AsUTC)
-Version     : $version
-Branch      : ${{ github.ref_name }}
-Commit      : ${{ github.sha }}
-Runner OS   : ${{ runner.os }}
-Node        : $(node --version)
-NPM         : $(npm --version)
-Architecture: x64
-"@ | Out-File -FilePath build-logs\build-environment.txt -Encoding UTF8
-
+          "=== Noor Windows EXE Build Log ===" | Out-File -FilePath $logFile -Encoding UTF8
+          "Date        : $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')) UTC" | Out-File -Append $logFile
+          "Version     : $version" | Out-File -Append $logFile
+          "Branch      : ${{ github.ref_name }}" | Out-File -Append $logFile
+          "Commit      : ${{ github.sha }}" | Out-File -Append $logFile
+          "Runner OS   : ${{ runner.os }}" | Out-File -Append $logFile
+          "Node        : $(node --version)" | Out-File -Append $logFile
+          "NPM         : $(npm --version)" | Out-File -Append $logFile
+          "Architecture: x64" | Out-File -Append $logFile
+          "" | Out-File -Append $logFile
+          "=== EXE Output ===" | Out-File -Append $logFile
           if ($exe) {
             $sizeMB = [math]::Round($exe.Length / 1MB, 1)
-            "`n=== EXE Output ===" | Out-File -Append build-logs\build-environment.txt
-            "File : $($exe.Name)" | Out-File -Append build-logs\build-environment.txt
-            "Size : ${sizeMB} MB" | Out-File -Append build-logs\build-environment.txt
-            "Path : $($exe.FullName)" | Out-File -Append build-logs\build-environment.txt
+            "File : $($exe.Name)" | Out-File -Append $logFile
+            "Size : ${sizeMB} MB" | Out-File -Append $logFile
           } else {
-            "`n=== EXE Output ===" | Out-File -Append build-logs\build-environment.txt
-            "No EXE found in dist-electron/" | Out-File -Append build-logs\build-environment.txt
+            "No EXE found in dist-electron/" | Out-File -Append $logFile
           }
 
-      # ── 11. Upload logs (mandatory — always) ──────────────────────────────
       - name: Upload build logs (mandatory)
         if: always()
         uses: actions/upload-artifact@v4
@@ -141,7 +123,6 @@ Architecture: x64
           retention-days: 30
           if-no-files-found: warn
 
-      # ── 12. Upload EXE ────────────────────────────────────────────────────
       - name: Upload Windows Setup EXE
         uses: actions/upload-artifact@v4
         with:
@@ -150,27 +131,23 @@ Architecture: x64
           retention-days: 30
           if-no-files-found: error
 
-      # ── 13. Build Summary ─────────────────────────────────────────────────
       - name: Build Summary
         if: always()
         shell: pwsh
         run: |
           $version = "${{ github.event.inputs.version || '2.3' }}"
           $exe = Get-ChildItem dist-electron -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-          "## نور — Noor Windows EXE v${version}" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "## Noor Windows EXE v${version}" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| الملف | الحجم | الحالة |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "|-------|-------|--------|" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           if ($exe) {
             $sizeMB = [math]::Round($exe.Length / 1MB, 1)
-            "| $($exe.Name) | ${sizeMB} MB | ✅ |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "| $($exe.Name) | ${sizeMB} MB | OK |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           } else {
-            "| Windows EXE | — | ❌ |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+            "| Windows EXE | -- | FAILED |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           }
-          "| Logs | build-logs/ | ✅ |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Logs | build-logs/ | OK |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
-          "| المعلومات | القيمة |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
-          "|-----------|--------|" | Out-File -Append $env:GITHUB_STEP_SUMMARY
-          "| Architecture | x64 (64-bit) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
-          "| Window size | 1280 × 800 (min 960×600) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
-          "| Installer | NSIS (مع إمكانية اختيار مسار التثبيت) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Architecture | x64 |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Window size | 1280x800 min 960x600 |" | Out-File -Append $env:GITHUB_STEP_SUMMARY

@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Android 12+ (API 31+) — Mandatory system splash screen configuration.
-    The OS shows this splash automatically BEFORE the Activity starts.
+    Android 12+ (API 31+) — Mandatory system splash screen.
+    The OS shows this BEFORE the Activity starts.
 
-    Strategy to show the logo cleanly (no zoom, no cropping):
-    - windowSplashScreenBackground        = cream (#F5E6CC) — matches app background
-    - windowSplashScreenIconBackgroundColor = cream (same as above) — hides the circular border
-    - windowSplashScreenAnimatedIcon      = @drawable/splash_logo — the Noor logo,
-      fitted proportionally into the icon area (no cropping, no distortion)
-
-    Result: Logo appears centered on a cream background with no visible circle.
+    Key trick: windowSplashScreenIconBackgroundColor = cream (same as splash background)
+    This makes the circular border invisible — logo floats on a clean cream background.
+    The logo is fitted proportionally (no cropping, no distortion).
 -->
 <resources>
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
@@ -17,6 +13,5 @@
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
-        <item name="android:windowFullscreen">true</item>
     </style>
 </resources>
