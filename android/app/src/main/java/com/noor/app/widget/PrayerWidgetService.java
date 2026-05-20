@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -241,6 +242,7 @@ public class PrayerWidgetService extends Service {
             .setContentTitle(title)
             .setContentText(content)
             .setSmallIcon(R.drawable.ic_stat_noor)
+            .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
             .setContentIntent(pi)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setSilent(true)
