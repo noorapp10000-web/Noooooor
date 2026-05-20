@@ -127,7 +127,7 @@ jobs:
       - name: Upload Windows Setup EXE
         uses: actions/upload-artifact@v4
         with:
-          name: noor-v${{ github.event.inputs.version || '2.3' }}-windows-setup
+          name: noor-v${{ github.event.inputs.version || '2.3.0' }}-windows-setup-x86
           path: dist-electron/*.exe
           retention-days: 30
           if-no-files-found: error

@@ -17,7 +17,7 @@ win:
   target:
     - target: nsis
       arch:
-        - x64
+        - ia32
   executableName: "Noor"
   requestedExecutionLevel: asInvoker
 
@@ -28,7 +28,7 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: "Noor - نور"
   language: "1025"
-  artifactName: "Noor-v${version}-Setup-x64.exe"
+  artifactName: "Noor-v${version}-Setup-x86.exe"
   deleteAppDataOnUninstall: false
   runAfterFinish: true
 

@@ -6,9 +6,15 @@ const config: CapacitorConfig = {
   webDir: 'artifacts/noor/dist/public',
   server: {
     androidScheme: 'https',
+    cleartext: true,
   },
   android: {
     allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,
+    backgroundColor: '#F5EDD8',
+    initialFocus: true,
+    useLegacyBridge: false,
   },
   plugins: {
     LocalNotifications: {
