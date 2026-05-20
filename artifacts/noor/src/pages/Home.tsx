@@ -119,9 +119,22 @@ function Clock3DIcon({ size = 20 }: { size?: number }) {
   );
 }
 
+const HIJRI_ADJUST_KEY = 'noor_hijri_adjust';
+
 export function Home() {
   const [dateOffset, setDateOffset] = useState(0);
+  const [hijriAdjust, setHijriAdjust] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem(HIJRI_ADJUST_KEY) ?? '0', 10) || 0; } catch { return 0; }
+  });
   const [showGovPicker, setShowGovPicker] = useState(false);
+
+  function changeHijriAdjust(delta: number) {
+    setHijriAdjust(prev => {
+      const next = prev + delta;
+      try { localStorage.setItem(HIJRI_ADJUST_KEY, String(next)); } catch {}
+      return next;
+    });
+  }
 
   const [userProfile, setUserProfile] = useState(() => getProfileCache());
 
@@ -210,9 +223,14 @@ export function Home() {
   }, [nextPrayer, dateOffset]);
 
   const displayDate = offsetDate(dateOffset);
-  const displayHijriLabel = hijri
-    ? `${hijri.day} ${hijri.month?.ar ?? ''} ${hijri.year} هـ`
-    : new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { day: 'numeric', month: 'long', year: 'numeric' }).format(displayDate);
+
+  const displayHijriLabel = (() => {
+    const adjustedDate = new Date(displayDate.getTime() + hijriAdjust * 86400000);
+    if (hijri && hijriAdjust === 0) {
+      return `${hijri.day} ${hijri.month?.ar ?? ''} ${hijri.year} هـ`;
+    }
+    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { day: 'numeric', month: 'long', year: 'numeric' }).format(adjustedDate);
+  })();
 
   const displayGregorianLabel = new Intl.DateTimeFormat('ar-EG', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -226,11 +244,43 @@ export function Home() {
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -ml-8 -mb-8" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="flex items-center gap-3 mb-0.5">
+          <div className="flex items-center gap-2 mb-0.5">
             <button onClick={() => setDateOffset(d => d - 1)} className="p-1.5 bg-white/15 rounded-full hover:bg-white/25 transition-colors">
               <ChevronRight className="w-4 h-4" />
             </button>
-            <p className="text-primary-foreground/90 font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>{displayHijriLabel}</p>
+            <div className="flex flex-col items-center gap-0.5">
+              <p className="text-primary-foreground/90 font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>{displayHijriLabel}</p>
+              {/* Hijri adjust buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => changeHijriAdjust(-2)}
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
+                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
+                >−2</button>
+                <button
+                  onClick={() => changeHijriAdjust(-1)}
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
+                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
+                >−1</button>
+                {hijriAdjust !== 0 && (
+                  <button
+                    onClick={() => { setHijriAdjust(0); try { localStorage.setItem(HIJRI_ADJUST_KEY, '0'); } catch {} }}
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
+                    style={{ background: 'rgba(193,154,107,0.4)', color: '#fff', fontFamily: '"Tajawal", sans-serif' }}
+                  >{hijriAdjust > 0 ? `+${hijriAdjust}` : hijriAdjust} ✕</button>
+                )}
+                <button
+                  onClick={() => changeHijriAdjust(+1)}
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
+                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
+                >+1</button>
+                <button
+                  onClick={() => changeHijriAdjust(+2)}
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
+                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
+                >+2</button>
+              </div>
+            </div>
             <button onClick={() => setDateOffset(d => d + 1)} className="p-1.5 bg-white/15 rounded-full hover:bg-white/25 transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>

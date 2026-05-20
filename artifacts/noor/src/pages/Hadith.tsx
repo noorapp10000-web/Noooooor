@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, Search, X, BookOpen } from 'lucide-react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -217,37 +217,53 @@ function SearchResults({
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); setLoading(false); return; }
-    const norm = normalizeArabic(query);
-    if (!norm) { setResults([]); setLoading(false); return; }
 
+    // Debounce: wait 350ms after user stops typing before searching
     setLoading(true);
-    setResults([]);
-    const books = book ? [book] : BOOKS;
-    let cancelled = false;
-    let total = 0;
+    const debounceTimer = setTimeout(async () => {
+      const norm = normalizeArabic(query);
+      if (!norm) { setResults([]); setLoading(false); return; }
 
-    (async () => {
+      setResults([]);
+      const books = book ? [book] : BOOKS;
+      let cancelled = false;
+      let total = 0;
+
+      const CHUNK_SIZE = 300; // process this many hadiths then yield to UI
+
       for (const b of books) {
-        if (cancelled || total >= SEARCH_LIMIT) break;
+        if (total >= SEARCH_LIMIT) break;
         try {
           const hadiths = await loadBook(b.slug);
           const found: Array<{ hadith: LocalHadith; book: Book }> = [];
-          for (const h of hadiths) {
+
+          for (let i = 0; i < hadiths.length; i++) {
             if (total >= SEARCH_LIMIT) break;
+            const h = hadiths[i];
             if (normalizeArabic(h.t).includes(norm)) {
               found.push({ hadith: h, book: b });
               total++;
             }
+            // Yield to the UI every CHUNK_SIZE hadiths to avoid blocking
+            if (i % CHUNK_SIZE === CHUNK_SIZE - 1) {
+              await new Promise<void>(resolve => setTimeout(resolve, 0));
+              if (cancelled) break;
+            }
           }
+
           if (found.length > 0 && !cancelled) {
             setResults(prev => [...prev, ...found]);
           }
         } catch {}
+        if (cancelled) break;
       }
-      if (!cancelled) setLoading(false);
-    })();
 
-    return () => { cancelled = true; };
+      if (!cancelled) setLoading(false);
+
+      return () => { cancelled = true; };
+    }, 350);
+
+    return () => clearTimeout(debounceTimer);
   }, [query, book]);
 
   if (loading) return (
