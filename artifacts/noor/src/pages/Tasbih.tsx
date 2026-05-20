@@ -7,7 +7,8 @@ import {
   getOrCreateLocalUid,
   todayKey,
 } from '@/lib/rtdb';
-import { BarChart2 } from 'lucide-react';
+import { vibrateLight, vibrateReset } from '@/lib/haptics';
+import { BarChart2, VolumeX, Volume2 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -91,6 +92,8 @@ export function Tasbih() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
 
+  const [vibrateEnabled, setVibrateEnabled] = useUserSetting<boolean>('tasbih_vibrate', true);
+
   const [typeIndex, setTypeIndex] = useState<number>(() => getCacheValue<number>('tasbih_type_idx', 0));
   const [totals, setTotals] = useState<Record<string, number>>(() => getCacheValue<Record<string, number>>('tasbih_totals', {}));
   const [counts, setCounts] = useState<Record<string, number>>(() => getCacheValue<Record<string, number>>('tasbih_counts', {}));
@@ -114,7 +117,6 @@ export function Tasbih() {
 
   function getUid() { return getCurrentUid() || localStorage.getItem('noor_uid') || getOrCreateLocalUid(); }
 
-  // Flush on unmount
   useEffect(() => { return () => { flushRTDB(); }; }, []);
 
   const handleTypeChange = (idx: number) => {
@@ -123,7 +125,7 @@ export function Tasbih() {
   };
 
   const handleTap = () => {
-    if ('vibrate' in navigator) navigator.vibrate(15);
+    if (vibrateEnabled) vibrateLight();
     controls.start({ scale: [1, 0.94, 1], transition: { duration: 0.18 } });
 
     const newCounts = { ...countsRef.current, [currentType.id]: (countsRef.current[currentType.id] ?? 0) + 1 };
@@ -141,7 +143,7 @@ export function Tasbih() {
     const newCounts = { ...countsRef.current, [currentType.id]: 0 };
     setCounts(newCounts);
     setShowResetDialog(false);
-    if ('vibrate' in navigator) navigator.vibrate([30, 20, 30]);
+    if (vibrateEnabled) vibrateReset();
     queueTasbihSync(getUid(), totalsRef.current, newCounts, dailyRef.current);
   };
 
@@ -151,6 +153,16 @@ export function Tasbih() {
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>السبحة الإلكترونية</h1>
         <div className="flex gap-2">
+          {/* Vibration toggle */}
+          <button
+            onClick={() => setVibrateEnabled(!vibrateEnabled)}
+            className="p-2 rounded-full transition-colors"
+            style={{ background: vibrateEnabled ? 'rgba(193,154,107,0.15)' : 'rgba(0,0,0,0.07)', color: vibrateEnabled ? '#C19A6B' : 'hsl(var(--muted-foreground))' }}
+            title={vibrateEnabled ? 'كتم الاهتزاز' : 'تفعيل الاهتزاز'}
+          >
+            {vibrateEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </button>
+
           <button onClick={() => setShowStats(!showStats)} className="p-2 bg-secondary text-primary rounded-full">
             <BarChart2 className="w-5 h-5" />
           </button>

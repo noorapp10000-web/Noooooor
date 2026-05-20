@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, User, ChevronRight, MapPin, FolderOpen, RefreshCw, CheckCircle } from 'lucide-react';
@@ -56,6 +56,14 @@ export function Login({ onComplete }: LoginProps) {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      nameInputRef.current?.focus();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -177,11 +185,12 @@ export function Login({ onComplete }: LoginProps) {
                     <User className="w-4 h-4" />
                   </div>
                   <input
+                    ref={nameInputRef}
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
+                    onInput={e => setName((e.target as HTMLInputElement).value)}
                     placeholder="اسمك..."
-                    autoFocus
                     maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
                     style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
