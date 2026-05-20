@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTutorial } from '@/components/TutorialMascotContext';
-import { ChevronLeft, ChevronRight, Search, X, Copy, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X, Copy, Share2, ArrowLeft, BookOpen } from 'lucide-react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
