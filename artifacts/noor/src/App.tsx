@@ -11,6 +11,7 @@ import { AudioProvider } from "@/contexts/AudioContext";
 import { AppSettingsProvider, useAppSettings } from "@/contexts/AppSettingsContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BatteryOptPrompt } from "@/components/BatteryOptPrompt";
+import { TutorialMascot } from "@/components/TutorialMascot";
 
 import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
@@ -108,6 +109,7 @@ function Router() {
   return (
     <>
     <NotificationTapHandler />
+    <TutorialMascot />
     <Switch>
       <Route path="/"><AppShell><Home /></AppShell></Route>
       <Route path="/quran"><AppShell><Quran /></AppShell></Route>
