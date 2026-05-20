@@ -29,29 +29,173 @@ const AudioCtx = createContext<AudioContextType | null>(null);
 const audioEl = new Audio();
 audioEl.preload = 'auto';
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Artwork generator — produces a 512×512 Islamic disc matching the
+   in-app player design. Returns a data: URL so Android's system
+   notification service can fetch it without needing localhost access.
+───────────────────────────────────────────────────────────────────────── */
+function buildArtwork(surahName: string, reciterName: string): string {
+  try {
+    const SIZE = 512;
+    const cx = SIZE / 2;   // 256
+    const cy = 210;        // disc centre (slightly above middle)
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = SIZE;
+    canvas.height = SIZE;
+    const c = canvas.getContext('2d');
+    if (!c) return '';
+
+    /* ── background gradient ── */
+    const bg = c.createLinearGradient(0, 0, SIZE, SIZE);
+    bg.addColorStop(0,   '#0d0b07');
+    bg.addColorStop(0.5, '#1a1308');
+    bg.addColorStop(1,   '#0d0b07');
+    c.fillStyle = bg;
+    c.fillRect(0, 0, SIZE, SIZE);
+
+    /* ── outer decorative ring ── */
+    c.strokeStyle = 'rgba(193,154,107,0.18)';
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.arc(cx, cy, 195, 0, Math.PI * 2);
+    c.stroke();
+
+    /* ── disc glow fill ── */
+    const glow = c.createRadialGradient(cx - 30, cy - 30, 10, cx, cy, 155);
+    glow.addColorStop(0,   'rgba(193,154,107,0.13)');
+    glow.addColorStop(0.6, 'rgba(193,154,107,0.06)');
+    glow.addColorStop(1,   'rgba(193,154,107,0)');
+    c.fillStyle = glow;
+    c.beginPath();
+    c.arc(cx, cy, 155, 0, Math.PI * 2);
+    c.fill();
+
+    /* ── 16 radial spokes (Islamic geometric pattern) ── */
+    const SPOKES = 16;
+    for (let i = 0; i < SPOKES; i++) {
+      const angle = (i * Math.PI * 2) / SPOKES;
+      const alpha = i % 2 === 0 ? 0.55 : 0.28;
+      c.strokeStyle = `rgba(193,154,107,${alpha})`;
+      c.lineWidth   = i % 2 === 0 ? 1.2 : 0.7;
+      c.beginPath();
+      c.moveTo(cx + Math.cos(angle) * 52,  cy + Math.sin(angle) * 52);
+      c.lineTo(cx + Math.cos(angle) * 148, cy + Math.sin(angle) * 148);
+      c.stroke();
+    }
+
+    /* ── concentric rings ── */
+    const rings = [
+      { r: 50,  alpha: 0.55, w: 1.8 },
+      { r: 100, alpha: 0.35, w: 1.2 },
+      { r: 130, alpha: 0.28, w: 1.0 },
+      { r: 150, alpha: 0.50, w: 2.0 },
+    ];
+    rings.forEach(({ r, alpha, w }) => {
+      c.strokeStyle = `rgba(193,154,107,${alpha})`;
+      c.lineWidth   = w;
+      c.beginPath();
+      c.arc(cx, cy, r, 0, Math.PI * 2);
+      c.stroke();
+    });
+
+    /* ── 8-petal inner rosette ── */
+    c.strokeStyle = 'rgba(193,154,107,0.4)';
+    c.lineWidth   = 1;
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      const bx = cx + Math.cos(a) * 50;
+      const by = cy + Math.sin(a) * 50;
+      c.beginPath();
+      c.arc(bx, by, 26, 0, Math.PI * 2);
+      c.stroke();
+    }
+
+    /* ── centre dot ── */
+    c.fillStyle = '#C19A6B';
+    c.beginPath();
+    c.arc(cx, cy, 6, 0, Math.PI * 2);
+    c.fill();
+
+    /* ── "نُور" label in centre ── */
+    c.fillStyle    = 'rgba(193,154,107,0.9)';
+    c.font         = 'bold 28px serif';
+    c.textAlign    = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('نُور', cx, cy);
+
+    /* ── bottom separator line ── */
+    const sepY = 382;
+    c.strokeStyle = 'rgba(193,154,107,0.25)';
+    c.lineWidth   = 1;
+    c.beginPath();
+    c.moveTo(cx - 160, sepY);
+    c.lineTo(cx + 160, sepY);
+    c.stroke();
+
+    /* ── surah name ── */
+    c.fillStyle    = '#e8d9b8';
+    c.font         = 'bold 40px serif';
+    c.textBaseline = 'alphabetic';
+    const title = surahName ? `سورة ${surahName}` : 'القرآن الكريم';
+    c.fillText(title, cx, 430);
+
+    /* ── reciter name ── */
+    c.fillStyle = 'rgba(193,154,107,0.78)';
+    c.font      = '26px sans-serif';
+    // Truncate long names so they fit
+    let rName = reciterName || 'تطبيق نُور';
+    if (c.measureText(rName).width > 420) {
+      while (c.measureText(rName + '…').width > 420 && rName.length > 0) {
+        rName = rName.slice(0, -1);
+      }
+      rName += '…';
+    }
+    c.fillText(rName, cx, 475);
+
+    return canvas.toDataURL('image/png');
+  } catch {
+    return '';
+  }
+}
+
+/* Cache last artwork so we don't regenerate on every tick */
+let cachedArtworkKey = '';
+let cachedArtworkUrl = '';
+
+function getArtwork(surahName: string, reciterName: string): string {
+  const key = `${surahName}|${reciterName}`;
+  if (key !== cachedArtworkKey) {
+    cachedArtworkKey = key;
+    cachedArtworkUrl = buildArtwork(surahName, reciterName);
+  }
+  return cachedArtworkUrl;
+}
+
 /* ── MediaSession helpers ── */
 function updateMediaSession(surahName: string, reciterName: string): void {
   if (!('mediaSession' in navigator)) return;
   try {
-    const base = typeof window !== 'undefined' ? window.location.origin : '';
+    const artworkDataUrl = getArtwork(surahName, reciterName);
+    const artworkList: MediaImage[] = artworkDataUrl
+      ? [{ src: artworkDataUrl, sizes: '512x512', type: 'image/png' }]
+      : [];
+
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: surahName ? `سورة ${surahName}` : 'القرآن الكريم',
-      artist: reciterName || 'تطبيق نُور',
-      album: 'القرآن الكريم',
-      artwork: [
-        { src: `${base}/icon-192.png`, sizes: '192x192', type: 'image/png' },
-        { src: `${base}/icon-512.png`, sizes: '512x512', type: 'image/png' },
-      ],
+      title:   surahName ? `سورة ${surahName}` : 'القرآن الكريم',
+      artist:  reciterName || 'تطبيق نُور',
+      album:   'القرآن الكريم',
+      artwork: artworkList,
     });
   } catch {}
 }
 
 function registerMediaSessionHandlers(
-  onPlay: () => void,
+  onPlay:  () => void,
   onPause: () => void,
-  onNext: () => void,
-  onPrev: () => void,
-  onSeek: (details: MediaSessionActionDetails) => void,
+  onNext:  () => void,
+  onPrev:  () => void,
+  onSeek:  (details: MediaSessionActionDetails) => void,
 ): void {
   if (!('mediaSession' in navigator)) return;
   try {
@@ -90,26 +234,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const initAutoPlay = readAutoPlayPref();
 
   const [state, setState] = useState<AudioState>({
-    reciterId: '',
-    reciterName: '',
-    serverUrl: '',
-    surahNum: null,
-    surahName: '',
-    isPlaying: false,
-    currentTime: 0,
-    duration: 0,
-    isLoading: false,
+    reciterId: '', reciterName: '', serverUrl: '',
+    surahNum: null, surahName: '',
+    isPlaying: false, currentTime: 0, duration: 0, isLoading: false,
     autoPlay: initAutoPlay,
   });
 
-  const rafRef       = useRef<number>(0);
-  const stateRef     = useRef(state);
-  stateRef.current   = state;
+  const rafRef      = useRef<number>(0);
+  const stateRef    = useRef(state);
+  stateRef.current  = state;
 
-  const autoPlayRef  = useRef<boolean>(initAutoPlay);
-  const playRef      = useRef<((opts: { reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string }) => void) | null>(null);
-
-  // Tracks whether the LAST pause was initiated by the user (not the system/screen-lock)
+  const autoPlayRef   = useRef<boolean>(initAutoPlay);
+  const playRef       = useRef<((opts: { reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string }) => void) | null>(null);
   const userPausedRef = useRef<boolean>(false);
 
   const tick = useCallback(() => {
@@ -136,27 +272,21 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   audioEl.oncanplay        = () => setState(s => ({ ...s, isLoading: false }));
   audioEl.ondurationchange = () => setState(s => ({ ...s, duration: audioEl.duration || 0 }));
 
-  // ── play ─────────────────────────────────────────────────────────
+  /* ── play ── */
   const play = useCallback(({ reciterId, reciterName, serverUrl, surahNum, surahName }: {
     reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string;
   }) => {
     userPausedRef.current = false;
-    const surahPad = surahNum.toString().padStart(3, '0');
-    audioEl.src = `${serverUrl}${surahPad}.mp3`;
+    const pad = surahNum.toString().padStart(3, '0');
+    audioEl.src = `${serverUrl}${pad}.mp3`;
     audioEl.load();
     audioEl.play().catch(() => {});
     setState(s => ({ ...s, reciterId, reciterName, serverUrl, surahNum, surahName, isLoading: true, currentTime: 0 }));
 
     updateMediaSession(surahName, reciterName);
     registerMediaSessionHandlers(
-      () => {
-        userPausedRef.current = false;
-        audioEl.play().catch(() => {});
-      },
-      () => {
-        userPausedRef.current = true;
-        audioEl.pause();
-      },
+      () => { userPausedRef.current = false; audioEl.play().catch(() => {}); },
+      () => { userPausedRef.current = true;  audioEl.pause(); },
       () => {
         const cur = stateRef.current;
         if (!cur.surahNum || cur.surahNum >= 114) return;
@@ -177,16 +307,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   playRef.current = play;
 
-  // ── onended: auto-play next surah or stop ────────────────────────
+  /* ── onended: auto-play or stop ── */
   audioEl.onended = () => {
     const cur = stateRef.current;
     if (autoPlayRef.current && cur.surahNum && cur.surahNum < 114 && playRef.current) {
       playRef.current({
-        reciterId:   cur.reciterId,
-        reciterName: cur.reciterName,
-        serverUrl:   cur.serverUrl,
-        surahNum:    cur.surahNum + 1,
-        surahName:   '',
+        reciterId: cur.reciterId, reciterName: cur.reciterName, serverUrl: cur.serverUrl,
+        surahNum: cur.surahNum + 1, surahName: '',
       });
     } else {
       setState(s => ({ ...s, isPlaying: false, currentTime: 0 }));
@@ -196,13 +323,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   };
 
   const togglePlay = useCallback(() => {
-    if (audioEl.paused) {
-      userPausedRef.current = false;
-      audioEl.play().catch(() => {});
-    } else {
-      userPausedRef.current = true;
-      audioEl.pause();
-    }
+    if (audioEl.paused) { userPausedRef.current = false; audioEl.play().catch(() => {}); }
+    else                { userPausedRef.current = true;  audioEl.pause(); }
   }, []);
 
   const pause = useCallback(() => {
@@ -247,28 +369,20 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // ── Background / lock-screen audio survival ──────────────────────
+  /* ── Keep audio alive in background / lock screen ── */
   useEffect(() => {
-    // Called by MainActivity.java (via evaluateJavascript) after the
-    // WebView is resumed from a system pause (screen lock / home button).
-    // If the user did NOT deliberately pause, we resume playback.
     (window as any).__noorKeepPlaying = () => {
       if (!userPausedRef.current && audioEl.paused && stateRef.current.surahNum) {
         audioEl.play().catch(() => {});
       }
     };
 
-    // Backup: visibilitychange fires when the browser tab goes hidden/visible.
-    // On Android WebView this fires when the screen locks or app is minimised.
     let wasPlayingOnHide = false;
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         wasPlayingOnHide = !audioEl.paused;
-      } else {
-        // Coming back to foreground — resume if we were playing and user didn't stop it
-        if (wasPlayingOnHide && audioEl.paused && !userPausedRef.current) {
-          audioEl.play().catch(() => {});
-        }
+      } else if (wasPlayingOnHide && audioEl.paused && !userPausedRef.current) {
+        audioEl.play().catch(() => {});
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
