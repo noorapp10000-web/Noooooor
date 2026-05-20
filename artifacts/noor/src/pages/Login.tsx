@@ -51,6 +51,7 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
 export function Login({ onComplete }: LoginProps) {
   const [step, setStep] = useState<Step>('name');
   const [name, setName] = useState('');
+  const [canNext, setCanNext] = useState(false);
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -64,6 +65,12 @@ export function Login({ onComplete }: LoginProps) {
     }, 300);
     return () => clearTimeout(timer);
   }, []);
+
+  function syncName() {
+    const val = nameInputRef.current?.value ?? '';
+    setName(val);
+    setCanNext(val.trim().length > 0);
+  }
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -83,7 +90,9 @@ export function Login({ onComplete }: LoginProps) {
   }
 
   function handleNameNext() {
-    if (!name.trim()) return;
+    const val = nameInputRef.current?.value ?? name;
+    if (!val.trim()) return;
+    setName(val.trim());
     setStep('city');
   }
 
@@ -187,16 +196,17 @@ export function Login({ onComplete }: LoginProps) {
                   <input
                     ref={nameInputRef}
                     type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    onInput={e => setName((e.target as HTMLInputElement).value)}
+                    defaultValue=""
                     placeholder="اسمك..."
                     maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
                     style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
                     onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    onKeyDown={e => e.key === 'Enter' && name.trim() && handleNameNext()}
+                    onBlur={() => { setFocused(false); syncName(); }}
+                    onInput={syncName}
+                    onChange={syncName}
+                    onCompositionEnd={syncName}
+                    onKeyDown={e => { syncName(); if (e.key === 'Enter' && nameInputRef.current?.value.trim()) handleNameNext(); }}
                   />
                 </div>
 
@@ -204,7 +214,7 @@ export function Login({ onComplete }: LoginProps) {
 
               <button
                 onClick={handleNameNext}
-                disabled={!name.trim()}
+                disabled={!canNext}
                 className="w-full py-4 rounded-2xl transition-all disabled:opacity-30 flex items-center justify-center gap-2"
                 style={BTN_GOLD}
               >
@@ -267,4 +277,4 @@ export function Login({ onComplete }: LoginProps) {
       </div>
     </div>
   );
-}
+    }
