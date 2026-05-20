@@ -1,4 +1,4 @@
-import { useState, useRef, useTransition } from 'react';
+import { useState, useRef } from 'react';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, User, ChevronRight, MapPin, FolderOpen, RefreshCw, CheckCircle } from 'lucide-react';
@@ -7,21 +7,7 @@ import { initUserSync, saveProfileToRTDB, getOrCreateLocalUid, importAllData, ty
 interface LoginProps { onComplete: () => void; }
 type Step = 'name' | 'city';
 
-// ─── Profanity Filter ──────────────────────────────────────────────────────────
-const BLOCKED_PATTERNS = [
-  // Arabic offensive / sexual / blasphemous words — comprehensive
-  /كس|كوس|كوسه|طيز|طيزك|طيزه|زب|زبي|زبك|زبه|زباله|نيك|ينيك|تتناك|تنتاك|متناك|منيوك|اتناك|اتنيك|شرموطه?|عاهره?|قحبه?|قحاب|بتاع\s*كس|شاذ|لواط|لوطي|مخنث|خنيث|خنثى|عرص|عرصه|عراصي|مص\s*زب|مص\s*كس|بظر|كلبه?|كلاب|حيوان\s*جنسي|مبناك|يلعن|يلعن\s*(امك|ابوك|دينك|ربك)|كسم|كسمك|كسمه|كسمها|كسمهم|كسمكم|يخرب\s*بيتك|ابن\s*(كلب|شرموطه?|قحبه?|عاهره?|حمار|زانيه?)|هبل|أهبل|مجنون\s*جنس|تسحق|سحاق|سحاقيه?|بورن|إباحي|جنسي\s*صريح|زانيه?|زاني|فاجره?|فاسق|فاحشه?|الفاحشه|عهر|داعر|داعره?|منحل|خايب|خايبه?|عيل\s*وسخ|وسخ|وسخه?|تفو|اللعنه?|ملعون|قذر|قذره?|عفن|نجس|ديوث|قواد|قوادين|قواده?|بيضان|نياك|نياكه?|مص\s*الأير|الأير|أير|أيره|تعبان\s*جنسي|منتهك|مغتصب|اغتصب|اغتصاب|إباحيه?|فيلم\s*سكس|سكس|خبل|خبله?|خبلاء/i,
 
-  // Blasphemy / religious insults
-  /يلعن\s*(الله|الدين|ربنا|النبي|الإسلام|القرآن)|لعنة\s*(الله|الدين)|اللعنة\s*على|كافر\s*خبيث|الله\s*وسخ|ربنا\s*(وسخ|بيهبل)/i,
-
-  // English offensive / sexual / slurs — comprehensive
-  /\b(fuck(?:ing|er|ed|s|tard)?|shit(?:ty|ter|s)?|bitch(?:es|ing)?|cunt(?:s)?|dick(?:head|s)?|pussy(?:ies)?|cock(?:sucker|s)?|ass(?:hole|wipe|hat|es)?|whore(?:s)?|slut(?:ty|s)?|bastard(?:s)?|nigger(?:s)?|nigga(?:s)?|faggot(?:s)?|fag(?:s)?|retard(?:ed|s)?|rape(?:d|r|s|ist)?|porn(?:o|ographic|ography)?|sex(?:ting|ual)?|nude(?:s)?|naked|boob(?:s)?|penis|vagina|tits?|titties|dildo(?:s)?|vibrator|masturbat(?:e|ion|ing)|jerk(?:ing)?\s*off|jack(?:ing)?\s*off|cum(?:shot|ming)?|orgasm|erotic|xxx|blowjob|handjob|rimjob|anal(?:\s*sex)?|fetish|bondage|bdsm|hentai|incest|pedophil(?:e|ia)|necrophil(?:e|ia)|bestiality|zoophil(?:e|ia)|hooker|escort\s*sex|prostitut(?:e|ion)|wank(?:er|ing)?|spunk|jizz|semen|clitoris|labia|scrotum|testicl(?:e|es)|anus|butthole|taint|twat|snatch|gash|minge|dong|schlong|boner|erection|horny|aroused|kinky|naughty\s*sex|dirty\s*talk|sexting|nudes\s*send|send\s*nudes|onlyfans|stripper|camgirl|sugar\s*daddy|pedo|kiddie\s*porn|child\s*porn|cp\s*porn|loli|shota|rape\s*fantasy|snuff|gore\s*porn|scat|watersport\s*sex|piss\s*sex|shit\s*sex|vomit\s*sex|choke\s*sex|necro|necrophilia|zoophilia|beastiality|torture\s*porn|slur|kike(?:s)?|spic(?:s)?|chink(?:s)?|gook(?:s)?|towelhead|sandnigger|wetback|cracker(?:s)?|redneck\s*slur|white\s*trash|trailer\s*trash|dago|wop|hymie|raghead|camel\s*jockey|porch\s*monkey|jungle\s*bunny|cotton\s*picker|coon(?:s)?|jap(?:s)?|gypsy\s*slur|tranny|shemale|heshe|it\s*slur|retard|mongoloid|spaz|tard|moron\s*offensive|imbecile\s*offensive|idiot\s*offensive|dumb(?:ass)?|dumbfuck|dipshit|goddamn|motherfuck(?:er|ing)?|son\s*of\s*a\s*bitch|piece\s*of\s*shit|go\s*to\s*hell|eat\s*shit|eat\s*a\s*dick|suck\s*my|lick\s*my|kiss\s*my\s*ass|up\s*yours|screw\s*you\s*offensive|piss\s*off|pissed\s*off|bollocks|tosser|wanker|twat(?:s)?|bloody\s*hell\s*offensive|arsehole|arse(?:s)?|bugger(?:ing)?|shag(?:ging)?|snog(?:ging)?\s*sexual|knob(?:head)?|bellend|prick(?:s)?|minge|slag(?:s)?|scrubber|trollop|harlot|strumpet|floozy|tart\s*offensive|hussy|bimbo\s*offensive|bitch\s*ass|punk\s*ass|douchebag|douche(?:bag)?|scumbag|sleazebag|creep(?:s)?|pervert(?:s)?|perv(?:s)?|molest(?:er|ation)?|grope(?:r|ing)?|harass\s*sexual)\b/i,
-];
-
-function isProfane(name: string): boolean {
-  return BLOCKED_PATTERNS.some(p => p.test(name));
-}
 
 function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string) => void }) {
   return (
@@ -65,13 +51,11 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
 export function Login({ onComplete }: LoginProps) {
   const [step, setStep] = useState<Step>('name');
   const [name, setName] = useState('');
-  const [nameError, setNameError] = useState('');
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
-  const [isPending, startTransition] = useTransition();
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -91,16 +75,8 @@ export function Login({ onComplete }: LoginProps) {
   }
 
   function handleNameNext() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    startTransition(() => {
-      if (isProfane(trimmed)) {
-        setNameError('هذا الاسم غير مقبول، الرجاء اختيار اسم مناسب');
-        return;
-      }
-      setNameError('');
-      setStep('city');
-    });
+    if (!name.trim()) return;
+    setStep('city');
   }
 
   const slide = {
@@ -193,17 +169,17 @@ export function Login({ onComplete }: LoginProps) {
                   className="relative w-full rounded-2xl transition-all duration-200"
                   style={{
                     background: focused ? '#fff' : 'rgba(255,255,255,0.8)',
-                    border: nameError ? '1.5px solid #ef4444' : focused ? '1.5px solid #C19A6B' : '1.5px solid rgba(139,99,64,0.25)',
-                    boxShadow: nameError ? '0 0 0 3px rgba(239,68,68,0.1)' : focused ? '0 0 0 3px rgba(193,154,107,0.15)' : '0 1px 4px rgba(93,48,16,0.08)',
+                    border: focused ? '1.5px solid #C19A6B' : '1.5px solid rgba(139,99,64,0.25)',
+                    boxShadow: focused ? '0 0 0 3px rgba(193,154,107,0.15)' : '0 1px 4px rgba(93,48,16,0.08)',
                   }}
                 >
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: nameError ? '#ef4444' : focused ? '#C19A6B' : 'rgba(139,99,64,0.45)' }}>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: focused ? '#C19A6B' : 'rgba(139,99,64,0.45)' }}>
                     <User className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
                     value={name}
-                    onChange={e => { setName(e.target.value); if (nameError) setNameError(''); }}
+                    onChange={e => setName(e.target.value)}
                     placeholder="اسمك..."
                     autoFocus
                     maxLength={30}
@@ -215,26 +191,15 @@ export function Login({ onComplete }: LoginProps) {
                   />
                 </div>
 
-                {/* Profanity error */}
-                {nameError && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs mt-2 text-center font-bold"
-                    style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}
-                  >
-                    ⚠️ {nameError}
-                  </motion.p>
-                )}
               </div>
 
               <button
                 onClick={handleNameNext}
-                disabled={!name.trim() || isPending}
+                disabled={!name.trim()}
                 className="w-full py-4 rounded-2xl transition-all disabled:opacity-30 flex items-center justify-center gap-2"
                 style={BTN_GOLD}
               >
-                {isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
+                <ChevronRight className="w-4 h-4" />
                 التالي
               </button>
 

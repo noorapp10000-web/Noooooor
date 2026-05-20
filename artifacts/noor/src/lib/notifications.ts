@@ -141,7 +141,7 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
   const now = new Date();
   const notifications: Parameters<typeof LocalNotifications.schedule>[0]['notifications'] = [];
 
-  for (let day = 0; day <= 34; day++) {
+  for (let day = 0; day <= 13; day++) {
     const times = computePrayerTimesForDay(lat, lng, day);
 
     for (const prayer of NOTIF_PRAYERS) {
@@ -222,7 +222,7 @@ export async function scheduleDailyNotifications(): Promise<void> {
 
   const notifications: Parameters<typeof LocalNotifications.schedule>[0]['notifications'] = [];
 
-  for (let slot = 0; slot < 365; slot++) {
+  for (let slot = 0; slot < 30; slot++) {
     // Build the target Date for this slot at exactly HH:00:00
     const dayDate = new Date(todayMidnight.getTime() + slot * 86400000);
     dayDate.setHours(hour, 0, 0, 0);
