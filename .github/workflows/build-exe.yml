@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'رقم الإصدار (مثال: 2.3)'
+        description: 'رقم الإصدار (مثال: 2.3.0)'
         required: false
-        default: '2.3'
+        default: '2.3.0'
 
 jobs:
   build-exe:
@@ -58,7 +58,7 @@ jobs:
       - name: Write electron package.json
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version || '2.3' }}"
+          $version = "${{ github.event.inputs.version || '2.3.0' }}"
           $pkg = [ordered]@{
             name        = "noor-app"
             productName = "Noor - نور"
@@ -93,7 +93,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version || '2.3' }}"
+          $version = "${{ github.event.inputs.version || '2.3.0' }}"
           $logFile = "build-logs\build-environment.txt"
           $exe = Get-ChildItem dist-electron -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           "=== Noor Windows EXE Build Log ===" | Out-File -FilePath $logFile -Encoding UTF8
@@ -136,7 +136,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version || '2.3' }}"
+          $version = "${{ github.event.inputs.version || '2.3.0' }}"
           $exe = Get-ChildItem dist-electron -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           "## Noor Windows EXE v${version}" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
