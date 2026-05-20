@@ -27,7 +27,7 @@ public class MainActivity extends BridgeActivity {
      * re-resume the WebView, which restores JS execution and keeps audio alive.
      */
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         if (getBridge() != null) {
             WebView webView = getBridge().getWebView();
@@ -44,7 +44,7 @@ public class MainActivity extends BridgeActivity {
      * background task list.
      */
     @Override
-    protected void onStop() {
+    public void onStop() {
         super.onStop();
         if (getBridge() != null) {
             WebView webView = getBridge().getWebView();
