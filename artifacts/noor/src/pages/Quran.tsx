@@ -6,6 +6,7 @@ import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
 import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { padZero, cn } from '@/lib/utils';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,6 +47,13 @@ async function getQuranIndex(): Promise<QuranEntry[]> {
 /* ── Share helper ── */
 async function shareAyah(text: string, surahName: string, ayahNum: number) {
   const shareText = `${surahName} — الآية ${ayahNum}\n\n${text}\n\n📱 من تطبيق نور`;
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({ text: shareText, dialogTitle: 'مشاركة الآية' });
+      return;
+    } catch {}
+  }
   if (navigator.share) {
     try { await navigator.share({ text: shareText }); return; } catch {}
   }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Search, X, Copy, Share2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
 
 function useDarkMode() {
   const [isDark, setIsDark] = useState(() =>
@@ -61,6 +62,13 @@ const SEARCH_LIMIT = 50;
 /* ── Share helper ── */
 async function shareHadith(text: string, bookName: string, hadithNum: number) {
   const shareText = `${bookName} — حديث رقم ${hadithNum}\n\n${text}\n\n📱 من تطبيق نور`;
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({ text: shareText, dialogTitle: 'مشاركة الحديث' });
+      return;
+    } catch {}
+  }
   if (navigator.share) {
     try { await navigator.share({ text: shareText }); return; } catch {}
   }
