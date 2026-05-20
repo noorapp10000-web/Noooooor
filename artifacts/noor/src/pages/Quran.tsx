@@ -5,7 +5,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
-import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2 } from 'lucide-react';
+import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2 } from 'lucide-react';
 import { padZero, cn } from '@/lib/utils';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,6 +41,48 @@ async function getQuranIndex(): Promise<QuranEntry[]> {
     } catch { /* try next */ }
   }
   throw new Error('فهرس البحث غير متوفر — تأكد من اتصال البيانات');
+}
+
+/* ── Share helper ── */
+async function shareAyah(text: string, surahName: string, ayahNum: number) {
+  const shareText = `${surahName} — الآية ${ayahNum}\n\n${text}\n\n📱 من تطبيق نور`;
+  if (navigator.share) {
+    try { await navigator.share({ text: shareText }); return; } catch {}
+  }
+  try { await navigator.clipboard.writeText(shareText); } catch {}
+  const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+async function copyAyah(text: string, surahName: string, ayahNum: number) {
+  const copyText = `${surahName} — الآية ${ayahNum}\n\n${text}`;
+  try { await navigator.clipboard.writeText(copyText); } catch {}
+}
+
+function AyahCopyButton({ text, surahName, ayahNum, dark }: { text: string; surahName: string; ayahNum: number; dark: boolean }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={async e => {
+        e.stopPropagation();
+        await copyAyah(text, surahName, ayahNum);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }}
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-all active:scale-90"
+      style={{
+        background: copied ? 'rgba(34,197,94,0.18)' : (dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.15)'),
+        border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(193,154,107,0.35)'}`,
+        color: copied ? '#16a34a' : (dark ? '#E8C98A' : '#6B4820'),
+        fontFamily: '"Tajawal", sans-serif',
+        fontSize: '0.6rem',
+        lineHeight: '1.6',
+      }}
+    >
+      {copied ? <span style={{ fontSize: 11 }}>✓</span> : <Copy className="w-2.5 h-2.5" />}
+      {copied ? 'تم' : 'نسخ'}
+    </button>
+  );
 }
 
 async function getTafsirIndex(): Promise<Record<string, string>> {
@@ -1023,23 +1065,45 @@ export function Quran() {
                   >
                     {text}
                     <AyahMarker num={ayah.numberInSurah} bookmarked={isBookmarked} dark={dark} />
-                    {/* Inline bookmark save button when selected */}
+                    {/* Inline action buttons when selected */}
                     {isSelected && mode === 'normal' && (
-                      <button
-                        onClick={e => { e.stopPropagation(); saveBookmark(ayah.numberInSurah); }}
-                        className="inline-flex items-center gap-1 mr-1 rounded-full px-2 py-0.5 text-xs align-middle transition-all"
-                        style={{
-                          background: '#C19A6B',
-                          color: '#0f0c07',
-                          fontFamily: '"Tajawal", sans-serif',
-                          fontSize: '0.6rem',
-                          lineHeight: '1.4',
-                          verticalAlign: 'middle',
-                        }}
-                      >
-                        <Bookmark className="w-2.5 h-2.5 fill-current" />
-                        حفظ
-                      </button>
+                      <span className="inline-flex items-center gap-1 mr-1 align-middle" style={{ verticalAlign: 'middle' }}>
+                        <button
+                          onClick={e => { e.stopPropagation(); saveBookmark(ayah.numberInSurah); }}
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-all active:scale-90"
+                          style={{
+                            background: '#C19A6B',
+                            color: '#0f0c07',
+                            fontFamily: '"Tajawal", sans-serif',
+                            fontSize: '0.6rem',
+                            lineHeight: '1.6',
+                          }}
+                        >
+                          <Bookmark className="w-2.5 h-2.5 fill-current" />
+                          حفظ
+                        </button>
+                        <AyahCopyButton
+                          text={ayah.text}
+                          surahName={surahName}
+                          ayahNum={ayah.numberInSurah}
+                          dark={dark}
+                        />
+                        <button
+                          onClick={e => { e.stopPropagation(); shareAyah(ayah.text, surahName, ayah.numberInSurah); }}
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition-all active:scale-90"
+                          style={{
+                            background: dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.15)',
+                            border: '1px solid rgba(193,154,107,0.35)',
+                            color: dark ? '#E8C98A' : '#6B4820',
+                            fontFamily: '"Tajawal", sans-serif',
+                            fontSize: '0.6rem',
+                            lineHeight: '1.6',
+                          }}
+                        >
+                          <Share2 className="w-2.5 h-2.5" />
+                          مشاركة
+                        </button>
+                      </span>
                     )}
                   </span>
                 );

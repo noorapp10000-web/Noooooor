@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Search, X, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X, Copy, Share2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -58,6 +58,17 @@ function normalizeArabic(text: string): string {
 const PAGE_SIZE = 10;
 const SEARCH_LIMIT = 50;
 
+/* ── Share helper ── */
+async function shareHadith(text: string, bookName: string, hadithNum: number) {
+  const shareText = `${bookName} — حديث رقم ${hadithNum}\n\n${text}\n\n📱 من تطبيق نور`;
+  if (navigator.share) {
+    try { await navigator.share({ text: shareText }); return; } catch {}
+  }
+  try { await navigator.clipboard.writeText(shareText); } catch {}
+  const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
 /* ── Book SVG ── */
 function BookSvg() {
   return (
@@ -90,12 +101,26 @@ function HadithCard({
 }) {
   const isDark = useDarkMode();
   const ref = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (highlighted && ref.current) {
       setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
     }
   }, [highlighted]);
+
+  async function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    const text = `${book.name} — حديث رقم ${hadith.n}\n\n${hadith.t}`;
+    try { await navigator.clipboard.writeText(text); } catch {}
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  async function handleShare(e: React.MouseEvent) {
+    e.stopPropagation();
+    await shareHadith(hadith.t, book.name, hadith.n);
+  }
 
   return (
     <div
@@ -111,16 +136,38 @@ function HadithCard({
     >
       <div className="h-[3px] w-full" style={{ background: book.iconBg, opacity: isDark ? 0.8 : 0.7 }} />
       <div className="p-4">
-        <div
-          className="text-xs font-bold px-2.5 py-1 rounded-full inline-block mb-3"
-          style={{
-            background: isDark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.12)',
-            border: `1px solid rgba(193,154,107,${isDark ? '0.35' : '0.3'})`,
-            color: isDark ? '#E8C98A' : '#7A4F1E',
-            fontFamily: '"Tajawal", sans-serif',
-          }}
-        >
-          حديث {hadith.n.toLocaleString('ar-EG')}
+        <div className="flex items-center justify-between mb-3" dir="rtl">
+          <div
+            className="text-xs font-bold px-2.5 py-1 rounded-full"
+            style={{
+              background: isDark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.12)',
+              border: `1px solid rgba(193,154,107,${isDark ? '0.35' : '0.3'})`,
+              color: isDark ? '#E8C98A' : '#7A4F1E',
+              fontFamily: '"Tajawal", sans-serif',
+            }}
+          >
+            حديث {hadith.n.toLocaleString('ar-EG')}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleCopy}
+              title="نسخ"
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{ background: copied ? 'rgba(34,197,94,0.18)' : 'rgba(193,154,107,0.1)', border: `1px solid rgba(193,154,107,${isDark ? '0.25' : '0.2'})` }}
+            >
+              {copied
+                ? <span style={{ fontSize: 12 }}>✓</span>
+                : <Copy className="w-3.5 h-3.5" style={{ color: isDark ? '#C19A6B' : '#8B6340' }} />}
+            </button>
+            <button
+              onClick={handleShare}
+              title="مشاركة"
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{ background: 'rgba(193,154,107,0.1)', border: `1px solid rgba(193,154,107,${isDark ? '0.25' : '0.2'})` }}
+            >
+              <Share2 className="w-3.5 h-3.5" style={{ color: isDark ? '#C19A6B' : '#8B6340' }} />
+            </button>
+          </div>
         </div>
         <p
           className="text-sm text-right"
