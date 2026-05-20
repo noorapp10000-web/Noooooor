@@ -174,7 +174,7 @@ public class PrayerWidgetService extends Service {
     private PrayerInfo getNextPrayer(float lat, float lng) {
         try {
             Coordinates coords = new Coordinates(lat, lng);
-            CalculationParameters params = CalculationMethod.EGYPT.getParameters();
+            CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
             long now = System.currentTimeMillis();
 
             // Today
