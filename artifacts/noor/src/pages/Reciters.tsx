@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useReciters } from '@/hooks/use-api';
-import { ArrowLeft, Search, ChevronRight, Download, Heart, Star, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, ChevronRight, Download, Heart, Star, Loader2, X, WifiOff } from 'lucide-react';
 import { Link } from 'wouter';
 import { useAudio } from '@/contexts/AudioContext';
 import { SURAH_NAMES } from '@/lib/constants';
@@ -9,6 +9,7 @@ import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getSettingCache, queueRTDBUpdate, getCurrentUid } from '@/lib/rtdb';
 import { useToast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
+import { useTheme } from 'next-themes';
 
 type FavoriteReciter = {
   key: string;
@@ -20,6 +21,16 @@ type FavoriteReciter = {
 };
 
 type FavoritesMap = Record<string, FavoriteReciter>;
+
+type FavoriteSurah = {
+  surahNum: number;
+  surahName: string;
+  reciterId: string;
+  reciterName: string;
+  serverUrl: string;
+};
+
+type FavoriteSurahsMap = Record<number, FavoriteSurah>;
 
 function favKey(reciterId: string | number, moshafIdx: number): string {
   return `${reciterId}-${moshafIdx}`;
@@ -34,6 +45,17 @@ function saveFavorites(next: FavoritesMap) {
   const uid = getCurrentUid() || getOrCreateLocalUid();
   if (!uid) return;
   queueRTDBUpdate(uid, { 'settings/favorite_reciters': next });
+}
+
+function loadFavoriteSurahs(): FavoriteSurahsMap {
+  const raw = getSettingCache<FavoriteSurahsMap | null>('favorite_surahs', null);
+  return raw ?? {};
+}
+
+function saveFavoriteSurahs(next: FavoriteSurahsMap) {
+  const uid = getCurrentUid() || getOrCreateLocalUid();
+  if (!uid) return;
+  queueRTDBUpdate(uid, { 'settings/favorite_surahs': next });
 }
 
 type Phase = 'reciters' | 'surahs' | 'player';
@@ -330,19 +352,24 @@ function fmtTime(s: number) {
 }
 
 export function Reciters() {
-  const { data: reciters, isLoading } = useReciters();
+  const { data: reciters, isLoading, isError } = useReciters();
   const audio = useAudio();
   const { toast } = useToast();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<Phase>('reciters');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const [selectedReciter, setSelectedReciter] = useState<{
     id: string; name: string; server: string; moshafName: string; country?: string;
   } | null>(null);
   const [favorites, setFavorites] = useState<FavoritesMap>(() => loadFavorites());
+  const [favoriteSurahs, setFavoriteSurahs] = useState<FavoriteSurahsMap>(() => loadFavoriteSurahs());
 
   const isFav = (rid: string | number, mi: number) => !!favorites[favKey(rid, mi)];
+  const isFavSurah = (surahNum: number) => !!favoriteSurahs[surahNum];
 
   const toggleFav = (r: any, moshaf: any, mi: number) => {
     const k = favKey(r.id, mi);
@@ -365,7 +392,29 @@ export function Reciters() {
     });
   };
 
+  const toggleFavSurah = () => {
+    if (!audio.surahNum) return;
+    const num = audio.surahNum;
+    setFavoriteSurahs(prev => {
+      const next = { ...prev };
+      if (next[num]) {
+        delete next[num];
+      } else {
+        next[num] = {
+          surahNum: num,
+          surahName: audio.surahName,
+          reciterId: audio.reciterId,
+          reciterName: audio.reciterName,
+          serverUrl: audio.serverUrl,
+        };
+      }
+      saveFavoriteSurahs(next);
+      return next;
+    });
+  };
+
   const favoritesList = Object.values(favorites);
+  const favoriteSurahsList = Object.values(favoriteSurahs).sort((a, b) => a.surahNum - b.surahNum);
 
   // On mount: if audio is already playing, jump straight to player
   useEffect(() => {
@@ -409,46 +458,81 @@ export function Reciters() {
   const handleDownload = async () => {
     if (!directMp3 || isDownloading) return;
 
+    // فحص الاتصال بالإنترنت
+    if (!navigator.onLine) {
+      toast({
+        title: 'لا يوجد اتصال بالإنترنت',
+        description: 'تحقق من اتصالك بالإنترنت وحاول مجدداً',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (Capacitor.isNativePlatform()) {
-      // ── Capacitor Android/iOS: تحميل مباشر إلى الجهاز ──────────────────
+      // ── Capacitor Android/iOS: تحميل مع شريط تقدم ──────────────────
       setIsDownloading(true);
+      setDownloadProgress(0);
       toast({ title: 'جاري التحميل...', description: `سورة ${audio.surahName || ''} - ${audio.reciterName}` });
       try {
         const response = await fetch(directMp3);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const blob = await response.blob();
 
-        // تحويل Blob إلى base64
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload  = () => resolve((reader.result as string).split(',')[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
+        // قراءة البيانات مع تتبع التقدم
+        const contentLength = Number(response.headers.get('content-length') ?? 0);
+        const reader = response.body!.getReader();
+        const chunks: Uint8Array[] = [];
+        let received = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (contentLength > 0) {
+            setDownloadProgress(Math.round((received / contentLength) * 100));
+          }
+        }
+
+        setDownloadProgress(95);
+
+        // تجميع الأجزاء
+        const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
+        const merged = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+
+        // تحويل إلى base64 بطريقة فعّالة للملفات الكبيرة
+        const CHUNK = 8192;
+        let binary = '';
+        for (let i = 0; i < merged.length; i += CHUNK) {
+          binary += String.fromCharCode(...merged.subarray(i, i + CHUNK));
+        }
+        const base64 = btoa(binary);
 
         const { Filesystem, Directory } = await import('@capacitor/filesystem');
-        // حفظ في مجلد المستندات (لا يحتاج إذن على Android 10+)
-        const savedPath = `نور/${mp3Filename}`;
         await Filesystem.writeFile({
-          path: savedPath,
+          path: `نور/${mp3Filename}`,
           data: base64,
           directory: Directory.Documents,
           recursive: true,
         });
 
+        setDownloadProgress(100);
         toast({
           title: '✅ تم التحميل بنجاح',
           description: `حُفظت في المستندات / نور / ${mp3Filename}`,
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error('[Download]', err);
+        const isOffline = !navigator.onLine || err?.message?.includes('Failed to fetch');
         toast({
           title: 'خطأ في التحميل',
-          description: 'تأكد من الاتصال بالإنترنت وحاول مجدداً',
+          description: isOffline ? 'تحقق من اتصالك بالإنترنت وحاول مجدداً' : 'حدث خطأ أثناء التحميل، حاول مجدداً',
           variant: 'destructive',
         });
       } finally {
         setIsDownloading(false);
+        setDownloadProgress(0);
       }
     } else {
       // ── متصفح الويب: استخدام endpoint التحميل ───────────────────────────
@@ -509,8 +593,81 @@ export function Reciters() {
               <div className="w-12 h-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
               <p className="text-muted-foreground font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>جاري تحميل القراء...</p>
             </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <WifiOff className="w-8 h-8 text-destructive" />
+              </div>
+              <div className="text-center">
+                <p className="font-bold text-lg" style={{ fontFamily: '"Tajawal", sans-serif' }}>لا يوجد اتصال بالإنترنت</p>
+                <p className="text-muted-foreground text-sm mt-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>تحقق من اتصالك وأعد تحميل الصفحة</p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-2 pb-6">
+              {/* ── السور المفضلة ──────────────────────────────── */}
+              {favoriteSurahsList.length > 0 && search.trim() === '' && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+                    <h2 className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                      السور المفضلة
+                    </h2>
+                    <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                      ({favoriteSurahsList.length})
+                    </span>
+                  </div>
+                  <div className="space-y-2 mb-4">
+                    {favoriteSurahsList.map(fs => (
+                      <div
+                        key={`favs-${fs.surahNum}`}
+                        className="w-full bg-red-500/5 p-4 rounded-2xl border border-red-500/20 shadow-sm flex items-center justify-between"
+                        data-testid={`fav-surah-row-${fs.surahNum}`}
+                      >
+                        <button
+                          onClick={() => {
+                            setSelectedReciter({
+                              id: fs.reciterId,
+                              name: fs.reciterName,
+                              server: fs.serverUrl,
+                              moshafName: '',
+                              country: undefined,
+                            });
+                            const sName = SURAH_NAMES[fs.surahNum] ?? `سورة ${fs.surahNum}`;
+                            audio.play({ reciterId: fs.reciterId, reciterName: fs.reciterName, serverUrl: fs.serverUrl, surahNum: fs.surahNum, surahName: sName });
+                            setPhase('player');
+                          }}
+                          className="flex-1 flex items-center gap-3 text-right"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                            {fs.surahNum}
+                          </div>
+                          <div>
+                            <p className="font-bold" style={{ fontFamily: '"Amiri", serif' }}>{fs.surahName}</p>
+                            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{fs.reciterName}</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFavoriteSurahs(prev => {
+                              const next = { ...prev };
+                              delete next[fs.surahNum];
+                              saveFavoriteSurahs(next);
+                              return next;
+                            });
+                          }}
+                          className="p-2 rounded-full hover:bg-red-500/10 transition-colors"
+                          data-testid={`button-unfav-surah-${fs.surahNum}`}
+                          title="إزالة من المفضلة"
+                        >
+                          <Heart className="w-5 h-5 fill-red-500 text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* ── القراء المفضلين ──────────────────────────────── */}
               {favoritesList.length > 0 && search.trim() === '' && (
                 <div className="mb-4">
@@ -681,59 +838,117 @@ export function Reciters() {
   // ── PHASE: Full Player ────────────────────────────────────────────────────
   const progress = audio.duration ? audio.currentTime / audio.duration : 0;
 
+  const playerBg = isDark
+    ? 'linear-gradient(160deg, #0d0b07 0%, #1a1308 50%, #0d0b07 100%)'
+    : 'linear-gradient(160deg, #f5ede0 0%, #ede0cc 50%, #f5ede0 100%)';
+  const playerTextMain  = isDark ? '#e8d9b8' : '#2d1f08';
+  const playerTextSub   = isDark ? 'rgba(193,154,107,0.7)' : 'rgba(120,80,30,0.85)';
+  const playerTextTime  = isDark ? 'rgba(193,154,107,0.5)' : 'rgba(120,80,30,0.55)';
+  const playerBtn       = isDark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.2)';
+  const playerBtnBorder = isDark ? '1px solid rgba(193,154,107,0.2)' : '1px solid rgba(193,154,107,0.35)';
+  const playerTrack     = isDark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.25)';
+
+  const favSurah = audio.surahNum ? isFavSurah(audio.surahNum) : false;
+
   return (
     <div className="h-screen flex flex-col max-w-lg mx-auto" dir="rtl"
-      style={{ background: 'linear-gradient(160deg, #0d0b07 0%, #1a1308 50%, #0d0b07 100%)' }}>
+      style={{ background: playerBg }}>
 
       {/* Spin animation keyframes */}
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-12 pb-4">
-        <button onClick={() => setPhase('surahs')} className="p-2 rounded-full" style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.25)' }}>
+
+        {/* زر رجوع للسور */}
+        <button onClick={() => setPhase('surahs')} className="p-2 rounded-full" style={{ background: playerBtn, border: playerBtnBorder }}>
           <ArrowLeft className="w-5 h-5" style={{ color: '#C19A6B' }} />
         </button>
-        <p className="text-sm font-bold" style={{ color: 'rgba(193,154,107,0.7)', fontFamily: '"Tajawal", sans-serif' }}>قيد التشغيل</p>
-        {directMp3 ? (
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="p-2 rounded-full transition-all flex items-center justify-center"
-            style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.25)', opacity: isDownloading ? 0.6 : 1 }}
-            title="تحميل السورة"
-            data-testid="button-download-surah"
-          >
-            {isDownloading
-              ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} />
-              : <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />
-            }
-          </button>
-        ) : (
-          <div
-            className="p-2 rounded-full opacity-30"
-            style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.25)' }}
-          >
-            <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />
-          </div>
-        )}
+
+        <p className="text-sm font-bold" style={{ color: playerTextSub, fontFamily: '"Tajawal", sans-serif' }}>قيد التشغيل</p>
+
+        {/* زر الإغلاق الكامل (يوقف الصوت ويخفي الشريط) */}
+        <button
+          onClick={() => { audio.stop(); setPhase('reciters'); }}
+          className="p-2 rounded-full transition-all"
+          style={{ background: playerBtn, border: playerBtnBorder }}
+          title="إيقاف وإغلاق"
+          data-testid="button-close-player"
+        >
+          <X className="w-5 h-5" style={{ color: '#C19A6B' }} />
+        </button>
       </div>
 
       {/* Islamic Geometric Disc */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
         <div className="relative" style={{ width: 220, height: 220 }}>
-          <div className="w-full h-full rounded-full overflow-hidden" style={{ boxShadow: '0 8px 50px rgba(193,154,107,0.35), 0 0 0 2px rgba(193,154,107,0.2)' }}>
+          <div className="w-full h-full rounded-full overflow-hidden" style={{ boxShadow: isDark ? '0 8px 50px rgba(193,154,107,0.35), 0 0 0 2px rgba(193,154,107,0.2)' : '0 8px 50px rgba(193,154,107,0.25), 0 0 0 2px rgba(193,154,107,0.3)' }}>
             <IslamicDisc isPlaying={audio.isPlaying} surahName={audio.surahName} />
           </div>
-          {/* Reflection glow */}
           <div className="absolute inset-0 rounded-full pointer-events-none" style={{ background: 'radial-gradient(ellipse at 35% 25%, rgba(193,154,107,0.08) 0%, transparent 60%)' }} />
         </div>
 
-        {/* Reciter info */}
+        {/* Reciter info + زر التحميل + زر القلب */}
         <div className="text-center w-full">
-          <h2 className="text-2xl font-bold" style={{ fontFamily: '"Amiri", serif', color: '#e8d9b8' }}>سورة {audio.surahName}</h2>
+          <h2 className="text-2xl font-bold" style={{ fontFamily: '"Amiri", serif', color: playerTextMain }}>سورة {audio.surahName}</h2>
           <div className="flex items-center justify-center gap-2 mt-2">
-            <p style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(193,154,107,0.7)' }}>{audio.reciterName}</p>
+            <p style={{ fontFamily: '"Tajawal", sans-serif', color: playerTextSub }}>{audio.reciterName}</p>
           </div>
+
+          {/* أزرار التحميل والقلب تحت اسم القارئ */}
+          <div className="flex items-center justify-center gap-3 mt-4">
+            {/* زر القلب لحفظ السورة في المفضلة */}
+            {audio.surahNum && (
+              <button
+                onClick={toggleFavSurah}
+                className="p-2.5 rounded-full transition-all"
+                style={{ background: playerBtn, border: playerBtnBorder }}
+                title={favSurah ? 'إزالة من المفضلة' : 'إضافة السورة للمفضلة'}
+                data-testid="button-fav-surah"
+              >
+                <Heart
+                  className="w-5 h-5 transition-all"
+                  style={{ color: favSurah ? '#ef4444' : '#C19A6B', fill: favSurah ? '#ef4444' : 'transparent' }}
+                />
+              </button>
+            )}
+
+            {/* زر التحميل */}
+            {directMp3 ? (
+              <button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="p-2.5 rounded-full transition-all flex items-center justify-center"
+                style={{ background: playerBtn, border: playerBtnBorder, opacity: isDownloading ? 0.7 : 1 }}
+                title="تحميل السورة"
+                data-testid="button-download-surah"
+              >
+                {isDownloading
+                  ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} />
+                  : <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />
+                }
+              </button>
+            ) : (
+              <div className="p-2.5 rounded-full opacity-30" style={{ background: playerBtn, border: playerBtnBorder }}>
+                <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />
+              </div>
+            )}
+          </div>
+
+          {/* شريط تقدم التحميل */}
+          {isDownloading && downloadProgress > 0 && (
+            <div className="mt-3 px-4">
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: playerTrack }}>
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${downloadProgress}%`, background: 'linear-gradient(to right, #C19A6B, #8a6a3a)' }}
+                />
+              </div>
+              <p className="text-xs mt-1" style={{ color: playerTextTime, fontFamily: '"Tajawal", sans-serif' }}>
+                {downloadProgress < 100 ? `جاري التحميل ${downloadProgress}%...` : 'اكتمل التحميل ✓'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -742,19 +957,16 @@ export function Reciters() {
         {/* ── Progress bar (RTL: fills right → left) ── */}
         <div
           className="w-full h-2 rounded-full mb-2 cursor-pointer relative overflow-hidden"
-          style={{ background: 'rgba(193,154,107,0.15)' }}
+          style={{ background: playerTrack }}
           onClick={e => {
             const rect = e.currentTarget.getBoundingClientRect();
-            // RTL: right side = 0%, left side = 100%
             audio.seek(1 - (e.clientX - rect.left) / rect.width);
           }}
         >
-          {/* Filled bar anchored to right, grows left */}
           <div
             className="absolute top-0 right-0 h-full rounded-full transition-all duration-300 relative"
             style={{ width: `${progress * 100}%`, background: 'linear-gradient(to left, #C19A6B, #8a6a3a)' }}
           >
-            {/* Thumb dot on left edge of filled bar */}
             <div
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full shadow-md"
               style={{ background: '#C19A6B', boxShadow: '0 0 8px rgba(193,154,107,0.6)' }}
@@ -762,32 +974,30 @@ export function Reciters() {
           </div>
         </div>
 
-        {/* Time labels — RTL: currentTime on RIGHT (start), duration on LEFT (end) */}
-        <div className="flex justify-between text-xs mb-6" style={{ color: 'rgba(193,154,107,0.5)', fontFamily: '"Tajawal", sans-serif' }}>
+        {/* Time labels */}
+        <div className="flex justify-between text-xs mb-6" style={{ color: playerTextTime, fontFamily: '"Tajawal", sans-serif' }}>
           <span>{fmtTime(audio.duration)}</span>
           <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtTime(audio.currentTime)}</span>
         </div>
 
         {/* Playback controls */}
         <div className="flex items-center justify-between">
-          {/* Previous surah */}
           <button
             onClick={() => { if (audio.surahNum && audio.surahNum > 1) { const n = audio.surahNum - 1; audio.play({ reciterId: audio.reciterId, reciterName: audio.reciterName, serverUrl: audio.serverUrl, surahNum: n, surahName: SURAH_NAMES[n] ?? '' }); } }}
             className="p-4 rounded-full transition-all"
-            style={{ background: 'rgba(193,154,107,0.12)', border: '1px solid rgba(193,154,107,0.2)' }}
+            style={{ background: playerBtn, border: playerBtnBorder }}
             disabled={!audio.surahNum || audio.surahNum <= 1}
           >
             <svg viewBox="0 0 24 24" fill="#C19A6B" className="w-6 h-6"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" /></svg>
           </button>
 
-          {/* Play/Pause */}
           <button
             onClick={audio.togglePlay}
             className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105"
             style={{ background: 'linear-gradient(135deg, #C19A6B, #7a5020)', boxShadow: '0 0 30px rgba(193,154,107,0.4)' }}
           >
             {audio.isLoading ? (
-              <div className="w-7 h-7 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-7 h-7 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />
             ) : audio.isPlaying ? (
               <svg viewBox="0 0 24 24" fill="white" className="w-8 h-8"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
             ) : (
@@ -795,11 +1005,10 @@ export function Reciters() {
             )}
           </button>
 
-          {/* Next surah */}
           <button
             onClick={() => { if (audio.surahNum && audio.surahNum < 114) { const n = audio.surahNum + 1; audio.play({ reciterId: audio.reciterId, reciterName: audio.reciterName, serverUrl: audio.serverUrl, surahNum: n, surahName: SURAH_NAMES[n] ?? '' }); } }}
             className="p-4 rounded-full transition-all"
-            style={{ background: 'rgba(193,154,107,0.12)', border: '1px solid rgba(193,154,107,0.2)' }}
+            style={{ background: playerBtn, border: playerBtnBorder }}
             disabled={!audio.surahNum || audio.surahNum >= 114}
           >
             <svg viewBox="0 0 24 24" fill="#C19A6B" className="w-6 h-6"><path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4V8l-5.5 4zM16 6h2v12h-2z" /></svg>

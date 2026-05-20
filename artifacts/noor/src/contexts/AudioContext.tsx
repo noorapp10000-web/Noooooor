@@ -31,13 +31,14 @@ audioEl.preload = 'auto';
 function updateMediaSession(surahName: string, reciterName: string): void {
   if (!('mediaSession' in navigator)) return;
   try {
+    const base = typeof window !== 'undefined' ? window.location.origin : '';
     navigator.mediaSession.metadata = new MediaMetadata({
       title: surahName ? `سورة ${surahName}` : 'القرآن الكريم',
       artist: reciterName || 'تطبيق نُور',
       album: 'القرآن الكريم',
       artwork: [
-        { src: '/logo.png',    sizes: '192x192', type: 'image/png' },
-        { src: '/logo.png',    sizes: '512x512', type: 'image/png' },
+        { src: `${base}/logo.png`, sizes: '192x192', type: 'image/png' },
+        { src: `${base}/logo.png`, sizes: '512x512', type: 'image/png' },
       ],
     });
   } catch {}
