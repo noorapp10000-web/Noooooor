@@ -10,6 +10,7 @@ import { MiniPlayer } from "@/components/MiniPlayer";
 import { AudioProvider } from "@/contexts/AudioContext";
 import { AppSettingsProvider, useAppSettings } from "@/contexts/AppSettingsContext";
 import { SplashScreen } from "@/components/SplashScreen";
+import { BatteryOptPrompt } from "@/components/BatteryOptPrompt";
 
 import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
@@ -295,6 +296,7 @@ function App() {
               </TooltipProvider>
             </AudioProvider>
           </AppSettingsProvider>
+          <BatteryOptPrompt />
         </QueryClientProvider>
       )}
     </>

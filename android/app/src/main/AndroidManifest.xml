@@ -87,6 +87,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
+    <!-- Battery optimization — needed to request ignoring battery optimizations -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Exact alarms for prayer notifications (required on Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
         android:minSdkVersion="31" />
