@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTutorial } from '@/components/TutorialMascotContext';
 import { ChevronLeft, ChevronRight, Search, X, Copy, Share2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -673,6 +674,15 @@ export function Hadith() {
   const [selected, setSelected] = useState<Book | null>(null);
   const [initHadithNum, setInitHadithNum] = useState<number | undefined>(undefined);
   const [tab, setTab] = useState<'books' | 'search'>('books');
+  const { showTutorial } = useTutorial();
+
+  useEffect(() => {
+    if (selected) {
+      showTutorial('hadith:book:' + selected.slug,
+        `أنت داخل ${selected.name}! 📜\n\n• اسحب للأعلى لتكمل قراءة الأحاديث\n• 🔍 زر البحث يفلتر الأحاديث داخل هذا الكتاب\n• اضغط على أي حديث لعرضه كاملاً مع التفاصيل\n• زر النسخ 📋 ينسخ الحديث كاملاً للمشاركة\n• السهم ← فوق للرجوع لقائمة الكتب`
+      );
+    }
+  }, [selected, showTutorial]);
   const isDark = useDarkMode();
 
   const openBook = useCallback((b: Book, hadithNum?: number) => {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTutorial } from '@/components/TutorialMascotContext';
 import { ChevronLeft, Award, CheckCircle, XCircle, Trophy, RotateCcw, ExternalLink } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,6 +56,27 @@ export function IslamicQuizzes() {
   const [selectedCat, setSelectedCat] = useState<Category | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const { showTutorial } = useTutorial();
+
+  useEffect(() => {
+    if (screen === 'topics') {
+      showTutorial('quiz:topics',
+        `اختار الموضوع الأنسب لك! 📚\n\n• كل موضوع بيغطي جانب معين من المعرفة الإسلامية\n• اضغط على الموضوع اللي تريد الاختبار فيه\n• بعد الموضوع هتختار مستوى الصعوبة`
+      );
+    } else if (screen === 'levels') {
+      showTutorial('quiz:levels',
+        `اختار مستوى الصعوبة! 🎯\n\n• سهل: أسئلة بسيطة للمبتدئين\n• متوسط: تحدٍّ معقول للمتوسطين\n• صعب: للمتمكنين والراغبين في الاختبار الحقيقي 💪\n• كل مستوى = 20 سؤال منتقى بعناية`
+      );
+    } else if (screen === 'quiz') {
+      showTutorial('quiz:playing',
+        `الاختبار بدأ! 🎯\n\n• اقرأ السؤال جيداً قبل الاختيار\n• اضغط على الإجابة التي تعتقد أنها صحيحة\n• ✅ خضراء = إجابة صحيحة / ❌ حمراء = خطأ\n• لا يوجد وقت — خذ وقتك وفكّر بهدوء\n• في نهاية الجلسة تظهر نتيجتك الكاملة 🏆`
+      );
+    } else if (screen === 'results') {
+      showTutorial('quiz:results',
+        `انتهى الاختبار! 🏆\n\n• النتيجة تعكس مستواك في هذا الموضوع\n• يمكنك مراجعة الأسئلة والإجابات الصحيحة\n• اضغط "إعادة" للعب مرة أخرى بأسئلة مختلفة\n• 💡 كرّر الموضوع يومياً لتعزيز معلوماتك!`
+      );
+    }
+  }, [screen, showTutorial]);
 
   // Quiz state
   const [questions, setQuestions] = useState<Question[]>([]);

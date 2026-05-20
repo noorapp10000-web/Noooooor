@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTutorial } from '@/components/TutorialMascotContext';
 import { useQuranSurahs, useSurah, useTafsir } from '@/hooks/use-api';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
@@ -309,9 +310,19 @@ export function Quran() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
 
+  const { showTutorial } = useTutorial();
+
   const [selectedSurah, setSelectedSurah] = useState<number | null>(null);
   const [scrollToAyah, setScrollToAyah] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (selectedSurah) {
+      showTutorial('quran:surah:' + selectedSurah,
+        `أنت داخل السورة الآن! 📖\n\n• اضغط مطوّلاً على أي آية لعرض تفسيرها الميسّر\n• زر 🔊 يشغّل التلاوة آية بآية بصوت القارئ المختار\n• A+ / A− : تكبير وتصغير حجم الخط حسب راحتك\n• 🔖 الضغط المطوّل يحفظ إشارة مرجعية في الآية\n• السهم ← فوق للعودة لقائمة السور في أي وقت\n\n💡 اضغط مرتين على الآية لنسخها ومشاركتها`
+      );
+    }
+  }, [selectedSurah, showTutorial]);
   const { data: surahData, isLoading: loadingSurah } = useSurah(selectedSurah ?? 0);
 
   const [mode, setMode] = useState<Mode>('normal');

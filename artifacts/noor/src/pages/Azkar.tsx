@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTutorial } from '@/components/TutorialMascotContext';
 import { Check, RotateCcw, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ReactNode } from 'react';
@@ -389,6 +390,15 @@ function CategoriesView({ onSelect }: { onSelect: (cat: HisnCategory) => void })
 /* ── Main ────────────────────────────────────────*/
 export function Azkar() {
   const [selected, setSelected] = useState<HisnCategory | null>(null);
+  const { showTutorial } = useTutorial();
+
+  useEffect(() => {
+    if (selected) {
+      showTutorial('azkar:cat:' + selected.id,
+        `اضغط على الذكر كل ما قلته! 🤲\n\n• الرقم الكبير = عدد المرات المطلوبة\n• كل ضغطة تعدّ مرة واحدة وتنزّل العداد\n• لما تكمل الذكر ينتقل تلقائياً للذكر التالي ✅\n• يمكنك الضغط مطوّلاً لنسخ الذكر ومشاركته\n• السهم ← فوق للرجوع لقائمة الأذكار`
+      );
+    }
+  }, [selected, showTutorial]);
 
   return (
     <AnimatePresence mode="wait">

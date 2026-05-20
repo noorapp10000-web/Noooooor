@@ -12,6 +12,7 @@ import { AppSettingsProvider, useAppSettings } from "@/contexts/AppSettingsConte
 import { SplashScreen } from "@/components/SplashScreen";
 import { BatteryOptPrompt } from "@/components/BatteryOptPrompt";
 import { TutorialMascot } from "@/components/TutorialMascot";
+import { TutorialProvider } from "@/components/TutorialMascotContext";
 
 import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
@@ -289,10 +290,12 @@ function App() {
             <AudioProvider>
               <TooltipProvider>
                 <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                  <>
-                    <GlobalBackground />
-                    <Router />
-                  </>
+                  <TutorialProvider>
+                    <>
+                      <GlobalBackground />
+                      <Router />
+                    </>
+                  </TutorialProvider>
                 </WouterRouter>
                 <Toaster />
               </TooltipProvider>
