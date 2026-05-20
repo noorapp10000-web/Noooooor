@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
 
 interface AudioState {
   reciterId: string;
@@ -29,7 +29,7 @@ const AudioCtx = createContext<AudioContextType | null>(null);
 const audioEl = new Audio();
 audioEl.preload = 'auto';
 
-/* ── MediaSession: تحكم في شاشة القفل وسماعات البلوتوث ── */
+/* ── MediaSession helpers ── */
 function updateMediaSession(surahName: string, reciterName: string): void {
   if (!('mediaSession' in navigator)) return;
   try {
@@ -39,8 +39,8 @@ function updateMediaSession(surahName: string, reciterName: string): void {
       artist: reciterName || 'تطبيق نُور',
       album: 'القرآن الكريم',
       artwork: [
-        { src: `${base}/logo.png`, sizes: '192x192', type: 'image/png' },
-        { src: `${base}/logo.png`, sizes: '512x512', type: 'image/png' },
+        { src: `${base}/icon-192.png`, sizes: '192x192', type: 'image/png' },
+        { src: `${base}/icon-512.png`, sizes: '512x512', type: 'image/png' },
       ],
     });
   } catch {}
@@ -102,13 +102,15 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     autoPlay: initAutoPlay,
   });
 
-  const rafRef      = useRef<number>(0);
-  const stateRef    = useRef(state);
-  stateRef.current  = state;
+  const rafRef       = useRef<number>(0);
+  const stateRef     = useRef(state);
+  stateRef.current   = state;
 
-  // Stable ref so onended can call play() without stale-closure issues
-  const autoPlayRef = useRef<boolean>(initAutoPlay);
-  const playRef     = useRef<((opts: { reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string }) => void) | null>(null);
+  const autoPlayRef  = useRef<boolean>(initAutoPlay);
+  const playRef      = useRef<((opts: { reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string }) => void) | null>(null);
+
+  // Tracks whether the LAST pause was initiated by the user (not the system/screen-lock)
+  const userPausedRef = useRef<boolean>(false);
 
   const tick = useCallback(() => {
     setState(s => ({ ...s, currentTime: audioEl.currentTime, duration: audioEl.duration || 0 }));
@@ -120,6 +122,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const stopTick  = () => cancelAnimationFrame(rafRef.current);
 
   audioEl.onplay = () => {
+    userPausedRef.current = false;
     setState(s => ({ ...s, isPlaying: true, isLoading: false }));
     setMediaSessionState('playing');
     startTick();
@@ -137,6 +140,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const play = useCallback(({ reciterId, reciterName, serverUrl, surahNum, surahName }: {
     reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string;
   }) => {
+    userPausedRef.current = false;
     const surahPad = surahNum.toString().padStart(3, '0');
     audioEl.src = `${serverUrl}${surahPad}.mp3`;
     audioEl.load();
@@ -145,8 +149,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
     updateMediaSession(surahName, reciterName);
     registerMediaSessionHandlers(
-      () => audioEl.play().catch(() => {}),
-      () => audioEl.pause(),
+      () => {
+        userPausedRef.current = false;
+        audioEl.play().catch(() => {});
+      },
+      () => {
+        userPausedRef.current = true;
+        audioEl.pause();
+      },
       () => {
         const cur = stateRef.current;
         if (!cur.surahNum || cur.surahNum >= 114) return;
@@ -165,19 +175,17 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  // Keep playRef up to date so onended can always call the latest play()
   playRef.current = play;
 
-  // ── onended: auto-play next surah or stop ─────────────────────────
+  // ── onended: auto-play next surah or stop ────────────────────────
   audioEl.onended = () => {
     const cur = stateRef.current;
     if (autoPlayRef.current && cur.surahNum && cur.surahNum < 114 && playRef.current) {
-      const nextNum = cur.surahNum + 1;
       playRef.current({
         reciterId:   cur.reciterId,
         reciterName: cur.reciterName,
         serverUrl:   cur.serverUrl,
-        surahNum:    nextNum,
+        surahNum:    cur.surahNum + 1,
         surahName:   '',
       });
     } else {
@@ -188,11 +196,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   };
 
   const togglePlay = useCallback(() => {
-    if (audioEl.paused) audioEl.play().catch(() => {});
-    else audioEl.pause();
+    if (audioEl.paused) {
+      userPausedRef.current = false;
+      audioEl.play().catch(() => {});
+    } else {
+      userPausedRef.current = true;
+      audioEl.pause();
+    }
   }, []);
 
-  const pause = useCallback(() => { audioEl.pause(); }, []);
+  const pause = useCallback(() => {
+    userPausedRef.current = true;
+    audioEl.pause();
+  }, []);
 
   const seek = useCallback((fraction: number) => {
     if (!audioEl.duration) return;
@@ -214,6 +230,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [play]);
 
   const stop = useCallback(() => {
+    userPausedRef.current = true;
     audioEl.pause();
     audioEl.src = '';
     stopTick();
@@ -228,6 +245,38 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem('noor_autoplay', String(next)); } catch {}
       return { ...s, autoPlay: next };
     });
+  }, []);
+
+  // ── Background / lock-screen audio survival ──────────────────────
+  useEffect(() => {
+    // Called by MainActivity.java (via evaluateJavascript) after the
+    // WebView is resumed from a system pause (screen lock / home button).
+    // If the user did NOT deliberately pause, we resume playback.
+    (window as any).__noorKeepPlaying = () => {
+      if (!userPausedRef.current && audioEl.paused && stateRef.current.surahNum) {
+        audioEl.play().catch(() => {});
+      }
+    };
+
+    // Backup: visibilitychange fires when the browser tab goes hidden/visible.
+    // On Android WebView this fires when the screen locks or app is minimised.
+    let wasPlayingOnHide = false;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        wasPlayingOnHide = !audioEl.paused;
+      } else {
+        // Coming back to foreground — resume if we were playing and user didn't stop it
+        if (wasPlayingOnHide && audioEl.paused && !userPausedRef.current) {
+          audioEl.play().catch(() => {});
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      delete (window as any).__noorKeepPlaying;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   return (

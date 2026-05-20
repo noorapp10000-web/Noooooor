@@ -13,45 +13,61 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Override onPause so the WebView keeps running after the screen locks.
+     * When the screen locks or the user leaves the app, Android calls onPause().
+     * BridgeActivity.onPause() → bridge.onPause() → webView.onPause() + pauseTimers()
+     * This freezes JS execution AND pauses the HTML5 audio element.
      *
-     * Default Capacitor behaviour:
-     *   BridgeActivity.onPause() → bridge.onPause()
-     *                            → webView.onPause()       (stops JS execution)
-     *                            → webView.pauseTimers()   (freezes all timers)
-     *
-     * That kills audio playback AND the MediaSession heartbeat, so the lock-screen
-     * and notification-shade controls disappear immediately.
-     *
-     * Fix: call super (so the Activity lifecycle is correct) then immediately
-     * re-resume the WebView, which restores JS execution and keeps audio alive.
+     * Fix:
+     *  1. Let super run (correct Activity lifecycle).
+     *  2. Immediately resume the WebView so JS keeps running.
+     *  3. Tell JS to resume audio if it was playing before the system paused it.
      */
     @Override
     public void onPause() {
         super.onPause();
-        if (getBridge() != null) {
-            WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                webView.resumeTimers();
-                webView.onResume();
-            }
-        }
+        resumeWebViewAndAudio();
     }
 
     /**
-     * onStop is called when the app is fully hidden (e.g. another app covers it).
-     * We apply the same fix so audio keeps going even when the app is in the
-     * background task list.
+     * onStop is called when the app is fully hidden (home button / task switcher).
+     * Same treatment: keep WebView and audio alive.
      */
     @Override
     public void onStop() {
         super.onStop();
+        resumeWebViewAndAudio();
+    }
+
+    /**
+     * Called when the user presses Home. The Activity loses focus before onPause().
+     * Resume timers early so the audio pipeline doesn't stutter.
+     */
+    @Override
+    public void onUserLeaveHint() {
+        super.onUserLeaveHint();
         if (getBridge() != null) {
             WebView webView = getBridge().getWebView();
             if (webView != null) {
                 webView.resumeTimers();
-                webView.onResume();
             }
         }
+    }
+
+    private void resumeWebViewAndAudio() {
+        if (getBridge() == null) return;
+        WebView webView = getBridge().getWebView();
+        if (webView == null) return;
+
+        webView.resumeTimers();
+        webView.onResume();
+
+        // After the WebView is resumed, ask JS to resume audio
+        // if it was playing before the system interrupted it.
+        webView.post(() ->
+            webView.evaluateJavascript(
+                "(function(){ try { if(window.__noorKeepPlaying) window.__noorKeepPlaying(); } catch(e){} })();",
+                null
+            )
+        );
     }
 }
