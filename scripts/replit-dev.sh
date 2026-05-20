@@ -31,10 +31,13 @@ cleanup() {
 }
 trap cleanup SIGTERM SIGINT
 
+TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
+VITE_BIN="$ROOT_DIR/node_modules/.bin/vite"
+
 echo "Starting API server on port $API_SERVER_PORT..."
 (cd "$ROOT_DIR/artifacts/api-server" && \
   PORT=$API_SERVER_PORT NODE_ENV=development \
-  "$ROOT_DIR/artifacts/api-server/node_modules/.bin/tsx" ./src/index.ts 2>&1) &
+  "$TSX_BIN" ./src/index.ts 2>&1) &
 
 echo "Starting noor proxy on port $NOOR_PROXY_PORT -> Vite on port $VITE_PORT..."
 PROXY_PORT=$NOOR_PROXY_PORT TARGET_PORT=$VITE_PORT node "$ROOT_DIR/scripts/proxy.js" &
@@ -45,5 +48,5 @@ cd "$ROOT_DIR/artifacts/noor" && exec env \
   VITE_PORT=$VITE_PORT \
   API_SERVER_PORT=$API_SERVER_PORT \
   BASE_PATH=/ \
-  "$ROOT_DIR/artifacts/noor/node_modules/.bin/vite" \
+  "$VITE_BIN" \
   --config "$ROOT_DIR/artifacts/noor/vite.config.ts"
