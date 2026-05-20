@@ -1,9 +1,17 @@
 #!/bin/bash
 # Main dev script for the "Start application" workflow.
-# Starts Vite dev server + API server.
+# On Replit: delegates to replit-dev.sh (artifact-aware multi-proxy setup).
+# Outside Replit: starts Vite + API server directly on their default ports.
 export BASE_PATH=/
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+# On Replit the REPL_ID env var is always set.
+# Delegate to the Replit-specific script which starts the noor proxy on 8080,
+# Vite on 5000, and the API server on 19382 — matching the artifact router.
+if [ -n "$REPL_ID" ]; then
+  exec bash "$ROOT_DIR/scripts/replit-dev.sh"
+fi
 
 API_SERVER_PORT="${API_SERVER_PORT:-3001}"
 VITE_PORT="${PORT:-5000}"
@@ -12,13 +20,11 @@ echo "Root dir: $ROOT_DIR"
 echo "API server dev port: $API_SERVER_PORT"
 echo "Vite port: $VITE_PORT"
 
-# Resolve tsx binary - check artifact-level first, then root
 TSX_BIN="$ROOT_DIR/artifacts/api-server/node_modules/.bin/tsx"
 if [ ! -f "$TSX_BIN" ]; then
   TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
 fi
 
-# Resolve vite binary - check artifact-level first, then root node_modules (pnpm hoist)
 VITE_BIN="$ROOT_DIR/artifacts/noor/node_modules/.bin/vite"
 if [ ! -f "$VITE_BIN" ]; then
   VITE_BIN="$ROOT_DIR/node_modules/.bin/vite"

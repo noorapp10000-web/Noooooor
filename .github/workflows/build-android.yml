@@ -105,6 +105,19 @@ jobs:
       - name: Create build-logs directory
         run: mkdir -p /tmp/build-logs
 
+      # ── 12. Force-reinstall Android SDK Platform 35 ───────────────────────
+      # The pre-installed android-35 platform jar on GitHub Actions runners can
+      # be corrupted (aapt2 reports "RES_TABLE_TYPE_TYPE entry offsets overlap").
+      # Force a clean reinstall before every build to guarantee a valid jar.
+      - name: Reinstall Android SDK Platform 35
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ ! -f "$SDKMANAGER" ] && SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name "sdkmanager" 2>/dev/null | head -1)
+          yes | "$SDKMANAGER" --install "platforms;android-35" 2>/dev/null || true
+          yes | "$SDKMANAGER" --uninstall "platforms;android-35" 2>/dev/null || true
+          yes | "$SDKMANAGER" --install "platforms;android-35" 2>/dev/null || true
+          echo "android-35 jar size: $(du -sh $ANDROID_HOME/platforms/android-35/android.jar 2>/dev/null || echo 'not found')"
+
       # ══════════════════════════════════════════════════════════════════════
       #  DEBUG BUILD
       # ══════════════════════════════════════════════════════════════════════
