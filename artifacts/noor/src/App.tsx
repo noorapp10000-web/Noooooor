@@ -41,6 +41,7 @@ import {
 } from "@/lib/rtdb";
 import { scheduleAllNotifications, setupNotificationTapHandler } from "@/lib/notifications";
 import { Capacitor } from "@capacitor/core";
+import NoorWidget from "@/lib/widget-bridge";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -133,9 +134,44 @@ function Router() {
   );
 }
 
+function syncWidgetTheme() {
+  if (!Capacitor.isNativePlatform()) return;
+  const isDark = document.documentElement.classList.contains('dark');
+  NoorWidget.setTheme({ theme: isDark ? 'dark' : 'light' }).catch(() => {});
+}
+
 function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  // Global error shield — prevent uncaught errors from crashing WebView
+  useEffect(() => {
+    const onError = (event: ErrorEvent) => {
+      event.preventDefault();
+      console.error('[noor] uncaught error:', event.error ?? event.message);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      event.preventDefault();
+      console.error('[noor] unhandled rejection:', event.reason);
+    };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
+
+  // Watch for dark-class changes on <html> and sync widget theme
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const observer = new MutationObserver(() => syncWidgetTheme());
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const handleSplashDone = useCallback(() => {
     setSplashDone(true);
@@ -148,9 +184,9 @@ function App() {
     const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
     document.documentElement.classList.toggle('dark', theme === 'dark');
     setIsLoggedIn(true);
-    // Schedule notifications after first login
     if (Capacitor.isNativePlatform()) {
       setTimeout(() => {
+        syncWidgetTheme();
         const profile = getProfileCache();
         if (profile?.lat && profile?.lng) {
           scheduleAllNotifications(profile.lat, profile.lng).catch(() => {});
@@ -172,10 +208,12 @@ function App() {
         const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
         document.documentElement.classList.toggle('dark', theme === 'dark');
         setIsLoggedIn(true);
-        // Schedule notifications on app startup (existing user)
-        if (Capacitor.isNativePlatform() && profile.lat && profile.lng) {
+        if (Capacitor.isNativePlatform()) {
           setTimeout(() => {
-            scheduleAllNotifications(profile.lat, profile.lng).catch(() => {});
+            syncWidgetTheme();
+            if (profile.lat && profile.lng) {
+              scheduleAllNotifications(profile.lat, profile.lng).catch(() => {});
+            }
           }, 3000);
         }
       } else {

@@ -12,11 +12,13 @@ export interface NoorWidgetPlugin {
     lat: number;
     lng: number;
   }): Promise<void>;
+  setTheme(data: { theme: 'light' | 'dark' }): Promise<void>;
 }
 
 const NoorWidget = registerPlugin<NoorWidgetPlugin>('NoorWidget', {
   web: {
     async setPrayerTimes() {},
+    async setTheme() {},
   } as NoorWidgetPlugin,
 });
 

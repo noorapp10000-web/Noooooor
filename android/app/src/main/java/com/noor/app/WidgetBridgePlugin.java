@@ -13,7 +13,7 @@ import com.noor.app.widget.PrayerWidget;
 import com.noor.app.widget.PrayerWidgetService;
 
 /**
- * Capacitor bridge plugin — receives lat/lng from the web layer and stores it in
+ * Capacitor bridge plugin — receives lat/lng and theme from the web layer and stores them in
  * SharedPreferences so the widget's foreground service can calculate prayer times
  * natively using the adhan library, independent of the app being open.
  */
@@ -39,6 +39,26 @@ public class WidgetBridgePlugin extends Plugin {
             .putLong("savedAt", System.currentTimeMillis())
             .apply();
 
+        triggerWidgetUpdate();
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void setTheme(PluginCall call) {
+        String theme = call.getString("theme", "light");
+
+        SharedPreferences prefs = getContext().getSharedPreferences(
+            PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE
+        );
+        prefs.edit()
+            .putString(PrayerWidgetService.KEY_THEME, theme)
+            .apply();
+
+        triggerWidgetUpdate();
+        call.resolve();
+    }
+
+    private void triggerWidgetUpdate() {
         AppWidgetManager awm = AppWidgetManager.getInstance(getContext());
         int[] ids = awm.getAppWidgetIds(
             new ComponentName(getContext(), PrayerWidget.class)
@@ -46,7 +66,5 @@ public class WidgetBridgePlugin extends Plugin {
         if (ids.length > 0) {
             PrayerWidgetService.start(getContext());
         }
-
-        call.resolve();
     }
 }

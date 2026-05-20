@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useTransition } from 'react';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, User, ChevronRight, MapPin, FolderOpen, RefreshCw, CheckCircle } from 'lucide-react';
@@ -71,6 +71,7 @@ export function Login({ onComplete }: LoginProps) {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -92,12 +93,14 @@ export function Login({ onComplete }: LoginProps) {
   function handleNameNext() {
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (isProfane(trimmed)) {
-      setNameError('هذا الاسم غير مقبول، الرجاء اختيار اسم مناسب');
-      return;
-    }
-    setNameError('');
-    setStep('city');
+    startTransition(() => {
+      if (isProfane(trimmed)) {
+        setNameError('هذا الاسم غير مقبول، الرجاء اختيار اسم مناسب');
+        return;
+      }
+      setNameError('');
+      setStep('city');
+    });
   }
 
   const slide = {
@@ -227,12 +230,12 @@ export function Login({ onComplete }: LoginProps) {
 
               <button
                 onClick={handleNameNext}
-                disabled={!name.trim()}
+                disabled={!name.trim() || isPending}
                 className="w-full py-4 rounded-2xl transition-all disabled:opacity-30 flex items-center justify-center gap-2"
                 style={BTN_GOLD}
               >
+                {isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
                 التالي
-                <ChevronRight className="w-4 h-4" />
               </button>
 
               {/* Import backup */}

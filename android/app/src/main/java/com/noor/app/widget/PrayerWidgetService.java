@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -32,23 +33,12 @@ import com.noor.app.R;
 import java.util.Calendar;
 import java.util.Date;
 
-/**
- * نُور — Foreground Service for per-second widget countdown.
- *
- * Architecture:
- *   • START_STICKY — Android restarts it automatically if killed
- *   • Handler ticks every 1 second to update 3 separate TextViews (HH / MM / SS)
- *   • Screen-off receiver pauses ticking (battery saving); resumes instantly on screen-on
- *   • Stops itself when no widget instances remain on the home screen
- *   • BootReceiver restarts it after device reboot
- *   • Uses adhan library (adhan:1.2.1 in build.gradle) for native prayer calculation —
- *     no internet, no web layer needed. Works completely offline and when app is closed.
- */
 public class PrayerWidgetService extends Service {
 
     public static final String PREFS_NAME = "NoorWidget";
     public static final String KEY_LAT    = "lat";
     public static final String KEY_LNG    = "lng";
+    public static final String KEY_THEME  = "theme";
 
     private static final String CHANNEL_ID = "noor_widget_ch";
     private static final int    NOTIF_ID   = 9001;
@@ -61,7 +51,6 @@ public class PrayerWidgetService extends Service {
     private boolean        isScreenOn  = true;
     private boolean        isRunning   = false;
 
-    // ── Per-second tick ──────────────────────────────────────────────────────
     private final Runnable tickRunnable = new Runnable() {
         @Override public void run() {
             if (isScreenOn) performUpdate();
@@ -69,7 +58,6 @@ public class PrayerWidgetService extends Service {
         }
     };
 
-    // ── Screen receiver (pauses ticking when screen is off) ─────────────────
     private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context ctx, Intent intent) {
             String action = intent.getAction();
@@ -82,7 +70,6 @@ public class PrayerWidgetService extends Service {
         }
     };
 
-    // ────────────────────────────────────────────────────────────────────────
     @Override
     public void onCreate() {
         super.onCreate();
@@ -113,17 +100,41 @@ public class PrayerWidgetService extends Service {
 
     @Override public IBinder onBind(Intent i) { return null; }
 
-    // ── Core update ──────────────────────────────────────────────────────────
     private void performUpdate() {
         AppWidgetManager awm = AppWidgetManager.getInstance(this);
         int[] ids = awm.getAppWidgetIds(new ComponentName(this, PrayerWidget.class));
         if (ids.length == 0) { stopSelf(); return; }
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        float lat = prefs.getFloat(KEY_LAT, Float.MIN_VALUE);
-        float lng = prefs.getFloat(KEY_LNG, Float.MIN_VALUE);
+        float lat   = prefs.getFloat(KEY_LAT, Float.MIN_VALUE);
+        float lng   = prefs.getFloat(KEY_LNG, Float.MIN_VALUE);
+        String theme = prefs.getString(KEY_THEME, "light");
+        boolean isDark = "dark".equals(theme);
 
         RemoteViews rv = new RemoteViews(getPackageName(), R.layout.widget_prayer);
+
+        // ── Apply theme colors ──────────────────────────────────────────────
+        if (isDark) {
+            rv.setInt(R.id.wg_root, "setBackgroundResource", R.drawable.widget_bg_dark);
+            rv.setInt(R.id.wg_card, "setBackgroundResource", R.drawable.widget_card_bg_dark);
+            rv.setInt(R.id.wg_hours,   "setBackgroundResource", R.drawable.widget_number_bg_dark);
+            rv.setInt(R.id.wg_minutes, "setBackgroundResource", R.drawable.widget_number_bg_dark);
+            rv.setInt(R.id.wg_seconds, "setBackgroundResource", R.drawable.widget_number_bg_dark);
+            rv.setTextColor(R.id.wg_prayer_name, Color.parseColor("#F5E6CC"));
+            rv.setTextColor(R.id.wg_hours,       Color.parseColor("#F5E6CC"));
+            rv.setTextColor(R.id.wg_minutes,     Color.parseColor("#F5E6CC"));
+            rv.setTextColor(R.id.wg_seconds,     Color.parseColor("#F5E6CC"));
+        } else {
+            rv.setInt(R.id.wg_root, "setBackgroundResource", R.drawable.widget_bg);
+            rv.setInt(R.id.wg_card, "setBackgroundResource", R.drawable.widget_card_bg);
+            rv.setInt(R.id.wg_hours,   "setBackgroundResource", R.drawable.widget_number_bg);
+            rv.setInt(R.id.wg_minutes, "setBackgroundResource", R.drawable.widget_number_bg);
+            rv.setInt(R.id.wg_seconds, "setBackgroundResource", R.drawable.widget_number_bg);
+            rv.setTextColor(R.id.wg_prayer_name, Color.WHITE);
+            rv.setTextColor(R.id.wg_hours,       Color.WHITE);
+            rv.setTextColor(R.id.wg_minutes,     Color.WHITE);
+            rv.setTextColor(R.id.wg_seconds,     Color.WHITE);
+        }
 
         if (lat == Float.MIN_VALUE) {
             setNoData(rv);
@@ -145,14 +156,12 @@ public class PrayerWidgetService extends Service {
                 rv.setTextViewText(R.id.wg_seconds,      pad2(s));
                 rv.setTextViewText(R.id.wg_prayer_time,  next.formattedTime);
 
-                // Keep foreground notification in sync
                 String cd = pad2(h) + ":" + pad2(m) + ":" + pad2(s);
                 getSystemService(NotificationManager.class)
                     .notify(NOTIF_ID, buildNotification(next.name, cd));
             }
         }
 
-        // Tap → open app
         Intent open = new Intent(this, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pi = PendingIntent.getActivity(
@@ -171,14 +180,12 @@ public class PrayerWidgetService extends Service {
         rv.setTextViewText(R.id.wg_prayer_time, "");
     }
 
-    // ── Prayer calculation (adhan 1.2.1 — Egyptian method) ──────────────────
     private PrayerInfo getNextPrayer(float lat, float lng) {
         try {
             Coordinates coords = new Coordinates(lat, lng);
             CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
             long now = System.currentTimeMillis();
 
-            // Today
             DateComponents dc = DateComponents.from(new Date());
             PrayerTimes pt = new PrayerTimes(coords, dc, params);
             Date[] times = { pt.fajr, pt.dhuhr, pt.asr, pt.maghrib, pt.isha };
@@ -190,7 +197,6 @@ public class PrayerWidgetService extends Service {
                 }
             }
 
-            // All today's prayers done — return tomorrow's Fajr
             Calendar tomorrow = Calendar.getInstance();
             tomorrow.add(Calendar.DAY_OF_YEAR, 1);
             DateComponents dcT = DateComponents.from(tomorrow.getTime());
@@ -217,7 +223,6 @@ public class PrayerWidgetService extends Service {
         return n < 10 ? "0" + n : String.valueOf(n);
     }
 
-    // ── Foreground notification ───────────────────────────────────────────────
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(
@@ -251,7 +256,6 @@ public class PrayerWidgetService extends Service {
             .build();
     }
 
-    // ── Static start helper ───────────────────────────────────────────────────
     public static void start(Context context) {
         Intent intent = new Intent(context, PrayerWidgetService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -261,7 +265,6 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Data model ─────────────────────────────────────────────────────────
     private static class PrayerInfo {
         final String name;
         final long   timeMs;
