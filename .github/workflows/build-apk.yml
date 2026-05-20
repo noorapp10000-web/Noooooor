@@ -1,156 +1,19 @@
-name: Build Noor APK
+# ⚠️ هذا الـ Workflow مُدمج الآن في build-android.yml
+# This workflow is superseded by build-android.yml (APK + AAB + signing + logs)
+# Use: Actions → "Build Noor Android (APK + AAB)"
+
+name: "[Deprecated] Build Noor APK — use build-android.yml"
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version (e.g. 2.3)'
-        required: false
-        default: '2.2'
-      build_type:
-        description: 'Build type'
-        required: false
-        default: 'debug'
-        type: choice
-        options:
-          - debug
-          - release
 
 jobs:
-  build-apk:
-    name: Build Noor APK
+  notice:
+    name: Redirect to build-android.yml
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Accept Android SDK licenses
+      - name: Notice
         run: |
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          [ ! -f "$SDKMANAGER" ] && SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name "sdkmanager" 2>/dev/null | head -1) || true
-          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls "$ANDROID_HOME/platforms/" | grep "android-34" && echo "android-34 found" || echo "WARNING: android-34 not found"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build web app
-        run: pnpm --filter @workspace/noor run build
-        env:
-          VITE_FIREBASE_API_KEY: 'AIzaSyDOVE54x_j5fldKYwTRAG9QzdRok_pD074'
-          VITE_FIREBASE_AUTH_DOMAIN: 'noooooor-app.firebaseapp.com'
-          VITE_FIREBASE_PROJECT_ID: 'noooooor-app'
-          VITE_FIREBASE_STORAGE_BUCKET: 'noooooor-app.firebasestorage.app'
-          VITE_FIREBASE_MESSAGING_SENDER_ID: '230599694330'
-          VITE_FIREBASE_APP_ID: '1:230599694330:web:8780636368d1469591f643'
-          VITE_FIREBASE_MEASUREMENT_ID: 'G-P96TYMPZQF'
-          BASE_PATH: /
-          NODE_ENV: production
-
-      - name: Sync Capacitor to Android
-        run: pnpm exec cap sync android
-
-      - name: Verify Android project structure
-        run: |
-          echo "=== capacitor.settings.gradle ==="
-          cat android/capacitor.settings.gradle
-          echo "=== capacitor-cordova-android-plugins ==="
-          ls android/capacitor-cordova-android-plugins/
-          echo "=== cordova.variables.gradle ==="
-          cat android/capacitor-cordova-android-plugins/cordova.variables.gradle
-          echo "=== web assets ==="
-          ls android/app/src/main/assets/public/ | head -5 && echo "OK" || echo "MISSING"
-
-      - name: Create local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-
-      - name: Fix Gradle permissions
-        run: chmod +x android/gradlew
-
-      - name: Build Debug APK
-        if: ${{ github.event.inputs.build_type != 'release' }}
-        run: |
-          cd android
-          ./gradlew assembleDebug --no-daemon --stacktrace \
-            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
-            2>&1 | tee /tmp/gradle.log; RC=${PIPESTATUS[0]}
-          if [ $RC -ne 0 ]; then
-            echo "=== BUILD FAILURE: What went wrong ==="
-            grep -A 30 "What went wrong:" /tmp/gradle.log | head -60 || tail -60 /tmp/gradle.log
-            exit $RC
-          fi
-
-      - name: Build Release APK
-        if: ${{ github.event.inputs.build_type == 'release' }}
-        run: |
-          cd android
-          ./gradlew assembleRelease --no-daemon --stacktrace \
-            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
-            2>&1 | tee /tmp/gradle.log; RC=${PIPESTATUS[0]}
-          if [ $RC -ne 0 ]; then
-            echo "=== BUILD FAILURE: What went wrong ==="
-            grep -A 30 "What went wrong:" /tmp/gradle.log | head -60 || tail -60 /tmp/gradle.log
-            exit $RC
-          fi
-
-      - name: Upload Gradle log (always)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-log
-          path: /tmp/gradle.log
-          if-no-files-found: ignore
-
-      - name: Locate APK
-        id: find_apk
-        run: |
-          APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" | head -1)
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
-          ls -lh "$APK_PATH"
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: noor-v${{ github.event.inputs.version || '2.2' }}-${{ github.event.inputs.build_type || 'debug' }}
-          path: ${{ steps.find_apk.outputs.apk_path }}
-          retention-days: 30
-          if-no-files-found: error
-
-      - name: Build Summary
-        run: |
-          APK_SIZE=$(du -sh "${{ steps.find_apk.outputs.apk_path }}" | cut -f1)
-          echo "## Noor APK - Build OK" >> $GITHUB_STEP_SUMMARY
-          echo "| Size | $APK_SIZE |" >> $GITHUB_STEP_SUMMARY
-          echo "| Package | com.noor.app |" >> $GITHUB_STEP_SUMMARY
-          echo "| Type | ${{ github.event.inputs.build_type || 'debug' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ هذا الـ Workflow تم استبداله بـ build-android.yml"
+          echo "Please use: Actions → 'Build Noor Android (APK + AAB)'"
+          echo "يدعم الآن: APK + AAB + توقيع + Logs إجباري"

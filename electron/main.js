@@ -1,4 +1,4 @@
-const { app, BrowserWindow, protocol, net, shell } = require('electron');
+const { app, BrowserWindow, protocol, net, shell, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
@@ -14,18 +14,23 @@ protocol.registerSchemesAsPrivileged([
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 430,
-    height: 900,
-    minWidth: 375,
-    minHeight: 667,
+    width: 1280,
+    height: 800,
+    minWidth: 960,
+    minHeight: 600,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
     },
     icon: path.join(__dirname, 'icon.png'),
-    title: 'نور',
-    backgroundColor: '#FFFBF5',
+    title: 'نور — Noor',
+    backgroundColor: '#F5E6CC',
     autoHideMenuBar: true,
+    show: false,
+  });
+
+  win.once('ready-to-show', () => {
+    win.show();
   });
 
   win.loadURL('app://noor/index.html');
@@ -34,6 +39,8 @@ function createWindow() {
     shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  Menu.setApplicationMenu(null);
 }
 
 app.whenReady().then(() => {

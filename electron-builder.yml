@@ -1,0 +1,46 @@
+appId: com.noor.app
+productName: "Noor - نور"
+copyright: "Copyright © 2024 Noor App"
+
+# ── Source ────────────────────────────────────────────────────────────────────
+directories:
+  app: electron
+  output: ../dist-electron
+  buildResources: ../attached_assets
+
+# Files to include in the app package
+files:
+  - main.js
+  - www/**/*
+  - package.json
+
+# ── App icon ──────────────────────────────────────────────────────────────────
+# The Noor logo is copied to electron/icon.png by the CI workflow
+win:
+  icon: icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+  executableName: "Noor"
+  # Request administrator rights if needed for installation
+  requestedExecutionLevel: asInvoker
+
+# ── Windows NSIS Installer ────────────────────────────────────────────────────
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: icon.png
+  uninstallerIcon: icon.png
+  installerHeaderIcon: icon.png
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Noor - نور"
+  # Arabic language support
+  language: "1025"
+  artifactName: "Noor-v${version}-Setup-x64.exe"
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+
+# ── Publishing ────────────────────────────────────────────────────────────────
+publish: null
