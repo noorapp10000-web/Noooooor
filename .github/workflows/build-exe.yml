@@ -75,7 +75,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location electron
-          npm install --save-dev electron@latest electron-builder@latest
+          npm install --save-dev electron@22.3.27 electron-builder@24.13.3
 
       - name: Build Windows Setup EXE
         shell: pwsh
@@ -127,7 +127,7 @@ jobs:
       - name: Upload Windows Setup EXE
         uses: actions/upload-artifact@v4
         with:
-          name: noor-v${{ github.event.inputs.version || '2.3.0' }}-windows-setup-x86
+          name: noor-v${{ github.event.inputs.version || '2.3.0' }}-windows-setup-win7-x86
           path: dist-electron/*.exe
           retention-days: 30
           if-no-files-found: error
@@ -150,5 +150,6 @@ jobs:
           }
           "| Logs | build-logs/ | OK |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
-          "| Architecture | x64 |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Architecture | ia32 (Windows 7+) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Electron | 22.3.27 (آخر إصدار يدعم Windows 7) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
           "| Window size | 1280x800 min 960x600 |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
