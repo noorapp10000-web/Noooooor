@@ -1,8 +1,43 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "4jVTh76gLYko6Oy1pxIW-"
+uri = "file://attached_assets/mascot_owl.png"
+type = "image"
+title = "Islamic owl mascot"
+
+[[generated]]
+id = "0-RXHzUfvhwHlFAag5hQf"
+uri = "file://attached_assets/mascot_moon.png"
+type = "image"
+title = "Islamic moon mascot"
+
+[[generated]]
+id = "PpLn8B9UctF_c59Vey8T9"
+uri = "file://attached_assets/mascot_student.png"
+type = "image"
+title = "Islamic student mascot"
 
 [[outputs]]
 id = "UZTEXrYzWt5P9P7SddU_5"
 uri = "file://noor-website-prompt.md"
 type = "text"
 title = "برومت موقع نور — Export/Import + Google Drive"
+
+[[outputs]]
+id = "x44wRpvt6dFFhO7BFEkup"
+uri = "file://attached_assets/mascot_owl.png"
+type = "image"
+title = "١ — البومة العالِمة 🦉"
+
+[[outputs]]
+id = "QJPgPpX5TVnrPIwGvrW3J"
+uri = "file://attached_assets/mascot_moon.png"
+type = "image"
+title = "٢ — الهلال المبتسم 🌙"
+
+[[outputs]]
+id = "k-_T_xJZO1KKSivUfsz9O"
+uri = "file://attached_assets/mascot_student.png"
+type = "image"
+title = "٣ — الطالب الصغير 📖"
