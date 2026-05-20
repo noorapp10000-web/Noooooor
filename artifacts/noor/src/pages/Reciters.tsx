@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useReciters } from '@/hooks/use-api';
-import { ArrowLeft, Search, ChevronRight, Download, Heart, Star, Loader2, X, WifiOff } from 'lucide-react';
+import { ArrowLeft, Search, ChevronRight, Download, Heart, Star, Loader2, X, WifiOff, Repeat } from 'lucide-react';
 import { Link } from 'wouter';
 import { useAudio } from '@/contexts/AudioContext';
 import { SURAH_NAMES } from '@/lib/constants';
@@ -1012,6 +1012,43 @@ export function Reciters() {
             disabled={!audio.surahNum || audio.surahNum >= 114}
           >
             <svg viewBox="0 0 24 24" fill="#C19A6B" className="w-6 h-6"><path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4V8l-5.5 4zM16 6h2v12h-2z" /></svg>
+          </button>
+        </div>
+
+        {/* ── Auto-play toggle ── */}
+        <div className="flex justify-center mt-5">
+          <button
+            onClick={audio.toggleAutoPlay}
+            data-testid="button-autoplay-toggle"
+            title={audio.autoPlay ? 'إيقاف التشغيل التلقائي' : 'تفعيل التشغيل التلقائي'}
+            className="flex items-center gap-2 px-4 py-2 rounded-full transition-all"
+            style={{
+              background: audio.autoPlay
+                ? 'rgba(193,154,107,0.18)'
+                : playerBtn,
+              border: audio.autoPlay
+                ? '1px solid rgba(193,154,107,0.5)'
+                : playerBtnBorder,
+            }}
+          >
+            <Repeat
+              className="w-4 h-4 transition-all"
+              style={{ color: audio.autoPlay ? '#C19A6B' : playerTextTime }}
+            />
+            <span
+              className="text-xs font-bold"
+              style={{
+                fontFamily: '"Tajawal", sans-serif',
+                color: audio.autoPlay ? '#C19A6B' : playerTextTime,
+              }}
+            >
+              {audio.autoPlay ? 'تلاوة متتالية' : 'تلاوة متتالية'}
+            </span>
+            {/* مؤشر التفعيل */}
+            <span
+              className="w-2 h-2 rounded-full transition-all"
+              style={{ background: audio.autoPlay ? '#C19A6B' : 'transparent', boxShadow: audio.autoPlay ? '0 0 6px rgba(193,154,107,0.7)' : 'none' }}
+            />
           </button>
         </div>
       </div>

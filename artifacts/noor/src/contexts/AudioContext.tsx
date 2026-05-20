@@ -10,6 +10,7 @@ interface AudioState {
   currentTime: number;
   duration: number;
   isLoading: boolean;
+  autoPlay: boolean;
 }
 
 interface AudioContextType extends AudioState {
@@ -20,6 +21,7 @@ interface AudioContextType extends AudioState {
   seekNext: () => void;
   seekPrev: () => void;
   stop: () => void;
+  toggleAutoPlay: () => void;
 }
 
 const AudioCtx = createContext<AudioContextType | null>(null);
@@ -79,8 +81,14 @@ function updateMediaPositionState(): void {
   } catch {}
 }
 
+function readAutoPlayPref(): boolean {
+  try { return localStorage.getItem('noor_autoplay') !== 'false'; } catch { return true; }
+}
+
 /* ── Provider ── */
 export function AudioProvider({ children }: { children: ReactNode }) {
+  const initAutoPlay = readAutoPlayPref();
+
   const [state, setState] = useState<AudioState>({
     reciterId: '',
     reciterName: '',
@@ -91,12 +99,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     currentTime: 0,
     duration: 0,
     isLoading: false,
+    autoPlay: initAutoPlay,
   });
 
-  const rafRef = useRef<number>(0);
-  // Keep latest state in a ref for MediaSession handlers (avoid stale closures)
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const rafRef      = useRef<number>(0);
+  const stateRef    = useRef(state);
+  stateRef.current  = state;
+
+  // Stable ref so onended can call play() without stale-closure issues
+  const autoPlayRef = useRef<boolean>(initAutoPlay);
+  const playRef     = useRef<((opts: { reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string }) => void) | null>(null);
 
   const tick = useCallback(() => {
     setState(s => ({ ...s, currentTime: audioEl.currentTime, duration: audioEl.duration || 0 }));
@@ -117,14 +129,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setMediaSessionState('paused');
     stopTick();
   };
-  audioEl.onended = () => {
-    setState(s => ({ ...s, isPlaying: false, currentTime: 0 }));
-    setMediaSessionState('paused');
-    stopTick();
-  };
-  audioEl.onwaiting         = () => setState(s => ({ ...s, isLoading: true }));
-  audioEl.oncanplay         = () => setState(s => ({ ...s, isLoading: false }));
-  audioEl.ondurationchange  = () => setState(s => ({ ...s, duration: audioEl.duration || 0 }));
+  audioEl.onwaiting        = () => setState(s => ({ ...s, isLoading: true }));
+  audioEl.oncanplay        = () => setState(s => ({ ...s, isLoading: false }));
+  audioEl.ondurationchange = () => setState(s => ({ ...s, duration: audioEl.duration || 0 }));
 
   // ── play ─────────────────────────────────────────────────────────
   const play = useCallback(({ reciterId, reciterName, serverUrl, surahNum, surahName }: {
@@ -136,12 +143,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audioEl.play().catch(() => {});
     setState(s => ({ ...s, reciterId, reciterName, serverUrl, surahNum, surahName, isLoading: true, currentTime: 0 }));
 
-    // شاشة القفل / سماعات البلوتوث
     updateMediaSession(surahName, reciterName);
     registerMediaSessionHandlers(
       () => audioEl.play().catch(() => {}),
       () => audioEl.pause(),
-      // next/prev: شغّل السورة التالية/السابقة
       () => {
         const cur = stateRef.current;
         if (!cur.surahNum || cur.surahNum >= 114) return;
@@ -155,12 +160,32 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                surahNum: cur.surahNum - 1, surahName: '' });
       },
       (details) => {
-        if (details.seekTime !== undefined) {
-          audioEl.currentTime = details.seekTime;
-        }
+        if (details.seekTime !== undefined) audioEl.currentTime = details.seekTime;
       },
     );
   }, []);
+
+  // Keep playRef up to date so onended can always call the latest play()
+  playRef.current = play;
+
+  // ── onended: auto-play next surah or stop ─────────────────────────
+  audioEl.onended = () => {
+    const cur = stateRef.current;
+    if (autoPlayRef.current && cur.surahNum && cur.surahNum < 114 && playRef.current) {
+      const nextNum = cur.surahNum + 1;
+      playRef.current({
+        reciterId:   cur.reciterId,
+        reciterName: cur.reciterName,
+        serverUrl:   cur.serverUrl,
+        surahNum:    nextNum,
+        surahName:   '',
+      });
+    } else {
+      setState(s => ({ ...s, isPlaying: false, currentTime: 0 }));
+      setMediaSessionState('paused');
+      stopTick();
+    }
+  };
 
   const togglePlay = useCallback(() => {
     if (audioEl.paused) audioEl.play().catch(() => {});
@@ -174,7 +199,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audioEl.currentTime = fraction * audioEl.duration;
   }, []);
 
-  // next/prev سورة (للأزرار داخل التطبيق)
   const seekNext = useCallback(() => {
     const cur = stateRef.current;
     if (!cur.surahNum || cur.surahNum >= 114) return;
@@ -197,8 +221,17 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, isPlaying: false, surahNum: null, currentTime: 0, duration: 0 }));
   }, []);
 
+  const toggleAutoPlay = useCallback(() => {
+    setState(s => {
+      const next = !s.autoPlay;
+      autoPlayRef.current = next;
+      try { localStorage.setItem('noor_autoplay', String(next)); } catch {}
+      return { ...s, autoPlay: next };
+    });
+  }, []);
+
   return (
-    <AudioCtx.Provider value={{ ...state, play, togglePlay, pause, seek, seekNext, seekPrev, stop }}>
+    <AudioCtx.Provider value={{ ...state, play, togglePlay, pause, seek, seekNext, seekPrev, stop, toggleAutoPlay }}>
       {children}
     </AudioCtx.Provider>
   );
