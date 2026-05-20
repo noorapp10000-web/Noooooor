@@ -83,7 +83,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Set-Location electron
-          npx electron-builder --win --x64 --config ..\electron-builder.yml 2>&1 | Tee-Object -FilePath ..\build-logs\exe-build.log
+          npx electron-builder --win --ia32 --config ..\electron-builder.yml 2>&1 | Tee-Object -FilePath ..\build-logs\exe-build.log
           if ($LASTEXITCODE -ne 0) {
             Write-Error "electron-builder failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
