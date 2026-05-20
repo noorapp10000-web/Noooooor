@@ -8,7 +8,7 @@ import {
   todayKey,
 } from '@/lib/rtdb';
 import { vibrateLight, vibrateReset } from '@/lib/haptics';
-import { BarChart2, VolumeX, Volume2 } from 'lucide-react';
+import { BarChart2, Vibrate, VibrateOff } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -160,7 +160,7 @@ export function Tasbih() {
             style={{ background: vibrateEnabled ? 'rgba(193,154,107,0.15)' : 'rgba(0,0,0,0.07)', color: vibrateEnabled ? '#C19A6B' : 'hsl(var(--muted-foreground))' }}
             title={vibrateEnabled ? 'كتم الاهتزاز' : 'تفعيل الاهتزاز'}
           >
-            {vibrateEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            {vibrateEnabled ? <Vibrate className="w-5 h-5" /> : <VibrateOff className="w-5 h-5" />}
           </button>
 
           <button onClick={() => setShowStats(!showStats)} className="p-2 bg-secondary text-primary rounded-full">
