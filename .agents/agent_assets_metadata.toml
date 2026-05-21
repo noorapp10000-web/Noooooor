@@ -138,6 +138,24 @@ uri = "file://artifacts/noor/public/images/prayer/step-10-julus.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "DN4eK50ZHCYrwPPI3r1e2"
+uri = "file://artifacts/noor/public/images/prayer/step-12-tashahhud.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "jH9xpAIzkNNS0ONYcnzvS"
+uri = "file://artifacts/noor/public/images/prayer/step-14-tasleem.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Mk_Yk06r5N63YRcNz5Lzb"
+uri = "file://artifacts/noor/public/images/prayer/step-13-salawat.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "UZTEXrYzWt5P9P7SddU_5"
 uri = "file://noor-website-prompt.md"
