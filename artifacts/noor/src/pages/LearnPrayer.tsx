@@ -505,6 +505,70 @@ export function LearnPrayer() {
                 </p>
               </div>
 
+              {/* Tashahhud hand position guide — step 12 only */}
+              {step === 11 && (
+                <div className="rounded-2xl p-4 mb-3"
+                  style={{ background: dark ? 'rgba(30,77,43,0.18)' : 'rgba(30,77,43,0.07)', border: '1px solid rgba(30,77,43,0.25)' }}>
+                  <p className="text-xs font-bold text-center mb-3"
+                    style={{ fontFamily: '"Tajawal",sans-serif', color: '#1e4d2b' }}>
+                    وضع اليدين في التشهد
+                  </p>
+                  <div className="flex items-end justify-center gap-6">
+                    {/* Right hand — fist with index finger extended ~45° */}
+                    <div className="flex flex-col items-center gap-1">
+                      <svg width="80" height="90" viewBox="0 0 80 90" fill="none">
+                        {/* Forearm */}
+                        <rect x="28" y="58" width="24" height="28" rx="10" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        {/* Palm/fist body */}
+                        <rect x="22" y="36" width="36" height="30" rx="12" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        {/* Thumb tucked on side */}
+                        <path d="M22 50 Q14 48 14 42 Q14 37 20 37" stroke="#C8A070" strokeWidth="4" strokeLinecap="round" fill="none"/>
+                        {/* Folded fingers hint (middle, ring, pinky) */}
+                        <path d="M32 36 Q32 30 36 30" stroke="#C8A070" strokeWidth="3" strokeLinecap="round" fill="none"/>
+                        <path d="M40 36 Q40 29 44 29" stroke="#C8A070" strokeWidth="3" strokeLinecap="round" fill="none"/>
+                        <path d="M48 37 Q49 32 52 32" stroke="#C8A070" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                        {/* Index finger — extended at 45° upward-forward */}
+                        <path d="M28 38 L14 18" stroke="#E8C9A0" strokeWidth="9" strokeLinecap="round"/>
+                        <path d="M28 38 L14 18" stroke="#C8A070" strokeWidth="1.5" strokeLinecap="round"/>
+                        {/* Fingertip */}
+                        <circle cx="13" cy="17" r="4.5" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                      </svg>
+                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: '#1e4d2b' }}>
+                        اليد اليمنى
+                      </p>
+                      <p className="text-[9px] text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
+                        قبضة + سبابة ممتدة
+                      </p>
+                    </div>
+                    {/* Left hand — flat open */}
+                    <div className="flex flex-col items-center gap-1">
+                      <svg width="80" height="90" viewBox="0 0 80 90" fill="none">
+                        {/* Forearm */}
+                        <rect x="28" y="58" width="24" height="28" rx="10" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        {/* Palm flat */}
+                        <rect x="18" y="28" width="44" height="32" rx="12" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        {/* Fingers extended flat */}
+                        <rect x="20" y="14" width="8" height="16" rx="4" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        <rect x="31" y="11" width="8" height="19" rx="4" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        <rect x="42" y="12" width="8" height="18" rx="4" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        <rect x="52" y="15" width="7" height="15" rx="3.5" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
+                        {/* Thumb */}
+                        <path d="M18 35 Q10 32 10 26 Q10 20 16 20" stroke="#C8A070" strokeWidth="4" strokeLinecap="round" fill="none"/>
+                      </svg>
+                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: '#1e4d2b' }}>
+                        اليد اليسرى
+                      </p>
+                      <p className="text-[9px] text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
+                        مفتوحة مبسوطة
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-center mt-2" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(30,77,43,0.65)' }}>
+                    كلتا اليدين على الركبتين — السبابة اليمنى ترفع عند قول «إلا الله»
+                  </p>
+                </div>
+              )}
+
               {/* Note */}
               {current.note && (
                 <div className="flex items-start gap-2.5 rounded-xl p-3 mb-4"
