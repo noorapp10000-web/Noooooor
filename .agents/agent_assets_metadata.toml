@@ -18,6 +18,66 @@ uri = "file://attached_assets/mascot_student.png"
 type = "image"
 title = "Islamic student mascot"
 
+[[generated]]
+id = "h9U8JTgrKD6FFiA8hUyv6"
+uri = "file://artifacts/noor/public/images/wudu/step-01-niyyah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OZjLagIP1biHIC6asnFGB"
+uri = "file://artifacts/noor/public/images/wudu/step-02-hands.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "cehwU91CRf1dmm1puEYDm"
+uri = "file://artifacts/noor/public/images/wudu/step-03-mouth.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "-QGPpg8g1lSlJoXByLZyx"
+uri = "file://artifacts/noor/public/images/wudu/step-04-nose.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "XMOPJ7BX51xS4YW4bZVwJ"
+uri = "file://artifacts/noor/public/images/wudu/step-05-face.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Yy-qyLuX-LmYCWuQzOFth"
+uri = "file://artifacts/noor/public/images/wudu/step-06-arms.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "u-py1mBQJbcfkq_AYjT_h"
+uri = "file://artifacts/noor/public/images/wudu/step-07-head.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OUSuDmcrfKCsQlw9nIUzQ"
+uri = "file://artifacts/noor/public/images/wudu/step-08-ears.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "aFGMF8XRklE17f9r1Gvjc"
+uri = "file://artifacts/noor/public/images/wudu/step-09-feet.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OESGyVp1HNrIzxGsXtF_4"
+uri = "file://artifacts/noor/public/images/wudu/step-10-dua.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "UZTEXrYzWt5P9P7SddU_5"
 uri = "file://noor-website-prompt.md"

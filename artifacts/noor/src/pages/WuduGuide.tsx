@@ -13,184 +13,7 @@ interface WuduStep {
   transliteration?: string;
   meaning?: string;
   points: string[];
-  Illustration: () => JSX.Element;
-}
-
-/* ── SVG Illustrations ─────────────────────────────────────── */
-function HandsIllustration() {
-  return (
-    <svg viewBox="0 0 120 100" className="w-full h-full">
-      <ellipse cx="60" cy="85" rx="40" ry="6" fill="rgba(193,154,107,0.15)" />
-      {/* Left hand */}
-      <rect x="22" y="40" width="22" height="32" rx="11" fill="#C4956A" />
-      <rect x="22" y="30" width="7" height="22" rx="3.5" fill="#C4956A" />
-      <rect x="30" y="27" width="7" height="22" rx="3.5" fill="#C4956A" />
-      <rect x="38" y="30" width="6" height="20" rx="3" fill="#C4956A" />
-      {/* Right hand */}
-      <rect x="76" y="40" width="22" height="32" rx="11" fill="#C4956A" />
-      <rect x="91" y="30" width="7" height="22" rx="3.5" fill="#C4956A" />
-      <rect x="83" y="27" width="7" height="22" rx="3.5" fill="#C4956A" />
-      <rect x="76" y="30" width="6" height="20" rx="3" fill="#C4956A" />
-      {/* Water drops */}
-      <ellipse cx="50" cy="22" rx="3" ry="4" fill="#60B8D4" opacity="0.8" />
-      <ellipse cx="60" cy="18" rx="3" ry="4" fill="#60B8D4" opacity="0.9" />
-      <ellipse cx="70" cy="22" rx="3" ry="4" fill="#60B8D4" opacity="0.8" />
-    </svg>
-  );
-}
-
-function FaceIllustration() {
-  return (
-    <svg viewBox="0 0 120 110" className="w-full h-full">
-      <ellipse cx="60" cy="95" rx="35" ry="5" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="50" r="34" fill="#C4956A" />
-      <circle cx="60" cy="50" r="30" fill="#D4A574" />
-      <circle cx="48" cy="44" r="4" fill="#5D3A1A" />
-      <circle cx="72" cy="44" r="4" fill="#5D3A1A" />
-      <path d="M50 62 Q60 70 70 62" stroke="#5D3A1A" strokeWidth="2" fill="none" strokeLinecap="round" />
-      {/* Water lines */}
-      <path d="M30 30 Q26 38 30 46" stroke="#60B8D4" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.8" />
-      <path d="M90 30 Q94 38 90 46" stroke="#60B8D4" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.8" />
-      <path d="M44 18 Q40 24 44 30" stroke="#60B8D4" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7" />
-      <path d="M76 18 Q80 24 76 30" stroke="#60B8D4" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7" />
-    </svg>
-  );
-}
-
-function MouthIllustration() {
-  return (
-    <svg viewBox="0 0 120 110" className="w-full h-full">
-      <ellipse cx="60" cy="95" rx="35" ry="5" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="50" r="34" fill="#C4956A" />
-      <circle cx="60" cy="50" r="30" fill="#D4A574" />
-      <circle cx="48" cy="44" r="4" fill="#5D3A1A" />
-      <circle cx="72" cy="44" r="4" fill="#5D3A1A" />
-      <path d="M46 63 Q60 76 74 63" stroke="#5D3A1A" strokeWidth="2" fill="#C47A5A" strokeLinecap="round" />
-      <path d="M47 64 Q60 74 73 64" fill="#C47A5A" />
-      {/* Water entering mouth */}
-      <path d="M55 52 Q58 56 55 62" stroke="#60B8D4" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
-      <path d="M62 50 Q65 55 62 63" stroke="#60B8D4" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />
-    </svg>
-  );
-}
-
-function NoseIllustration() {
-  return (
-    <svg viewBox="0 0 120 110" className="w-full h-full">
-      <ellipse cx="60" cy="95" rx="35" ry="5" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="50" r="34" fill="#C4956A" />
-      <circle cx="60" cy="50" r="30" fill="#D4A574" />
-      <circle cx="48" cy="44" r="4" fill="#5D3A1A" />
-      <circle cx="72" cy="44" r="4" fill="#5D3A1A" />
-      <path d="M60 36 Q55 48 52 56 Q56 60 60 60 Q64 60 68 56 Q65 48 60 36Z" fill="#C4956A" />
-      <ellipse cx="53" cy="56" rx="5" ry="3.5" fill="#A0724A" />
-      <ellipse cx="67" cy="56" rx="5" ry="3.5" fill="#A0724A" />
-      <path d="M50 38 Q46 44 50 52" stroke="#60B8D4" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.85" />
-      <path d="M70 38 Q74 44 70 52" stroke="#60B8D4" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.85" />
-    </svg>
-  );
-}
-
-function ArmIllustration() {
-  return (
-    <svg viewBox="0 0 120 100" className="w-full h-full">
-      <ellipse cx="60" cy="88" rx="40" ry="5" fill="rgba(193,154,107,0.15)" />
-      {/* Left arm extended */}
-      <rect x="15" y="38" width="38" height="24" rx="12" fill="#C4956A" />
-      <rect x="14" y="40" width="8" height="18" rx="4" fill="#B8845A" />
-      {/* Right arm extended */}
-      <rect x="67" y="38" width="38" height="24" rx="12" fill="#C4956A" />
-      <rect x="98" y="40" width="8" height="18" rx="4" fill="#B8845A" />
-      {/* Elbow marks */}
-      <ellipse cx="42" cy="50" rx="6" ry="8" fill="#B8845A" opacity="0.5" />
-      <ellipse cx="78" cy="50" rx="6" ry="8" fill="#B8845A" opacity="0.5" />
-      {/* Water drops */}
-      <ellipse cx="30" cy="70" rx="3" ry="4" fill="#60B8D4" opacity="0.85" />
-      <ellipse cx="42" cy="74" rx="2.5" ry="3.5" fill="#60B8D4" opacity="0.7" />
-      <ellipse cx="90" cy="70" rx="3" ry="4" fill="#60B8D4" opacity="0.85" />
-      <ellipse cx="78" cy="74" rx="2.5" ry="3.5" fill="#60B8D4" opacity="0.7" />
-    </svg>
-  );
-}
-
-function HeadWipeIllustration() {
-  return (
-    <svg viewBox="0 0 120 110" className="w-full h-full">
-      <ellipse cx="60" cy="98" rx="35" ry="5" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="52" r="34" fill="#C4956A" />
-      <circle cx="60" cy="52" r="30" fill="#D4A574" />
-      {/* Hands on head */}
-      <rect x="18" y="22" width="16" height="26" rx="8" fill="#C4956A" transform="rotate(-20 26 35)" />
-      <rect x="86" y="22" width="16" height="26" rx="8" fill="#C4956A" transform="rotate(20 94 35)" />
-      {/* Arrow showing wipe direction */}
-      <path d="M35 28 Q60 20 85 28" stroke="#60B8D4" strokeWidth="2.5" fill="none" strokeLinecap="round" markerEnd="url(#arr)" opacity="0.9" />
-      <circle cx="48" cy="46" r="4" fill="#5D3A1A" />
-      <circle cx="72" cy="46" r="4" fill="#5D3A1A" />
-      <path d="M50 64 Q60 72 70 64" stroke="#5D3A1A" strokeWidth="2" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function EarIllustration() {
-  return (
-    <svg viewBox="0 0 120 110" className="w-full h-full">
-      <ellipse cx="60" cy="98" rx="35" ry="5" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="52" r="28" fill="#D4A574" />
-      {/* Left ear */}
-      <path d="M26 36 Q16 52 26 68" stroke="#C4956A" strokeWidth="10" fill="none" strokeLinecap="round" />
-      <path d="M26 42 Q20 52 26 62" stroke="#B8845A" strokeWidth="4" fill="none" strokeLinecap="round" />
-      {/* Right ear */}
-      <path d="M94 36 Q104 52 94 68" stroke="#C4956A" strokeWidth="10" fill="none" strokeLinecap="round" />
-      <path d="M94 42 Q100 52 94 62" stroke="#B8845A" strokeWidth="4" fill="none" strokeLinecap="round" />
-      {/* Fingers wiping ears */}
-      <circle cx="21" cy="52" r="5" fill="#C4956A" opacity="0.85" />
-      <circle cx="99" cy="52" r="5" fill="#C4956A" opacity="0.85" />
-      <ellipse cx="48" cy="46" r="4" fill="#5D3A1A" />
-      <ellipse cx="72" cy="46" r="4" fill="#5D3A1A" />
-    </svg>
-  );
-}
-
-function FootIllustration() {
-  return (
-    <svg viewBox="0 0 120 100" className="w-full h-full">
-      <ellipse cx="60" cy="90" rx="44" ry="6" fill="rgba(193,154,107,0.15)" />
-      {/* Left foot */}
-      <ellipse cx="35" cy="72" rx="22" ry="12" fill="#C4956A" />
-      <rect x="13" y="60" width="44" height="20" rx="10" fill="#C4956A" />
-      <rect x="16" y="48" width="7" height="20" rx="3.5" fill="#C4956A" />
-      <rect x="24" y="44" width="7" height="20" rx="3.5" fill="#C4956A" />
-      <rect x="32" y="43" width="7" height="19" rx="3.5" fill="#C4956A" />
-      <rect x="40" y="45" width="6" height="18" rx="3" fill="#C4956A" />
-      <rect x="47" y="49" width="5" height="16" rx="2.5" fill="#C4956A" />
-      {/* Water drops */}
-      <ellipse cx="28" cy="84" rx="2.5" ry="3.5" fill="#60B8D4" opacity="0.8" />
-      <ellipse cx="38" cy="86" rx="2" ry="3" fill="#60B8D4" opacity="0.7" />
-      <ellipse cx="48" cy="84" rx="2.5" ry="3.5" fill="#60B8D4" opacity="0.8" />
-    </svg>
-  );
-}
-
-function DuaIllustration() {
-  return (
-    <svg viewBox="0 0 120 110" className="w-full h-full">
-      <ellipse cx="60" cy="98" rx="35" ry="5" fill="rgba(193,154,107,0.15)" />
-      {/* Person standing */}
-      <circle cx="60" cy="24" r="14" fill="#C4956A" />
-      <rect x="46" y="38" width="28" height="34" rx="10" fill="#C4956A" />
-      {/* Hands raised in dua */}
-      <rect x="22" y="36" width="24" height="12" rx="6" fill="#C4956A" transform="rotate(-30 34 42)" />
-      <rect x="74" y="36" width="24" height="12" rx="6" fill="#C4956A" transform="rotate(30 86 42)" />
-      {/* Stars/sparkles */}
-      <circle cx="20" cy="24" r="3" fill="#F5C842" opacity="0.8" />
-      <circle cx="100" cy="24" r="3" fill="#F5C842" opacity="0.8" />
-      <circle cx="32" cy="14" r="2" fill="#F5C842" opacity="0.6" />
-      <circle cx="88" cy="14" r="2" fill="#F5C842" opacity="0.6" />
-      {/* Eyes */}
-      <circle cx="55" cy="22" r="2.5" fill="#5D3A1A" />
-      <circle cx="65" cy="22" r="2.5" fill="#5D3A1A" />
-    </svg>
-  );
+  img: string;
 }
 
 const WUDU_STEPS: WuduStep[] = [
@@ -207,7 +30,7 @@ const WUDU_STEPS: WuduStep[] = [
       'النية محلها القلب ولا تُلفظ',
       'قُل «بسم الله» قبل البدء',
     ],
-    Illustration: HandsIllustration,
+    img: '/images/wudu/step-01-niyyah.png',
   },
   {
     id: 2,
@@ -219,7 +42,7 @@ const WUDU_STEPS: WuduStep[] = [
       'أدخِل الماء بين الأصابع',
       'ابدأ باليمنى ثم اليسرى',
     ],
-    Illustration: HandsIllustration,
+    img: '/images/wudu/step-02-hands.png',
   },
   {
     id: 3,
@@ -231,7 +54,7 @@ const WUDU_STEPS: WuduStep[] = [
       'ثم أخرجه — ثلاث مرات',
       'يُستحب المبالغة في المضمضة في غير الصيام',
     ],
-    Illustration: MouthIllustration,
+    img: '/images/wudu/step-03-mouth.png',
   },
   {
     id: 4,
@@ -243,7 +66,7 @@ const WUDU_STEPS: WuduStep[] = [
       'الاستنثار: أخرج الماء من الأنف باليد اليسرى',
       'كرر ثلاث مرات',
     ],
-    Illustration: NoseIllustration,
+    img: '/images/wudu/step-04-nose.png',
   },
   {
     id: 5,
@@ -255,7 +78,7 @@ const WUDU_STEPS: WuduStep[] = [
       'ومن الأذن اليمنى إلى الأذن اليسرى',
       'المسافة الطولية من قمة الجبهة للذقن، والعرضية بين الأذنين',
     ],
-    Illustration: FaceIllustration,
+    img: '/images/wudu/step-05-face.png',
   },
   {
     id: 6,
@@ -267,7 +90,7 @@ const WUDU_STEPS: WuduStep[] = [
       'يشمل الغسل المرفق نفسه',
       'أدخِل الماء بين الأصابع',
     ],
-    Illustration: ArmIllustration,
+    img: '/images/wudu/step-06-arms.png',
   },
   {
     id: 7,
@@ -280,7 +103,7 @@ const WUDU_STEPS: WuduStep[] = [
       'ثم أعِد يديك إلى المقدمة مرةً واحدة',
       'يكفي مسح بعض الرأس عند الحنفية والشافعية',
     ],
-    Illustration: HeadWipeIllustration,
+    img: '/images/wudu/step-07-head.png',
   },
   {
     id: 8,
@@ -292,7 +115,7 @@ const WUDU_STEPS: WuduStep[] = [
       'وامسح بالإبهامين ظاهر الأذنين',
       'بنفس ماء مسح الرأس',
     ],
-    Illustration: EarIllustration,
+    img: '/images/wudu/step-08-ears.png',
   },
   {
     id: 9,
@@ -304,7 +127,7 @@ const WUDU_STEPS: WuduStep[] = [
       'يشمل الغسل الكعبين',
       'أدخِل الماء بين أصابع القدم بخنصر اليد اليسرى',
     ],
-    Illustration: FootIllustration,
+    img: '/images/wudu/step-09-feet.png',
   },
   {
     id: 10,
@@ -319,7 +142,7 @@ const WUDU_STEPS: WuduStep[] = [
       '«اللهم اجعلني من التوابين واجعلني من المتطهرين»',
       'يُفضّل استقبال القبلة عند قراءة الدعاء',
     ],
-    Illustration: DuaIllustration,
+    img: '/images/wudu/step-10-dua.png',
   },
 ];
 
@@ -340,10 +163,10 @@ export function WuduGuide() {
   const total = WUDU_STEPS.length;
   const progress = ((step + 1) / total) * 100;
 
-  const bg       = dark ? '#0f0c07' : '#f0f8ff';
-  const cardBg   = dark ? '#1a1208' : '#ffffff';
-  const border   = dark ? 'rgba(96,184,212,0.18)' : 'rgba(96,184,212,0.25)';
-  const textColor = dark ? '#e0f0f8' : '#1a3a4a';
+  const bg        = dark ? '#0d1117' : '#f0f8ff';
+  const cardBg    = dark ? '#161b22' : '#ffffff';
+  const border    = dark ? 'rgba(96,184,212,0.18)' : 'rgba(96,184,212,0.25)';
+  const textColor  = dark ? '#e0f0f8' : '#1a3a4a';
   const mutedColor = dark ? 'rgba(224,240,248,0.5)' : 'rgba(26,58,74,0.5)';
 
   const markDone = () => {
@@ -409,11 +232,35 @@ export function WuduGuide() {
             className="rounded-3xl border overflow-hidden"
             style={{ background: cardBg, borderColor: border }}>
 
-            {/* Illustration area */}
-            <div className="flex items-center justify-center py-6"
-              style={{ background: dark ? 'rgba(96,184,212,0.05)' : 'rgba(96,184,212,0.06)' }}>
-              <div className="w-44 h-36">
-                <current.Illustration />
+            {/* Character image */}
+            <div className="relative flex items-end justify-center overflow-hidden"
+              style={{
+                height: 220,
+                background: dark
+                  ? 'linear-gradient(160deg, #1a2e3a 0%, #0d1f2a 100%)'
+                  : 'linear-gradient(160deg, #dff2fb 0%, #b8e4f5 100%)',
+              }}>
+              {/* Decorative water circle */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                <div className="w-48 h-48 rounded-full"
+                  style={{ background: 'radial-gradient(circle, #60B8D4 0%, transparent 70%)' }} />
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={current.img}
+                  src={current.img}
+                  alt={current.title}
+                  className="h-52 object-contain object-bottom relative z-10 drop-shadow-lg"
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </AnimatePresence>
+              {/* Step badge */}
+              <div className="absolute top-3 left-3 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white shadow-lg"
+                style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)' }}>
+                {step + 1}
               </div>
             </div>
 
@@ -505,7 +352,10 @@ export function WuduGuide() {
 
         <button onClick={markDone}
           className="flex-1 h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 text-white"
-          style={{ background: completed.has(step) ? '#16a34a' : 'linear-gradient(135deg,#60B8D4,#3a8fa8)', fontFamily: '"Tajawal",sans-serif' }}>
+          style={{
+            background: completed.has(step) ? '#16a34a' : 'linear-gradient(135deg,#60B8D4,#3a8fa8)',
+            fontFamily: '"Tajawal",sans-serif',
+          }}>
           {completed.has(step)
             ? <><CheckCircle size={18} /> تم</>
             : step === total - 1 ? 'إنهاء ✓' : 'التالي →'}
