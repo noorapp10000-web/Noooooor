@@ -125,7 +125,6 @@ export function Tasbih() {
   };
 
   const handleTap = () => {
-    if (vibrateEnabled) vibrateLight();
     controls.start({ scale: [1, 0.94, 1], transition: { duration: 0.18 } });
 
     const newCounts = { ...countsRef.current, [currentType.id]: (countsRef.current[currentType.id] ?? 0) + 1 };
@@ -241,7 +240,13 @@ export function Tasbih() {
       <div className="flex flex-col items-center gap-3 mb-4">
         <motion.button
           animate={controls}
-          onPointerDown={() => setIsPressing(true)}
+          onPointerDown={() => {
+            setIsPressing(true);
+            if (vibrateEnabled) {
+              try { navigator.vibrate?.(15); } catch (_) {}
+              vibrateLight();
+            }
+          }}
           onPointerUp={() => { setIsPressing(false); handleTap(); }}
           onPointerLeave={() => setIsPressing(false)}
           className="w-28 h-28 rounded-full flex items-center justify-center select-none touch-none outline-none"
