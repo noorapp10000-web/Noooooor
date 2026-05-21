@@ -4,6 +4,111 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useUserSetting } from '@/hooks/use-user-setting';
 
+/* ── Prayer time SVG icons ───────────────────────────────────── */
+function FajrIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+      <path d="M18 5C15.5 5 13.2 5.8 11.3 7.1C14.7 8.6 17 12 17 16C17 20 14.7 23.4 11.3 24.9C13.2 26.2 15.5 27 18 27C24.1 27 29 22.1 29 16C29 9.9 24.1 5 18 5Z" fill="rgba(255,255,255,0.95)"/>
+      <circle cx="26" cy="8" r="1.5" fill="rgba(255,255,255,0.7)"/>
+      <circle cx="30" cy="13" r="1" fill="rgba(255,255,255,0.55)"/>
+      <circle cx="24" cy="5.5" r="0.9" fill="rgba(255,255,255,0.6)"/>
+      <line x1="4" y1="31" x2="32" y2="31" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function DuhrIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="8" fill="rgba(255,255,255,0.95)"/>
+      <line x1="18" y1="4" x2="18" y2="8" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="18" y1="28" x2="18" y2="32" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="4" y1="18" x2="8" y2="18" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="28" y1="18" x2="32" y2="18" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="8.7" y1="8.7" x2="11.5" y2="11.5" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="24.5" y1="24.5" x2="27.3" y2="27.3" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="27.3" y1="8.7" x2="24.5" y2="11.5" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="11.5" y1="24.5" x2="8.7" y2="27.3" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function AsrIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="17" r="7" fill="rgba(255,255,255,0.95)"/>
+      <line x1="18" y1="4" x2="18" y2="8" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="28" y1="17" x2="32" y2="17" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="4" y1="17" x2="8" y2="17" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="8.7" y1="7.7" x2="11.5" y2="10.5" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="27.3" y1="7.7" x2="24.5" y2="10.5" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="4" y1="29" x2="32" y2="29" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M11 29 Q18 20 25 29" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
+    </svg>
+  );
+}
+
+function MaghribIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+      <clipPath id="maghrib-clip">
+        <rect x="0" y="0" width="36" height="27"/>
+      </clipPath>
+      <circle cx="18" cy="27" r="10" fill="rgba(255,255,255,0.95)" clipPath="url(#maghrib-clip)"/>
+      <line x1="18" y1="4" x2="18" y2="9" stroke="rgba(255,255,255,0.75)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="4" y1="18" x2="9" y2="18" stroke="rgba(255,255,255,0.75)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="27" y1="18" x2="32" y2="18" stroke="rgba(255,255,255,0.75)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="7.5" y1="8.5" x2="11" y2="12" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="28.5" y1="8.5" x2="25" y2="12" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="2" y1="27" x2="34" y2="27" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IshaIcon({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="9" fill="rgba(255,255,255,0.9)"/>
+      <circle cx="22" cy="14" r="5.5" fill="rgba(255,255,255,0.12)" stroke="none"/>
+      <path d="M22 13C20.3 13 18.9 14.1 18.4 15.6C19.1 15.2 19.9 15.2 20.6 15.6C21.9 14.5 21.9 12.7 22 13Z" fill="rgba(0,0,0,0.2)"/>
+      <circle cx="28" cy="8" r="1.3" fill="rgba(255,255,255,0.75)"/>
+      <circle cx="9" cy="7" r="0.9" fill="rgba(255,255,255,0.6)"/>
+      <circle cx="30" cy="22" r="1" fill="rgba(255,255,255,0.55)"/>
+      <circle cx="6" cy="26" r="0.8" fill="rgba(255,255,255,0.5)"/>
+      <circle cx="26" cy="28" r="1.1" fill="rgba(255,255,255,0.6)"/>
+    </svg>
+  );
+}
+
+function MosqueIcon({ size = 44, color = 'white' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 44 44" fill="none">
+      <rect x="3" y="14" width="5" height="24" rx="1.5" fill={color} opacity="0.88"/>
+      <path d="M5.5 14 C3.5 14 2 12.5 2 10.5 L9 10.5 C9 12.5 7.5 14 5.5 14Z" fill={color} opacity="0.88"/>
+      <rect x="4.5" y="7" width="2" height="4" rx="1" fill={color} opacity="0.88"/>
+      <circle cx="5.5" cy="6.5" r="1.2" fill={color} opacity="0.7"/>
+      <rect x="36" y="14" width="5" height="24" rx="1.5" fill={color} opacity="0.88"/>
+      <path d="M38.5 14 C36.5 14 35 12.5 35 10.5 L42 10.5 C42 12.5 40.5 14 38.5 14Z" fill={color} opacity="0.88"/>
+      <rect x="37.5" y="7" width="2" height="4" rx="1" fill={color} opacity="0.88"/>
+      <circle cx="38.5" cy="6.5" r="1.2" fill={color} opacity="0.7"/>
+      <rect x="8" y="28" width="28" height="10" rx="1" fill={color}/>
+      <path d="M8 28 Q8 14 22 14 Q36 14 36 28Z" fill={color}/>
+      <path d="M17 38 L17 32 Q17 28 22 28 Q27 28 27 32 L27 38Z" fill={color === 'white' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.2)'}/>
+      <path d="M22 14.5 C21.2 14.5 20.5 15.2 20.5 16 C21 15.7 21.6 15.7 22 16 C22.9 15.3 22.9 14.3 22 14.5Z" fill={color === 'white' ? '#C19A6B' : 'rgba(255,255,255,0.8)'} opacity="0.85"/>
+    </svg>
+  );
+}
+
+function TipIcon({ size = 16, color = '#C19A6B' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <circle cx="8" cy="8" r="7" stroke={color} strokeWidth="1.5"/>
+      <line x1="8" y1="7" x2="8" y2="11.5" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="8" cy="4.8" r="0.9" fill={color}/>
+    </svg>
+  );
+}
+
 /* ── Body-position SVG illustrations ────────────────────────── */
 function StandingFig({ color = '#C4956A' }: { color?: string }) {
   return (
@@ -128,7 +233,6 @@ function TashahhudFig() {
       <ellipse cx="82" cy="100" rx="22" ry="12" fill="#C4956A" />
       <rect x="40" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(15 47 101)" />
       <rect x="66" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(-15 73 101)" />
-      {/* Raised index finger */}
       <rect x="80" y="48" width="7" height="22" rx="3.5" fill="#C4956A" />
       <rect x="81" y="38" width="5" height="16" rx="2.5" fill="#D4A574" />
     </svg>
@@ -145,10 +249,8 @@ function TasleemFig() {
       <ellipse cx="94" cy="100" rx="22" ry="12" fill="#C4956A" />
       <rect x="48" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(15 55 101)" />
       <rect x="78" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(-15 85 101)" />
-      {/* Head turned right */}
       <circle cx="84" cy="22" r="13" fill="#C4956A" />
       <circle cx="89" cy="20" r="4" fill="#5D3A1A" />
-      {/* Salam arrow */}
       <path d="M96 18 Q108 22 112 32" stroke="#C19A6B" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7" />
     </svg>
   );
@@ -286,12 +388,19 @@ const PRAYER_STEPS: PrayerStep[] = [
   },
 ];
 
-const PRAYERS = [
-  { name: 'الفجر',   rakaas: 2, color: '#1e3a5c', emoji: '🌅' },
-  { name: 'الظهر',   rakaas: 4, color: '#8B6340', emoji: '☀️' },
-  { name: 'العصر',   rakaas: 4, color: '#7a3a1e', emoji: '🌤' },
-  { name: 'المغرب',  rakaas: 3, color: '#5c2d6e', emoji: '🌇' },
-  { name: 'العشاء',  rakaas: 4, color: '#0f2d4d', emoji: '🌙' },
+interface Prayer {
+  name: string;
+  rakaas: number;
+  color: string;
+  Icon: (props: { size?: number }) => JSX.Element;
+}
+
+const PRAYERS: Prayer[] = [
+  { name: 'الفجر',  rakaas: 2, color: '#1e3a5c', Icon: FajrIcon },
+  { name: 'الظهر',  rakaas: 4, color: '#8B6340', Icon: DuhrIcon },
+  { name: 'العصر',  rakaas: 4, color: '#7a3a1e', Icon: AsrIcon },
+  { name: 'المغرب', rakaas: 3, color: '#5c2d6e', Icon: MaghribIcon },
+  { name: 'العشاء', rakaas: 4, color: '#0f2d4d', Icon: IshaIcon },
 ];
 
 export function LearnPrayer() {
@@ -328,15 +437,19 @@ export function LearnPrayer() {
 
         <div className="flex-1 overflow-y-auto px-4 pb-8">
           {/* Intro */}
-          <div className="rounded-3xl p-5 mb-5"
+          <div className="rounded-3xl p-5 mb-5 flex items-start gap-4"
             style={{ background: 'linear-gradient(135deg,#2d6a4f,#1b4332)' }}>
-            <p className="text-3xl mb-2">🕌</p>
-            <p className="text-white font-black text-lg mb-1" style={{ fontFamily: '"Tajawal",sans-serif' }}>
-              خطوات الصلاة كاملة
-            </p>
-            <p className="text-sm leading-relaxed" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(255,255,255,0.75)' }}>
-              دليل مفصل لكل خطوة في الصلاة مع النص العربي والتشكيل والشرح — مناسب للمسلم الجديد والمراجع
-            </p>
+            <div className="flex-shrink-0 mt-0.5">
+              <MosqueIcon size={44} color="white" />
+            </div>
+            <div>
+              <p className="text-white font-black text-lg mb-1" style={{ fontFamily: '"Tajawal",sans-serif' }}>
+                خطوات الصلاة كاملة
+              </p>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(255,255,255,0.75)' }}>
+                دليل مفصل لكل خطوة في الصلاة مع النص العربي والتشكيل والشرح — مناسب للمسلم الجديد والمراجع
+              </p>
+            </div>
           </div>
 
           {/* Prayer selector */}
@@ -348,7 +461,10 @@ export function LearnPrayer() {
               <button key={i} onClick={() => { setSelectedPrayer(i); setStep(0); }}
                 className="flex items-center gap-4 p-4 rounded-2xl text-right transition-transform active:scale-95"
                 style={{ background: p.color, border: `1px solid rgba(255,255,255,0.12)` }}>
-                <span className="text-3xl">{p.emoji}</span>
+                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-2xl"
+                  style={{ background: 'rgba(255,255,255,0.12)' }}>
+                  <p.Icon size={32} />
+                </div>
                 <div className="flex-1">
                   <p className="font-black text-lg text-white" style={{ fontFamily: '"Tajawal",sans-serif' }}>
                     صلاة {p.name}
@@ -401,10 +517,16 @@ export function LearnPrayer() {
           style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
           <ChevronRight size={20} />
         </button>
-        <div className="text-center">
-          <p className="font-black text-base" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
-            {prayer.emoji} صلاة {prayer.name}
-          </p>
+        <div className="text-center flex flex-col items-center gap-0.5">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+              style={{ background: prayer.color }}>
+              <prayer.Icon size={18} />
+            </div>
+            <p className="font-black text-base" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+              صلاة {prayer.name}
+            </p>
+          </div>
           <p className="text-xs" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
             خطوة {step + 1} من {total}
           </p>
@@ -496,9 +618,9 @@ export function LearnPrayer() {
 
               {/* Note */}
               {current.note && (
-                <div className="flex items-start gap-2 rounded-xl p-3 mb-4"
+                <div className="flex items-start gap-2.5 rounded-xl p-3 mb-4"
                   style={{ background: 'rgba(193,154,107,0.08)', border: `1px solid rgba(193,154,107,0.18)` }}>
-                  <span className="text-base flex-shrink-0">💡</span>
+                  <TipIcon size={16} color="#C19A6B" />
                   <p className="text-xs leading-relaxed" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
                     {current.note}
                   </p>
@@ -522,7 +644,7 @@ export function LearnPrayer() {
           onClick={() => { if (step < total - 1) setStep(s => s + 1); else setSelectedPrayer(null); }}
           className="flex-1 h-14 rounded-2xl font-bold text-base text-white"
           style={{ background: `linear-gradient(135deg, ${current.color}, #C19A6B)`, fontFamily: '"Tajawal",sans-serif' }}>
-          {step === total - 1 ? '✓ انتهت الصلاة' : `التالي — ${PRAYER_STEPS[step + 1]?.title} →`}
+          {step === total - 1 ? 'انتهت الصلاة ✓' : `التالي — ${PRAYER_STEPS[step + 1]?.title} →`}
         </button>
 
         <button onClick={() => setStep(s => Math.min(total - 1, s + 1))}
