@@ -6,7 +6,8 @@ import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
-import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2 } from 'lucide-react';
+import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2, Mic } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { Capacitor } from '@capacitor/core';
 import { padZero, cn } from '@/lib/utils';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -306,6 +307,7 @@ function AyahMarker({ num, bookmarked, dark }: { num: number; bookmarked?: boole
 }
 
 export function Quran() {
+  const [, navigate] = useLocation();
   const { data: surahs, isLoading: loadingList } = useQuranSurahs();
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
@@ -535,14 +537,24 @@ export function Quran() {
             <svg width="18" height="18" viewBox="0 0 40 40" fill="#C19A6B"><polygon points="20,2 24,14 37,14 27,22 31,35 20,27 9,35 13,22 3,14 16,14" /></svg>
           </div>
           <h1 className="text-2xl font-bold flex-1" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B' }}>القرآن الكريم</h1>
-          <button
-            onClick={() => setShowMoshaf(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
-            style={{ fontFamily: '"Tajawal", sans-serif', background: C.btnBg, border: `1px solid ${C.btnBorder}`, color: '#C19A6B' }}
-          >
-            <Download size={13} />
-            تحميل المصحف
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/quran-recitation')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+              style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg,#C19A6B,#a07a4a)', color: '#fff' }}
+            >
+              <Mic size={13} />
+              تسميع
+            </button>
+            <button
+              onClick={() => setShowMoshaf(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
+              style={{ fontFamily: '"Tajawal", sans-serif', background: C.btnBg, border: `1px solid ${C.btnBorder}`, color: '#C19A6B' }}
+            >
+              <Download size={13} />
+              تحميل
+            </button>
+          </div>
         </div>
         <AnimatePresence>
           {showMoshaf && <MoshafSheet dark={dark} onClose={() => setShowMoshaf(false)} />}
