@@ -35,6 +35,8 @@ import { Sunnah } from "@/pages/Sunnah";
 import { IslamicTV } from "@/pages/IslamicTV";
 import { VoiceComparison } from "@/pages/VoiceComparison";
 import { HifzTest } from "@/pages/HifzTest";
+import { WuduGuide } from "@/pages/WuduGuide";
+import { LearnPrayer } from "@/pages/LearnPrayer";
 
 import {
   initUserSyncFast,
@@ -132,6 +134,8 @@ function Router() {
       <Route path="/tv"><FullScreenShell><IslamicTV /></FullScreenShell></Route>
       <Route path="/voice-comparison"><FullScreenShell><VoiceComparison /></FullScreenShell></Route>
       <Route path="/hifz-test"><FullScreenShell><HifzTest /></FullScreenShell></Route>
+      <Route path="/wudu"><FullScreenShell><WuduGuide /></FullScreenShell></Route>
+      <Route path="/learn-prayer"><FullScreenShell><LearnPrayer /></FullScreenShell></Route>
       <Route component={NotFound} />
     </Switch>
     </>

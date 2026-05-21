@@ -838,3 +838,47 @@ export function QuranVideoIcon({ className = '', size = 24 }: P) {
     </svg>
   );
 }
+
+export function WuduIcon({ className = '', size = 24 }: P) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Water drop shadow */}
+      <ellipse cx="12.3" cy="19.3" rx="5.5" ry="3.3" fill="currentColor" fillOpacity="0.13" />
+      {/* Water drop */}
+      <path d="M12 3 C12 3 6 10.5 6 14.5 C6 17.8 8.7 20.5 12 20.5 C15.3 20.5 18 17.8 18 14.5 C18 10.5 12 3 12 3Z"
+        fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      {/* Highlight inside drop */}
+      <path d="M9.5 13 C9.5 13 9 14.5 9.5 16" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.5" />
+      {/* Hands washing symbol at bottom */}
+      <path d="M7 22 Q9 20.5 12 20.5 Q15 20.5 17 22" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none" strokeOpacity="0.6" />
+      {/* Small droplets around */}
+      <circle cx="5.5" cy="10" r="0.9" fill="currentColor" fillOpacity="0.5" />
+      <circle cx="18.5" cy="11" r="0.7" fill="currentColor" fillOpacity="0.4" />
+      <circle cx="7" cy="7" r="0.6" fill="currentColor" fillOpacity="0.35" />
+    </svg>
+  );
+}
+
+export function PrayerStepsIcon({ className = '', size = 24 }: P) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Person standing shadow */}
+      <ellipse cx="12.3" cy="22.3" rx="4.5" ry="1.5" fill="currentColor" fillOpacity="0.13" />
+      {/* Head */}
+      <circle cx="12" cy="5" r="2.8" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="1.4" />
+      {/* Body */}
+      <rect x="9.5" y="8.5" width="5" height="7" rx="2.5" fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="1.3" />
+      {/* Arms raised (takbeer) */}
+      <path d="M9.5 10 L5.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M14.5 10 L18.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Legs */}
+      <path d="M10.5 15.5 L9.5 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M13.5 15.5 L14.5 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Steps indicator dots */}
+      <circle cx="3" cy="20" r="1" fill="currentColor" fillOpacity="0.7" />
+      <circle cx="3" cy="16.5" r="0.8" fill="currentColor" fillOpacity="0.5" />
+      <circle cx="3" cy="13.5" r="0.6" fill="currentColor" fillOpacity="0.35" />
+      <path d="M3 19 L3 14" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 1.5" strokeOpacity="0.4" strokeLinecap="round" />
+    </svg>
+  );
+}

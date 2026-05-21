@@ -21,6 +21,8 @@ import {
   HadithIcon,
   QiblaCompassIcon,
   HifzIcon,
+  WuduIcon,
+  PrayerStepsIcon,
 } from '@/components/NoorIcons';
 
 function IslamicPattern() {
@@ -647,6 +649,8 @@ export function MoreMenu() {
   const userProfile = getProfileCache();
 
   const MENU_ITEMS = [
+    { Icon: PrayerStepsIcon,   label: 'تعلم الصلاة',         path: '/learn-prayer', desc: 'خطوات الصلاة كاملة بالنص والتشكيل والشرح • 14 خطوة', grad: 'linear-gradient(145deg, #2d6a4f, #1b4332)' },
+    { Icon: WuduIcon,          label: 'الوضوء',               path: '/wudu',         desc: 'دليل مفصل لأركان وسنن الوضوء • 10 خطوات',           grad: 'linear-gradient(145deg, #1e4d7b, #0a2d5c)' },
     { Icon: HifzIcon,          label: 'اختبار الحفظ',        path: '/hifz-test',    desc: 'اختبر حفظك لكل آيات القرآن الكريم • 6236 آية', grad: 'linear-gradient(145deg, #1e4d2b, #0d2b16)' },
     { Icon: HadithIcon,        label: 'الأحاديث الشريفة',   path: '/hadith',       desc: 'أحاديث النبي ﷺ من كبار المصادر',                grad: 'linear-gradient(145deg, #2d6a4f, #1b4332)' },
     { Icon: ScrollIcon,        label: 'التاريخ الإسلامي',   path: '/history',      desc: 'من السيرة النبوية حتى الدولة العثمانية',         grad: 'linear-gradient(145deg, #6b3a0f, #3d2008)' },
