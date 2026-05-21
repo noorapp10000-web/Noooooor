@@ -109,153 +109,6 @@ function TipIcon({ size = 16, color = '#C19A6B' }: { size?: number; color?: stri
   );
 }
 
-/* ── Body-position SVG illustrations ────────────────────────── */
-function StandingFig({ color = '#C4956A' }: { color?: string }) {
-  return (
-    <svg viewBox="0 0 80 160" className="w-full h-full">
-      <circle cx="40" cy="20" r="13" fill={color} />
-      <rect x="26" y="35" width="28" height="50" rx="10" fill={color} />
-      <rect x="14" y="37" width="12" height="44" rx="6" fill={color} />
-      <rect x="54" y="37" width="12" height="44" rx="6" fill={color} />
-      <rect x="26" y="83" width="12" height="55" rx="6" fill={color} />
-      <rect x="42" y="83" width="12" height="55" rx="6" fill={color} />
-    </svg>
-  );
-}
-
-function HandsRaisedFig() {
-  return (
-    <svg viewBox="0 0 100 160" className="w-full h-full">
-      <circle cx="50" cy="20" r="13" fill="#C4956A" />
-      <rect x="36" y="35" width="28" height="50" rx="10" fill="#C4956A" />
-      <rect x="6" y="28" width="12" height="40" rx="6" fill="#C4956A" transform="rotate(-35 12 48)" />
-      <rect x="76" y="16" width="12" height="40" rx="6" fill="#C4956A" transform="rotate(35 82 36)" />
-      <rect x="36" y="83" width="12" height="55" rx="6" fill="#C4956A" />
-      <rect x="52" y="83" width="12" height="55" rx="6" fill="#C4956A" />
-      <path d="M18 22 L30 14" stroke="#C19A6B" strokeWidth="2" strokeDasharray="3 2" opacity="0.7" />
-      <path d="M82 22 L70 14" stroke="#C19A6B" strokeWidth="2" strokeDasharray="3 2" opacity="0.7" />
-    </svg>
-  );
-}
-
-function QuranReadingFig() {
-  return (
-    <svg viewBox="0 0 100 160" className="w-full h-full">
-      <circle cx="50" cy="20" r="13" fill="#C4956A" />
-      <rect x="36" y="35" width="28" height="50" rx="10" fill="#C4956A" />
-      <rect x="14" y="48" width="14" height="30" rx="6" fill="#C4956A" />
-      <rect x="72" y="48" width="14" height="30" rx="6" fill="#C4956A" />
-      <rect x="22" y="62" width="56" height="36" rx="8" fill="#2d6a4f" />
-      <rect x="26" y="68" width="20" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="26" y="74" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="26" y="80" width="18" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="54" y="68" width="18" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="54" y="74" width="14" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="54" y="80" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.4)" />
-      <rect x="36" y="83" width="12" height="55" rx="6" fill="#C4956A" />
-      <rect x="52" y="83" width="12" height="55" rx="6" fill="#C4956A" />
-    </svg>
-  );
-}
-
-function RukuFig() {
-  return (
-    <svg viewBox="0 0 140 120" className="w-full h-full">
-      <ellipse cx="70" cy="112" rx="50" ry="6" fill="rgba(193,154,107,0.15)" />
-      <circle cx="110" cy="28" r="13" fill="#C4956A" />
-      <rect x="36" y="46" width="78" height="16" rx="8" fill="#C4956A" />
-      <rect x="100" y="34" width="14" height="36" rx="7" fill="#C4956A" />
-      <rect x="28" y="54" width="14" height="42" rx="7" fill="#C4956A" />
-      <rect x="44" y="54" width="14" height="42" rx="7" fill="#C4956A" />
-      <rect x="68" y="62" width="12" height="46" rx="6" fill="#C4956A" />
-      <rect x="84" y="62" width="12" height="46" rx="6" fill="#C4956A" />
-    </svg>
-  );
-}
-
-function ItidalFig() {
-  return (
-    <svg viewBox="0 0 100 160" className="w-full h-full">
-      <circle cx="50" cy="20" r="13" fill="#C4956A" />
-      <rect x="36" y="35" width="28" height="50" rx="10" fill="#C4956A" />
-      <rect x="16" y="48" width="14" height="36" rx="7" fill="#C4956A" />
-      <rect x="70" y="48" width="14" height="36" rx="7" fill="#C4956A" />
-      <rect x="36" y="83" width="12" height="55" rx="6" fill="#C4956A" />
-      <rect x="52" y="83" width="12" height="55" rx="6" fill="#C4956A" />
-      <path d="M50 8 L50 2" stroke="#F5C842" strokeWidth="2" />
-      <circle cx="50" cy="1" r="2.5" fill="#F5C842" />
-    </svg>
-  );
-}
-
-function SujoodFig() {
-  return (
-    <svg viewBox="0 0 160 120" className="w-full h-full">
-      <ellipse cx="80" cy="112" rx="68" ry="6" fill="rgba(193,154,107,0.15)" />
-      <circle cx="26" cy="78" r="13" fill="#C4956A" />
-      <rect x="14" y="88" width="26" height="20" rx="10" fill="#C4956A" />
-      <rect x="40" y="68" width="70" height="16" rx="8" fill="#C4956A" />
-      <rect x="82" y="54" width="14" height="32" rx="7" fill="#C4956A" />
-      <rect x="98" y="54" width="14" height="32" rx="7" fill="#C4956A" />
-      <rect x="40" y="82" width="14" height="26" rx="7" fill="#C4956A" />
-      <rect x="56" y="82" width="14" height="26" rx="7" fill="#C4956A" />
-      <rect x="110" y="68" width="14" height="40" rx="7" fill="#C4956A" />
-      <rect x="126" y="68" width="14" height="40" rx="7" fill="#C4956A" />
-    </svg>
-  );
-}
-
-function JulusFig() {
-  return (
-    <svg viewBox="0 0 120 140" className="w-full h-full">
-      <ellipse cx="60" cy="130" rx="50" ry="7" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="24" r="13" fill="#C4956A" />
-      <rect x="46" y="38" width="28" height="44" rx="10" fill="#C4956A" />
-      <rect x="22" y="46" width="14" height="36" rx="7" fill="#C4956A" />
-      <rect x="84" y="46" width="14" height="36" rx="7" fill="#C4956A" />
-      <ellipse cx="38" cy="100" rx="22" ry="12" fill="#C4956A" />
-      <ellipse cx="82" cy="100" rx="22" ry="12" fill="#C4956A" />
-      <rect x="40" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(15 47 101)" />
-      <rect x="66" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(-15 73 101)" />
-    </svg>
-  );
-}
-
-function TashahhudFig() {
-  return (
-    <svg viewBox="0 0 120 140" className="w-full h-full">
-      <ellipse cx="60" cy="130" rx="50" ry="7" fill="rgba(193,154,107,0.15)" />
-      <circle cx="60" cy="24" r="13" fill="#C4956A" />
-      <rect x="46" y="38" width="28" height="44" rx="10" fill="#C4956A" />
-      <rect x="22" y="46" width="14" height="36" rx="7" fill="#C4956A" />
-      <rect x="84" y="46" width="14" height="36" rx="7" fill="#C4956A" />
-      <ellipse cx="38" cy="100" rx="22" ry="12" fill="#C4956A" />
-      <ellipse cx="82" cy="100" rx="22" ry="12" fill="#C4956A" />
-      <rect x="40" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(15 47 101)" />
-      <rect x="66" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(-15 73 101)" />
-      <rect x="80" y="48" width="7" height="22" rx="3.5" fill="#C4956A" />
-      <rect x="81" y="38" width="5" height="16" rx="2.5" fill="#D4A574" />
-    </svg>
-  );
-}
-
-function TasleemFig() {
-  return (
-    <svg viewBox="0 0 140 140" className="w-full h-full">
-      <ellipse cx="70" cy="130" rx="55" ry="7" fill="rgba(193,154,107,0.15)" />
-      <circle cx="70" cy="24" r="13" fill="#C4956A" />
-      <rect x="56" y="38" width="28" height="44" rx="10" fill="#C4956A" />
-      <ellipse cx="46" cy="100" rx="22" ry="12" fill="#C4956A" />
-      <ellipse cx="94" cy="100" rx="22" ry="12" fill="#C4956A" />
-      <rect x="48" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(15 55 101)" />
-      <rect x="78" y="82" width="14" height="38" rx="7" fill="#C4956A" transform="rotate(-15 85 101)" />
-      <circle cx="84" cy="22" r="13" fill="#C4956A" />
-      <circle cx="89" cy="20" r="4" fill="#5D3A1A" />
-      <path d="M96 18 Q108 22 112 32" stroke="#C19A6B" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7" />
-    </svg>
-  );
-}
-
 /* ── Prayer steps data ─────────────────────────────────────── */
 interface PrayerStep {
   id: number;
@@ -266,7 +119,7 @@ interface PrayerStep {
   meaning: string;
   note?: string;
   repetitions?: number;
-  Fig: () => JSX.Element;
+  img: string;
   color: string;
 }
 
@@ -277,7 +130,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Nawaytu an uṣallī',
     meaning: 'أنوي الصلاة بقلبك — ولا تُلفظ النية',
     note: 'النية محلها القلب فقط، ولا يشترط التلفظ بها',
-    Fig: StandingFig, color: '#2d6a4f',
+    img: '/images/prayer/step-01-niyyah.png', color: '#2d6a4f',
   },
   {
     id: 2, title: 'تكبيرة الإحرام', position: 'قيام — يرفع يديه',
@@ -285,7 +138,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Allāhu Akbar',
     meaning: 'الله أكبر',
     note: 'يرفع يديه حذو منكبيه أو شحمتي أذنيه عند التكبير',
-    Fig: HandsRaisedFig, color: '#1e4d7b',
+    img: '/images/prayer/step-02-takbir.png', color: '#1e4d7b',
   },
   {
     id: 3, title: 'دعاء الاستفتاح', position: 'قيام — سنة',
@@ -293,7 +146,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Subḥānaka Allāhumma wa biḥamdik, wa tabāraka ismuk, wa taʿālā jadduk, wa lā ilāha ghayruk',
     meaning: 'سبحانك اللهم وبحمدك، وتبارك اسمك، وتعالى جدك، ولا إله غيرك',
     note: 'دعاء مستحب في أول كل صلاة — يُقرأ في السر',
-    Fig: StandingFig, color: '#4a2a7a',
+    img: '/images/prayer/step-03-istiftah.png', color: '#4a2a7a',
   },
   {
     id: 4, title: 'التعوذ والبسملة', position: 'قيام',
@@ -301,7 +154,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Aʿūdhu billāhi min ash-shayṭān ir-rajīm · Bismillāh ir-Raḥmān ir-Raḥīm',
     meaning: 'أعوذ بالله من الشيطان الرجيم — بسم الله الرحمن الرحيم',
     note: 'يُقرأ سراً في الصلاة الجهرية وسراً في السرية',
-    Fig: StandingFig, color: '#7a3a1e',
+    img: '/images/prayer/step-04-basmala.png', color: '#7a3a1e',
   },
   {
     id: 5, title: 'قراءة الفاتحة', position: 'قيام — ركن',
@@ -309,7 +162,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Al-ḥamdu lillāhi rabb il-ʿālamīn...',
     meaning: 'سورة الفاتحة كاملة — ركن من أركان الصلاة',
     note: 'لا صلاة لمن لم يقرأ بفاتحة الكتاب — ثم يقول: آمين',
-    Fig: QuranReadingFig, color: '#2d6a4f',
+    img: '/images/prayer/step-05-fatiha.png', color: '#2d6a4f',
   },
   {
     id: 6, title: 'قراءة سورة قصيرة', position: 'قيام — سنة',
@@ -317,7 +170,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Qul huwa Allāhu aḥad...',
     meaning: 'سورة الإخلاص — مثال على السورة القصيرة',
     note: 'في الركعة الأولى والثانية فقط — يمكن قراءة أي سورة',
-    Fig: QuranReadingFig, color: '#5c3a7a',
+    img: '/images/prayer/step-06-surah.png', color: '#5c3a7a',
   },
   {
     id: 7, title: 'الركوع', position: 'ركوع — ركن',
@@ -326,7 +179,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي العظيم',
     note: 'يكبّر عند الانحناء، ويضع يديه على ركبتيه، وتستوي ظهره',
     repetitions: 3,
-    Fig: RukuFig, color: '#1a5c5c',
+    img: '/images/prayer/step-07-ruku.png', color: '#1a5c5c',
   },
   {
     id: 8, title: 'الاعتدال من الركوع', position: 'قيام — ركن',
@@ -334,7 +187,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Samiʿa Allāhu liman ḥamidah · Rabbanā wa laka al-ḥamd',
     meaning: 'سمع الله لمن حمده — ربنا ولك الحمد',
     note: 'يرفع من الركوع قائلاً «سمع الله لمن حمده» ثم يكمل الدعاء',
-    Fig: ItidalFig, color: '#6b3a0f',
+    img: '/images/prayer/step-08-itidal.png', color: '#6b3a0f',
   },
   {
     id: 9, title: 'السجدة الأولى', position: 'سجود — ركن',
@@ -343,7 +196,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي الأعلى',
     note: 'يسجد على سبعة أعضاء: الجبهة+الأنف، الكفّان، الركبتان، أطراف القدمين',
     repetitions: 3,
-    Fig: SujoodFig, color: '#3a1a5c',
+    img: '/images/prayer/step-09-sujood1.png', color: '#3a1a5c',
   },
   {
     id: 10, title: 'الجلوس بين السجدتين', position: 'جلوس',
@@ -351,7 +204,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Rabb ighfir lī, Rabb ighfir lī',
     meaning: 'ربِّ اغفر لي',
     note: 'يجلس مفترشاً بين السجدتين ثم يسجد مرة ثانية',
-    Fig: JulusFig, color: '#7a3a1e',
+    img: '/images/prayer/step-10-julus.png', color: '#7a3a1e',
   },
   {
     id: 11, title: 'السجدة الثانية', position: 'سجود — ركن',
@@ -360,7 +213,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي الأعلى',
     note: 'ثم يقوم للركعة التالية مكبِّراً، ويفعل مثل ذلك في كل ركعة',
     repetitions: 3,
-    Fig: SujoodFig, color: '#3a1a5c',
+    img: '/images/prayer/step-11-sujood2.png', color: '#3a1a5c',
   },
   {
     id: 12, title: 'التشهد الأخير', position: 'جلوس — ركن',
@@ -368,7 +221,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'At-taḥiyyātu lillāh waṣ-ṣalawātu waṭ-ṭayyibāt...',
     meaning: 'التحيات لله — يُرفع السبّابة عند الشهادة',
     note: 'في آخر ركعة يجلس جلسةً للتشهد ثم يُكمل الصلاة الإبراهيمية',
-    Fig: TashahhudFig, color: '#1e4d2b',
+    img: '/images/prayer/step-12-tashahhud.png', color: '#1e4d2b',
   },
   {
     id: 13, title: 'الصلاة الإبراهيمية', position: 'جلوس — بعد التشهد',
@@ -376,7 +229,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Allāhumma ṣalli ʿalā Muḥammad wa ʿalā āli Muḥammad...',
     meaning: 'اللهم صلِّ على محمد وعلى آل محمد',
     note: 'ثم يتعوذ ويدعو بما شاء قبل التسليم',
-    Fig: TashahhudFig, color: '#0f3d2e',
+    img: '/images/prayer/step-13-salawat.png', color: '#0f3d2e',
   },
   {
     id: 14, title: 'التسليم', position: 'جلوس — ركن',
@@ -384,7 +237,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'As-salāmu ʿalaykum wa raḥmatullāh',
     meaning: 'السلام عليكم ورحمة الله',
     note: 'يلتفت يميناً ثم يساراً — وبهذا تنتهي الصلاة',
-    Fig: TasleemFig, color: '#4a1e2a',
+    img: '/images/prayer/step-14-tasleem.png', color: '#4a1e2a',
   },
 ];
 
@@ -487,9 +340,9 @@ export function LearnPrayer() {
               <button key={s.id} onClick={() => { setSelectedPrayer(0); setStep(i); }}
                 className="flex items-center gap-3 p-3 rounded-2xl text-right"
                 style={{ background: cardBg, border: `1px solid ${border}` }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: s.color, minWidth: 32 }}>
-                  <span className="text-white text-xs font-bold">{i + 1}</span>
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
+                  style={{ background: s.color + '22', minWidth: 40 }}>
+                  <img src={s.img} alt={s.title} className="w-full h-full object-cover object-top" />
                 </div>
                 <p className="flex-1 font-bold text-sm" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
                   {s.title}
@@ -570,24 +423,60 @@ export function LearnPrayer() {
             className="rounded-3xl border overflow-hidden"
             style={{ background: cardBg, borderColor: border }}>
 
-            {/* Illustration */}
-            <div className="flex items-center justify-center py-4"
-              style={{ background: current.color + '18' }}>
-              <div className="h-40 w-36">
-                <current.Fig />
+            {/* Character illustration — same style as WuduGuide */}
+            <div className="relative flex items-end justify-center overflow-hidden"
+              style={{
+                height: 240,
+                background: dark
+                  ? `linear-gradient(160deg, ${current.color}55 0%, #0f0c07 100%)`
+                  : `linear-gradient(160deg, ${current.color}22 0%, #fdfaf5 100%)`,
+              }}>
+              <div className="absolute inset-0 flex items-center justify-center opacity-15">
+                <div className="w-48 h-48 rounded-full"
+                  style={{ background: `radial-gradient(circle, ${current.color} 0%, transparent 70%)` }} />
+              </div>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={current.img}
+                  src={current.img}
+                  alt={current.title}
+                  className="h-56 object-contain object-bottom relative z-10 drop-shadow-xl"
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </AnimatePresence>
+              {/* Step badge */}
+              <div className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white shadow-lg"
+                style={{ background: current.color, boxShadow: `0 2px 12px ${current.color}88` }}>
+                {step + 1}
+              </div>
+              {/* Position badge */}
+              <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full text-xs font-bold text-white"
+                style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', fontFamily: '"Tajawal",sans-serif' }}>
+                {current.position.split(' — ')[0]}
               </div>
             </div>
 
             {/* Title block */}
             <div className="px-5 pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold px-3 py-1 rounded-full text-white"
-                  style={{ background: current.color, fontFamily: '"Tajawal",sans-serif' }}>
-                  {step + 1} — {current.title}
-                </span>
-                <span className="text-xs" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
-                  {current.position}
-                </span>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-2xl font-black" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+                  {current.title}
+                </h2>
+                {current.position.includes('ركن') && (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{ background: '#ef444422', color: '#ef4444', border: '1px solid #ef444444', fontFamily: '"Tajawal",sans-serif' }}>
+                    ركن
+                  </span>
+                )}
+                {current.position.includes('سنة') && (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{ background: '#C19A6B22', color: '#C19A6B', border: '1px solid #C19A6B44', fontFamily: '"Tajawal",sans-serif' }}>
+                    سنة
+                  </span>
+                )}
               </div>
 
               {/* Arabic text */}

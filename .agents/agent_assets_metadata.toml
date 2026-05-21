@@ -78,6 +78,66 @@ uri = "file://artifacts/noor/public/images/wudu/step-10-dua.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "gkSU4K8ZhrSEKHUofuEXf"
+uri = "file://artifacts/noor/public/images/prayer/step-01-niyyah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "TwUhy34qLme6GwMbjPNt3"
+uri = "file://artifacts/noor/public/images/prayer/step-02-takbir.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "v2vTh2V800jy8y7Wf1fR1"
+uri = "file://artifacts/noor/public/images/prayer/step-03-istiftah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "BWGtA6uVIUqLFWN39bIBU"
+uri = "file://artifacts/noor/public/images/prayer/step-04-basmala.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "GiSKA5oYQ1zmB6AbsDgmR"
+uri = "file://artifacts/noor/public/images/prayer/step-05-fatiha.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Ick96_k0kZHaxXOUKq6LF"
+uri = "file://artifacts/noor/public/images/prayer/step-06-surah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "N8OUX8uXiDXEVn5VVwgby"
+uri = "file://artifacts/noor/public/images/prayer/step-07-ruku.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "tUZkjxk5fiOqGlqu68GDc"
+uri = "file://artifacts/noor/public/images/prayer/step-08-itidal.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "of5yAoVw2MTTXTigUuQ4K"
+uri = "file://artifacts/noor/public/images/prayer/step-09-sujood1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "4DlFxGJ-cEiOOt6roNkQy"
+uri = "file://artifacts/noor/public/images/prayer/step-10-julus.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "UZTEXrYzWt5P9P7SddU_5"
 uri = "file://noor-website-prompt.md"
