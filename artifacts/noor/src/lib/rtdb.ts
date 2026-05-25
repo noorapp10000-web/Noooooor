@@ -9,6 +9,7 @@ export interface UserProfile {
   name: string;
   email: string;
   photo: string;
+  gender?: 'male' | 'female';
   governorateId: string;
   governorateName: string;
   lat: number;

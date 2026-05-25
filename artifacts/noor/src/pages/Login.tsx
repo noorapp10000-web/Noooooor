@@ -6,8 +6,7 @@ import { initUserSync, saveProfileToRTDB, getOrCreateLocalUid, importAllData, ty
 
 interface LoginProps { onComplete: () => void; }
 type Step = 'name' | 'city';
-
-
+type Gender = 'male' | 'female';
 
 function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string) => void }) {
   return (
@@ -50,6 +49,7 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
 
 export function Login({ onComplete }: LoginProps) {
   const [step, setStep] = useState<Step>('name');
+  const [gender, setGender] = useState<Gender>('male');
   const [name, setName] = useState('');
   const [canNext, setCanNext] = useState(false);
   const [govId, setGovId] = useState('');
@@ -60,9 +60,7 @@ export function Login({ onComplete }: LoginProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      nameInputRef.current?.focus();
-    }, 300);
+    const timer = setTimeout(() => nameInputRef.current?.focus(), 400);
     return () => clearTimeout(timer);
   }, []);
 
@@ -83,7 +81,7 @@ export function Login({ onComplete }: LoginProps) {
       const result = importAllData(text);
       setImportResult({ ok: result.success, msg: result.success ? 'تم استعادة البيانات ✓' : (result.error ?? 'خطأ غير معروف') });
       setImporting(false);
-      if (result.success) setTimeout(() => { onComplete(); }, 1600);
+      if (result.success) setTimeout(() => onComplete(), 1600);
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -123,6 +121,7 @@ export function Login({ onComplete }: LoginProps) {
       name: name.trim() || 'ذاكر',
       email: '',
       photo: '',
+      gender,
       governorateId: gov.id,
       governorateName: gov.name,
       lat: gov.lat,
@@ -132,11 +131,11 @@ export function Login({ onComplete }: LoginProps) {
 
     initUserSync(uid);
     saveProfileToRTDB(uid, profile);
-
     document.documentElement.classList.remove('dark');
-
     onComplete();
   }
+
+  const mascotSrc = gender === 'female' ? '/mascot-female.png' : '/mascot.png';
 
   return (
     <div
@@ -144,6 +143,7 @@ export function Login({ onComplete }: LoginProps) {
       style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}
       dir="rtl"
     >
+      {/* Background glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full"
           style={{ background: 'radial-gradient(ellipse, rgba(193,154,107,0.18) 0%, transparent 70%)', filter: 'blur(50px)' }} />
@@ -153,16 +153,31 @@ export function Login({ onComplete }: LoginProps) {
 
       <div className="relative z-10 w-full max-w-sm">
 
-        {/* Logo */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="text-center mb-8">
-          <div className="relative mx-auto mb-3 w-24 h-24">
-            <div className="absolute -inset-2 rounded-[30px] opacity-30" style={{ background: 'radial-gradient(circle, #C19A6B, transparent)', filter: 'blur(12px)' }} />
-            <div className="absolute -inset-0.5 rounded-[26px]" style={{ background: 'linear-gradient(135deg, rgba(193,154,107,0.6), rgba(193,154,107,0.1), rgba(193,154,107,0.4))' }} />
-            <div className="relative w-full h-full rounded-3xl overflow-hidden flex items-center justify-center" style={{ background: 'linear-gradient(145deg, #F5E6CC, #E8D4A8)', zIndex: 1 }}>
-              <img src="/logo.png" alt="شعار نور" className="w-full h-full object-contain" style={{ padding: '4px' }} />
-            </div>
+        {/* Mascot + App name */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="text-center mb-6"
+        >
+          {/* Mascot */}
+          <div className="relative mx-auto mb-2" style={{ height: 180, width: 160 }}>
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={mascotSrc}
+                src={mascotSrc}
+                alt="mascot"
+                className="absolute inset-0 w-full h-full object-contain drop-shadow-xl"
+                initial={{ opacity: 0, scale: 0.88, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.88, y: 8 }}
+                transition={{ duration: 0.28, ease: 'easeOut' }}
+              />
+            </AnimatePresence>
           </div>
-          <h1 className="text-3xl font-bold mt-1" style={{ fontFamily: '"Amiri", serif', background: 'linear-gradient(135deg, #e8c98a, #C19A6B, #a07840)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+
+          {/* App name */}
+          <h1 className="text-3xl font-bold" style={{ fontFamily: '"Amiri", serif', background: 'linear-gradient(135deg, #e8c98a, #C19A6B, #a07840)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             نُور
           </h1>
           <p className="text-xs tracking-[0.25em] mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
@@ -176,12 +191,43 @@ export function Login({ onComplete }: LoginProps) {
           {step === 'name' && (
             <motion.div key="name" {...slide} className="flex flex-col gap-4">
               <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(139,99,64,0.2)', boxShadow: '0 2px 12px rgba(93,48,16,0.08)' }}>
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'linear-gradient(135deg,#C19A6B,#8B6340)' }}>
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="text-lg font-bold text-center mb-1" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>أهلاً بك في نور</h2>
-                <p className="text-xs text-center mb-5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>اكتب اسمك للبدء</p>
 
+                <h2 className="text-lg font-bold text-center mb-4" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>
+                  أهلاً بك في نور
+                </h2>
+
+                {/* Gender selector */}
+                <div className="flex gap-2 mb-4">
+                  {(['male', 'female'] as Gender[]).map(g => {
+                    const selected = gender === g;
+                    const label = g === 'male' ? 'ذكر' : 'أنثى';
+                    return (
+                      <button
+                        key={g}
+                        onClick={() => setGender(g)}
+                        className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-all duration-200"
+                        style={{
+                          fontFamily: '"Tajawal", sans-serif',
+                          background: selected
+                            ? 'linear-gradient(135deg, #C19A6B, #a07840)'
+                            : 'rgba(139,99,64,0.07)',
+                          color: selected ? '#fff' : '#8B6340',
+                          border: selected
+                            ? '1.5px solid rgba(193,154,107,0.6)'
+                            : '1.5px solid rgba(139,99,64,0.18)',
+                          boxShadow: selected ? '0 2px 10px rgba(193,154,107,0.3)' : 'none',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Name input */}
+                <p className="text-xs text-center mb-3" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+                  اكتب اسمك للبدء
+                </p>
                 <div
                   className="relative w-full rounded-2xl transition-all duration-200"
                   style={{
@@ -209,7 +255,6 @@ export function Login({ onComplete }: LoginProps) {
                     onKeyDown={e => { syncName(); if (e.key === 'Enter' && nameInputRef.current?.value.trim()) handleNameNext(); }}
                   />
                 </div>
-
               </div>
 
               <button
@@ -277,4 +322,4 @@ export function Login({ onComplete }: LoginProps) {
       </div>
     </div>
   );
-    }
+}
