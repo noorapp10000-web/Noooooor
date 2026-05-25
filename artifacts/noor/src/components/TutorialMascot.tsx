@@ -1,7 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'wouter';
 import { useTutorial } from './TutorialMascotContext';
+
+function getMascotSrc(): string {
+  try {
+    const uid = localStorage.getItem('noor_uid');
+    if (!uid) return '/mascot.png';
+    const raw = localStorage.getItem(`noor_rtdb_cache_${uid}`);
+    if (!raw) return '/mascot.png';
+    const profile = JSON.parse(raw) as Record<string, unknown>;
+    return profile.gender === 'female' ? '/mascot-female.png' : '/mascot.png';
+  } catch {
+    return '/mascot.png';
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────
    رسائل دقيقة — مبنية على محتوى الصفحات الفعلي
@@ -199,6 +212,11 @@ const ROUTE_MESSAGES: Record<string, string> = {
 export function TutorialMascot() {
   const [location] = useLocation();
   const { showTutorial, hide, visible, message } = useTutorial();
+  const [mascotSrc, setMascotSrc] = useState(getMascotSrc);
+
+  useEffect(() => {
+    setMascotSrc(getMascotSrc());
+  }, [location]);
 
   useEffect(() => {
     const msg = ROUTE_MESSAGES[location];
@@ -238,7 +256,7 @@ export function TutorialMascot() {
           >
             {/* ── Mascot ── */}
             <motion.img
-              src="/mascot.png"
+              src={mascotSrc}
               alt="مرشد نور"
               className="flex-shrink-0 select-none"
               style={{

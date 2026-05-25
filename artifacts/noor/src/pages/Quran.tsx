@@ -6,7 +6,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
-import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2, Mic } from 'lucide-react';
+import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Capacitor } from '@capacitor/core';
 import { padZero, cn } from '@/lib/utils';
@@ -538,14 +538,6 @@ export function Quran() {
           </div>
           <h1 className="text-2xl font-bold flex-1" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B' }}>القرآن الكريم</h1>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/quran-recitation')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"
-              style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg,#C19A6B,#a07a4a)', color: '#fff' }}
-            >
-              <Mic size={13} />
-              تسميع
-            </button>
             <button
               onClick={() => setShowMoshaf(true)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold"

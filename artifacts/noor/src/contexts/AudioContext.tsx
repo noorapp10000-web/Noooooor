@@ -28,6 +28,8 @@ const AudioCtx = createContext<AudioContextType | null>(null);
 
 const audioEl = new Audio();
 audioEl.preload = 'auto';
+audioEl.hidden = true;
+document.body.appendChild(audioEl);
 
 /* ─────────────────────────────────────────────────────────────────────────
    Artwork generator — produces a 512×512 Islamic disc matching the
