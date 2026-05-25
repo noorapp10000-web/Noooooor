@@ -3,134 +3,153 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5E6CC"
     android:layoutDirection="rtl"
     android:focusable="true"
     android:focusableInTouchMode="true">
 
-    <!-- Decorative top arc -->
+    <!-- Full background gradient -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="260dp"
-        android:layout_gravity="top"
-        android:background="#E8D5B0"
-        android:alpha="0.45" />
+        android:layout_height="match_parent"
+        android:background="@drawable/guard_bg_gradient" />
 
-    <!-- Main content — centered card -->
-    <LinearLayout
+    <!-- Subtle top arc decoration -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_gravity="top"
+        android:background="@drawable/guard_arc_top" />
+
+    <!-- Scrollable content centered -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:paddingStart="28dp"
-        android:paddingEnd="28dp">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <!-- App logo -->
-        <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/splash_logo"
-            android:scaleType="fitCenter"
-            android:layout_marginBottom="12dp" />
-
-        <!-- App name -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="نُور"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:textColor="#7A4F1E"
-            android:fontFamily="sans-serif"
-            android:layout_marginBottom="28dp" />
-
-        <!-- White card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/guard_card_bg"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
-            android:paddingTop="32dp"
-            android:paddingBottom="32dp">
+            android:gravity="center_horizontal"
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp"
+            android:paddingTop="64dp"
+            android:paddingBottom="48dp">
 
-            <!-- Mosque emoji / icon label -->
+            <!-- App name small label -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🕌"
-                android:textSize="40sp"
-                android:layout_marginBottom="16dp" />
-
-            <!-- "Prayer time has come" -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="حان الآن موعد صلاة"
-                android:textSize="16sp"
-                android:textColor="#8B5E2A"
-                android:gravity="center"
+                android:text="تطبيق نُور"
+                android:textSize="13sp"
+                android:letterSpacing="0.12"
+                android:textColor="#8B6030"
                 android:fontFamily="sans-serif"
                 android:layout_marginBottom="6dp" />
 
-            <!-- Prayer name — big and golden -->
-            <TextView
-                android:id="@+id/tv_prayer_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="الفجر"
-                android:textSize="36sp"
-                android:textStyle="bold"
-                android:textColor="#C19A6B"
-                android:gravity="center"
-                android:fontFamily="sans-serif"
-                android:layout_marginBottom="20dp" />
+            <!-- Mosque vector image -->
+            <ImageView
+                android:layout_width="150dp"
+                android:layout_height="130dp"
+                android:src="@drawable/ic_mosque"
+                android:scaleType="fitCenter"
+                android:layout_marginBottom="24dp" />
 
-            <!-- Divider -->
-            <View
-                android:layout_width="60dp"
-                android:layout_height="1.5dp"
-                android:background="#E8D0A0"
-                android:layout_marginBottom="20dp" />
-
-            <!-- Instruction -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="اذهب للصلاة"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#5A3A10"
-                android:gravity="center"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="لفتح التطبيقات اضغط على الزر أدناه بعد الصلاة"
-                android:textSize="13sp"
-                android:textColor="#9A7040"
-                android:gravity="center"
-                android:layout_marginBottom="28dp" />
-
-            <!-- Oath button -->
-            <Button
-                android:id="@+id/btn_oath"
+            <!-- Main card -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="58dp"
-                android:text="أقسم بالله أني صليت"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="@drawable/guard_card_bg"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:paddingTop="36dp"
+                android:paddingBottom="36dp">
+
+                <!-- "Prayer time for" label -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="حانَ وقتُ صلاة"
+                    android:textSize="15sp"
+                    android:textColor="#8B6030"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Prayer name — large and golden -->
+                <TextView
+                    android:id="@+id/tv_prayer_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="الفجر"
+                    android:textSize="42sp"
+                    android:textStyle="bold"
+                    android:textColor="#C19A6B"
+                    android:gravity="center"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Decorative golden divider -->
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="2dp"
+                    android:background="#C19A6B"
+                    android:layout_marginBottom="20dp"
+                    android:alpha="0.6" />
+
+                <!-- Instruction line -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="اذهب إلى الصلاة الآن"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="#4A2E0A"
+                    android:gravity="center"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="لن يُفتح أي تطبيق إلا بعد أداء الصلاة"
+                    android:textSize="12sp"
+                    android:textColor="#9A7040"
+                    android:gravity="center"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- Oath button -->
+                <Button
+                    android:id="@+id/btn_oath"
+                    android:layout_width="match_parent"
+                    android:layout_height="58dp"
+                    android:text="أقسمُ بالله أني صلَّيت"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="sans-serif"
+                    android:background="@drawable/guard_button_bg"
+                    android:stateListAnimator="@null"
+                    android:elevation="0dp" />
+
+            </LinearLayout>
+
+            <!-- Quran ayah at bottom -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="﴿ إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا ﴾"
+                android:textSize="13sp"
+                android:textColor="#8B6030"
+                android:gravity="center"
                 android:fontFamily="sans-serif"
-                android:background="@drawable/guard_button_bg"
-                android:stateListAnimator="@null"
-                android:elevation="0dp" />
+                android:paddingTop="24dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
 
         </LinearLayout>
-
-    </LinearLayout>
+    </ScrollView>
 
 </FrameLayout>

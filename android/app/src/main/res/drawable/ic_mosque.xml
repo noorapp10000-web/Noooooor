@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="140dp"
+    android:viewportWidth="160"
+    android:viewportHeight="140">
+
+    <!-- ── Left minaret shaft ── -->
+    <path android:fillColor="#C19A6B"
+        android:pathData="M12,38 L22,38 L22,105 L12,105 Z"/>
+    <!-- Left minaret balcony -->
+    <path android:fillColor="#A8804F"
+        android:pathData="M9,72 L25,72 L25,76 L9,76 Z"/>
+    <!-- Left minaret cap dome -->
+    <path android:fillColor="#C19A6B"
+        android:pathData="M17,24 C12,24 10,30 10,36 L10,40 L24,40 L24,36 C24,30 22,24 17,24 Z"/>
+    <!-- Left finial -->
+    <path android:fillColor="#D4AC7A"
+        android:pathData="M16,18 L18,18 L18,26 L16,26 Z"/>
+    <path android:fillColor="#D4AC7A"
+        android:pathData="M17,15 C15.5,15 15,16 15,17.5 C15,19 15.5,19.5 17,19.5 C18.5,19.5 19,19 19,17.5 C19,16 18.5,15 17,15 Z"/>
+
+    <!-- ── Right minaret shaft ── -->
+    <path android:fillColor="#C19A6B"
+        android:pathData="M138,38 L148,38 L148,105 L138,105 Z"/>
+    <!-- Right minaret balcony -->
+    <path android:fillColor="#A8804F"
+        android:pathData="M135,72 L151,72 L151,76 L135,76 Z"/>
+    <!-- Right minaret cap dome -->
+    <path android:fillColor="#C19A6B"
+        android:pathData="M143,24 C138,24 136,30 136,36 L136,40 L150,40 L150,36 C150,30 148,24 143,24 Z"/>
+    <!-- Right finial -->
+    <path android:fillColor="#D4AC7A"
+        android:pathData="M142,18 L144,18 L144,26 L142,26 Z"/>
+    <path android:fillColor="#D4AC7A"
+        android:pathData="M143,15 C141.5,15 141,16 141,17.5 C141,19 141.5,19.5 143,19.5 C144.5,19.5 145,19 145,17.5 C145,16 144.5,15 143,15 Z"/>
+
+    <!-- ── Main building body ── -->
+    <path android:fillColor="#C19A6B"
+        android:pathData="M25,55 L135,55 L135,105 L25,105 Z"/>
+
+    <!-- ── Central large dome ── -->
+    <path android:fillColor="#C19A6B"
+        android:pathData="M50,55 C50,30 70,16 80,16 C90,16 110,30 110,55 Z"/>
+    <!-- Dome highlight rim -->
+    <path android:fillColor="#D4AC7A"
+        android:pathData="M50,55 L110,55 L110,58 L50,58 Z"/>
+
+    <!-- ── Two small side domes ── -->
+    <path android:fillColor="#B8895A"
+        android:pathData="M25,55 C25,46 31,40 38,40 C45,40 51,46 51,55 Z"/>
+    <path android:fillColor="#B8895A"
+        android:pathData="M109,55 C109,46 115,40 122,40 C129,40 135,46 135,55 Z"/>
+
+    <!-- ── Central dome finial ── -->
+    <path android:fillColor="#E8C27A"
+        android:pathData="M79,9 L81,9 L81,18 L79,18 Z"/>
+    <!-- Crescent -->
+    <path android:fillColor="#E8C27A"
+        android:pathData="M80,4 C77,4 74.5,6.5 74.5,9.5 C74.5,12.5 77,15 80,15 C78,15 75.5,13 75.5,9.5 C75.5,6 78,4 80,4 Z"/>
+    <path android:fillColor="#E8C27A"
+        android:pathData="M80,4 C83,4 85.5,6.5 85.5,9.5 C85.5,12.5 83,15 80,15 C83,15 85.5,13 85.5,9.5 C85.5,6 83,4 80,4 Z"/>
+
+    <!-- ── Arched windows on body ── -->
+    <!-- Left window -->
+    <path android:fillColor="#F0DDB8"
+        android:pathData="M35,68 C35,63 38,60 41,60 C44,60 47,63 47,68 L47,82 L35,82 Z"/>
+    <!-- Right window -->
+    <path android:fillColor="#F0DDB8"
+        android:pathData="M113,68 C113,63 116,60 119,60 C122,60 125,63 125,68 L125,82 L113,82 Z"/>
+
+    <!-- ── Central arched door ── -->
+    <path android:fillColor="#F0DDB8"
+        android:pathData="M68,105 C68,90 72,83 80,83 C88,83 92,90 92,105 Z"/>
+    <path android:fillColor="#F0DDB8"
+        android:pathData="M68,105 L92,105 L92,105 L68,105 Z"/>
+
+    <!-- ── Base / ground line ── -->
+    <path android:fillColor="#A8804F"
+        android:pathData="M8,105 L152,105 L152,110 L8,110 Z"/>
+
+    <!-- ── Steps ── -->
+    <path android:fillColor="#B8895A"
+        android:pathData="M30,110 L130,110 L130,115 L30,115 Z"/>
+    <path android:fillColor="#C49A6A"
+        android:pathData="M40,115 L120,115 L120,120 L40,120 Z"/>
+
+    <!-- ── Geometric decorative strip on body ── -->
+    <path android:fillColor="#B8895A" android:strokeWidth="0"
+        android:pathData="M25,85 L135,85 L135,88 L25,88 Z"/>
+
+</vector>
