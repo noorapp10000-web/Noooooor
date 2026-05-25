@@ -162,6 +162,24 @@ uri = "file://android/app/src/main/res/drawable-xxhdpi/mosque_realistic.png"
 type = "image"
 title = "realistic mosque illustration"
 
+[[generated]]
+id = "ZrOEGcVKUAwR2my2cneRL"
+uri = "file://attached_assets/mosque_simple_raw.png"
+type = "image"
+title = "simple mosque silhouette"
+
+[[generated]]
+id = "a6Luqi7mABZduVZWN_dqZ"
+uri = "file://attached_assets/mosque_photo_raw.png"
+type = "image"
+title = "realistic mosque photo"
+
+[[generated]]
+id = "M85RgaWm4XQZSXBPTctBI"
+uri = "file://attached_assets/mosque_white_bg.png"
+type = "image"
+title = "mosque white background"
+
 [[outputs]]
 id = "UZTEXrYzWt5P9P7SddU_5"
 uri = "file://noor-website-prompt.md"
