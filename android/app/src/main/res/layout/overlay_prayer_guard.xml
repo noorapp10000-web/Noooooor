@@ -48,13 +48,13 @@
                 android:fontFamily="sans-serif"
                 android:layout_marginBottom="6dp" />
 
-            <!-- Mosque vector image -->
+            <!-- Mosque realistic image -->
             <ImageView
-                android:layout_width="150dp"
-                android:layout_height="130dp"
-                android:src="@drawable/ic_mosque"
+                android:layout_width="260dp"
+                android:layout_height="220dp"
+                android:src="@drawable/mosque_realistic"
                 android:scaleType="fitCenter"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="16dp" />
 
             <!-- Main card -->
             <LinearLayout
