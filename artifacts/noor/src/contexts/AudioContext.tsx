@@ -1,4 +1,26 @@
 import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+interface AudioBridgePlugin {
+  updateMetadata(opts: { title: string; artist: string; isPlaying: boolean }): Promise<void>;
+  setState(opts: { playing: boolean }): Promise<void>;
+  dismiss(): Promise<void>;
+  addListener(event: string, cb: () => void): Promise<{ remove: () => void }>;
+}
+const AudioBridge = registerPlugin<AudioBridgePlugin>('AudioBridge');
+
+function nativeUpdate(title: string, artist: string, isPlaying: boolean) {
+  if (!Capacitor.isNativePlatform()) return;
+  AudioBridge.updateMetadata({ title, artist, isPlaying }).catch(() => {});
+}
+function nativeSetState(playing: boolean) {
+  if (!Capacitor.isNativePlatform()) return;
+  AudioBridge.setState({ playing }).catch(() => {});
+}
+function nativeDismiss() {
+  if (!Capacitor.isNativePlatform()) return;
+  AudioBridge.dismiss().catch(() => {});
+}
 
 interface AudioState {
   reciterId: string;
@@ -265,11 +287,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     userPausedRef.current = false;
     setState(s => ({ ...s, isPlaying: true, isLoading: false }));
     setMediaSessionState('playing');
+    nativeSetState(true);
     startTick();
   };
   audioEl.onpause = () => {
     setState(s => ({ ...s, isPlaying: false }));
     setMediaSessionState('paused');
+    nativeSetState(false);
     stopTick();
   };
   audioEl.onwaiting        = () => setState(s => ({ ...s, isLoading: true }));
@@ -287,6 +311,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audioEl.play().catch(() => {});
     setState(s => ({ ...s, reciterId, reciterName, serverUrl, surahNum, surahName, isLoading: true, currentTime: 0 }));
     updateMediaSession(surahName, reciterName);
+    nativeUpdate(surahName ? `سورة ${surahName}` : 'القرآن الكريم', reciterName, true);
   }, []);
 
   playRef.current = play;
@@ -341,6 +366,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audioEl.src = '';
     stopTick();
     setMediaSessionState('none');
+    nativeDismiss();
     setState(s => ({ ...s, isPlaying: false, surahNum: null, currentTime: 0, duration: 0 }));
   }, []);
 
@@ -353,38 +379,63 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  /* ── Register MediaSession action handlers ONCE at mount ── */
+  /* ── Register MediaSession + Native AudioBridge handlers ONCE at mount ── */
   useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    try {
-      navigator.mediaSession.setActionHandler('play', () => {
-        userPausedRef.current = false;
-        audioEl.play().catch(() => {});
-      });
-      navigator.mediaSession.setActionHandler('pause', () => {
-        userPausedRef.current = true;
-        audioEl.pause();
-      });
-      navigator.mediaSession.setActionHandler('stop', () => {
-        userPausedRef.current = true;
-        audioEl.pause();
-      });
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        const cur = stateRef.current;
-        if (!cur.surahNum || cur.surahNum >= 114 || !playRef.current) return;
-        playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
-          serverUrl: cur.serverUrl, surahNum: cur.surahNum + 1, surahName: '' });
-      });
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        const cur = stateRef.current;
-        if (!cur.surahNum || cur.surahNum <= 1 || !playRef.current) return;
-        playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
-          serverUrl: cur.serverUrl, surahNum: cur.surahNum - 1, surahName: '' });
-      });
-      navigator.mediaSession.setActionHandler('seekto', (details) => {
-        if (details.seekTime !== undefined) audioEl.currentTime = details.seekTime;
-      });
-    } catch {}
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler('play', () => {
+          userPausedRef.current = false;
+          audioEl.play().catch(() => {});
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          userPausedRef.current = true;
+          audioEl.pause();
+        });
+        navigator.mediaSession.setActionHandler('stop', () => {
+          userPausedRef.current = true;
+          audioEl.pause();
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          const cur = stateRef.current;
+          if (!cur.surahNum || cur.surahNum >= 114 || !playRef.current) return;
+          playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
+            serverUrl: cur.serverUrl, surahNum: cur.surahNum + 1, surahName: '' });
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+          const cur = stateRef.current;
+          if (!cur.surahNum || cur.surahNum <= 1 || !playRef.current) return;
+          playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
+            serverUrl: cur.serverUrl, surahNum: cur.surahNum - 1, surahName: '' });
+        });
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined) audioEl.currentTime = details.seekTime;
+        });
+      } catch {}
+    }
+
+    if (!Capacitor.isNativePlatform()) return;
+    const listeners: Array<{ remove: () => void }> = [];
+    AudioBridge.addListener('mediaPlay', () => {
+      userPausedRef.current = false;
+      audioEl.play().catch(() => {});
+    }).then(l => listeners.push(l)).catch(() => {});
+    AudioBridge.addListener('mediaPause', () => {
+      userPausedRef.current = true;
+      audioEl.pause();
+    }).then(l => listeners.push(l)).catch(() => {});
+    AudioBridge.addListener('mediaNext', () => {
+      const cur = stateRef.current;
+      if (!cur.surahNum || cur.surahNum >= 114 || !playRef.current) return;
+      playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
+        serverUrl: cur.serverUrl, surahNum: cur.surahNum + 1, surahName: '' });
+    }).then(l => listeners.push(l)).catch(() => {});
+    AudioBridge.addListener('mediaPrev', () => {
+      const cur = stateRef.current;
+      if (!cur.surahNum || cur.surahNum <= 1 || !playRef.current) return;
+      playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
+        serverUrl: cur.serverUrl, surahNum: cur.surahNum - 1, surahName: '' });
+    }).then(l => listeners.push(l)).catch(() => {});
+    return () => { listeners.forEach(l => l.remove()); };
   }, []);
 
   /* ── Keep audio alive in background / lock screen ── */

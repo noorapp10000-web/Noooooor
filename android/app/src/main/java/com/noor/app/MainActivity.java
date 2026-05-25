@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(WidgetBridgePlugin.class);
         registerPlugin(BatteryOptPlugin.class);
+        registerPlugin(AudioBridgePlugin.class);
         super.onCreate(savedInstanceState);
     }
 

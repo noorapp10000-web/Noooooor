@@ -54,6 +54,9 @@ dependencies {
 
     // Adhan — Islamic prayer times library (pure Java, no internet needed)
     implementation 'com.batoulapps.adhan:adhan:1.2.1'
+
+    // Media session + MediaStyle notification (lock screen & notification shade controls)
+    implementation "androidx.media:media:1.7.0"
 }
 
 apply from: 'capacitor.build.gradle'
