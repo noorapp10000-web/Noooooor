@@ -6,6 +6,8 @@ import { Check } from 'lucide-react';
 import { Link } from 'wouter';
 import { queueDailyTrackerSync, getCurrentUid, getCacheValue, getSettingCache } from '@/lib/rtdb';
 import { getOrCreateLocalUid } from '@/lib/rtdb';
+import { Capacitor } from '@capacitor/core';
+import NoorGuard from '@/lib/guard-bridge';
 
 const MORNING_CAT_ID = 27;
 const EVENING_CAT_ID = 9001;
@@ -337,9 +339,13 @@ export function HomeTracker() {
 
   const togglePrayer = (key: PrayerKey) => {
     setState(prev => {
-      const next = { ...prev, prayers: { ...prev.prayers, [key]: !prev.prayers[key] } };
+      const newValue = !prev.prayers[key];
+      const next = { ...prev, prayers: { ...prev.prayers, [key]: newValue } };
       const uid = getCurrentUid() || getOrCreateLocalUid();
       if (uid) queueDailyTrackerSync(uid, currentDateKey, next);
+      if (Capacitor.isNativePlatform()) {
+        NoorGuard.setPrayedStatus({ date: currentDateKey, prayer: key, prayed: newValue }).catch(() => {});
+      }
       return next;
     });
     if ('vibrate' in navigator) navigator.vibrate(10);

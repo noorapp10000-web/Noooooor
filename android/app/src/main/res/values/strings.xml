@@ -5,4 +5,8 @@
     <string name="package_name">com.noor.app</string>
     <string name="custom_url_scheme">com.noor.app</string>
     <string name="widget_description">ويدجت الصلاة القادمة — تطبيق نور</string>
+
+    <!-- Prayer Guard accessibility service -->
+    <string name="accessibility_service_label">نور — حارس أوقات الصلاة</string>
+    <string name="accessibility_service_description">يراقب التطبيقات المفتوحة أثناء أوقات الصلاة ويعرض تذكيراً بأداء الصلاة. لا يجمع أي بيانات شخصية.</string>
 </resources>

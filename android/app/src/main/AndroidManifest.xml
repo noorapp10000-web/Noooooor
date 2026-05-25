@@ -66,6 +66,21 @@
             </intent-filter>
         </receiver>
 
+        <!-- ── Prayer Guard (شاشة القسم) ────────────────────────────────── -->
+
+        <service
+            android:name=".guard.PrayerGuardService"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
     </application>
 
     <!-- ── Permissions ─────────────────────────────────────────────────── -->
@@ -102,5 +117,9 @@
     <!-- Vibration for notification alerts -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Prayer Guard — overlay over other apps -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
 
 </manifest>

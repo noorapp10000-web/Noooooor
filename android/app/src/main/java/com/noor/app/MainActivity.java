@@ -3,6 +3,7 @@ package com.noor.app;
 import android.os.Bundle;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
+import com.noor.app.guard.PrayerGuardBridgePlugin;
 
 public class MainActivity extends BridgeActivity {
 
@@ -11,6 +12,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(WidgetBridgePlugin.class);
         registerPlugin(BatteryOptPlugin.class);
         registerPlugin(AudioBridgePlugin.class);
+        registerPlugin(PrayerGuardBridgePlugin.class);
         super.onCreate(savedInstanceState);
     }
 
@@ -63,8 +65,6 @@ public class MainActivity extends BridgeActivity {
         webView.resumeTimers();
         webView.onResume();
 
-        // After the WebView is resumed, ask JS to resume audio
-        // if it was playing before the system interrupted it.
         webView.post(() ->
             webView.evaluateJavascript(
                 "(function(){ try { if(window.__noorKeepPlaying) window.__noorKeepPlaying(); } catch(e){} })();",

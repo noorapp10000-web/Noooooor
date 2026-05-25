@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, ShieldCheck } from 'lucide-react';
+import NoorGuard from '@/lib/guard-bridge';
 
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
@@ -426,6 +427,134 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   );
 }
 
+function PrayerGuardSection({
+  sectionBg, borderColor, textColor, subText,
+}: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
+  const isNative = Capacitor.isNativePlatform();
+  const [enabled,       setEnabled]       = useState(false);
+  const [permissions,   setPermissions]   = useState({ overlay: false, accessibility: false });
+  const [loading,       setLoading]       = useState(true);
+
+  useEffect(() => {
+    if (!isNative) { setLoading(false); return; }
+    Promise.all([
+      NoorGuard.isEnabled(),
+      NoorGuard.checkPermissions(),
+    ]).then(([en, perms]) => {
+      setEnabled(en.enabled);
+      setPermissions(perms);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [isNative]);
+
+  async function handleToggle() {
+    const next = !enabled;
+    setEnabled(next);
+    await NoorGuard.setEnabled({ enabled: next }).catch(() => {});
+  }
+
+  if (!isNative) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+        className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(145deg, #C19A6B, #8B5E3C)' }}>
+            <ShieldCheck className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>حارس أوقات الصلاة</p>
+            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>متاح على تطبيق الاندرويد فقط</p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  const allGranted = permissions.overlay && permissions.accessibility;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+      className="rounded-2xl p-4 space-y-3" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
+
+      {/* Header + toggle */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'linear-gradient(145deg, #C19A6B, #8B5E3C)' }}>
+          <ShieldCheck className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>حارس أوقات الصلاة</p>
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>يوقف التطبيقات أثناء وقت الصلاة حتى تؤدّيها</p>
+        </div>
+        {!loading && (
+          <Toggle on={enabled && allGranted} onToggle={handleToggle} />
+        )}
+      </div>
+
+      {/* Description */}
+      <p className="text-xs px-1 leading-relaxed" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+        عند دخول وقت الصلاة، تظهر شاشة فوق أي تطبيق تفتحه تذكّرك بأداء الصلاة. لا تختفي إلا بعد أن تضغط <span style={{ color: '#C19A6B', fontWeight: 700 }}>"أقسم بالله أني صليت"</span>.
+      </p>
+
+      {/* Permission cards */}
+      <div className="space-y-2">
+        {/* Overlay permission */}
+        <div className="flex items-center gap-3 p-3 rounded-xl"
+          style={{ background: permissions.overlay ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)', border: `1px solid ${permissions.overlay ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)'}` }}>
+          <div className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ background: permissions.overlay ? '#22c55e' : '#ef4444' }} />
+          <div className="flex-1">
+            <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: permissions.overlay ? '#22c55e' : '#ef4444' }}>
+              {permissions.overlay ? 'إذن العرض فوق التطبيقات ✓' : 'إذن العرض فوق التطبيقات'}
+            </p>
+            {!permissions.overlay && (
+              <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>مطلوب لعرض شاشة التذكير</p>
+            )}
+          </div>
+          {!permissions.overlay && (
+            <button
+              onClick={() => NoorGuard.requestOverlayPermission().then(() => NoorGuard.checkPermissions().then(setPermissions))}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0"
+              style={{ background: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
+              منح
+            </button>
+          )}
+        </div>
+
+        {/* Accessibility permission */}
+        <div className="flex items-center gap-3 p-3 rounded-xl"
+          style={{ background: permissions.accessibility ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)', border: `1px solid ${permissions.accessibility ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)'}` }}>
+          <div className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ background: permissions.accessibility ? '#22c55e' : '#ef4444' }} />
+          <div className="flex-1">
+            <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: permissions.accessibility ? '#22c55e' : '#ef4444' }}>
+              {permissions.accessibility ? 'خدمة إمكانية الوصول ✓' : 'خدمة إمكانية الوصول'}
+            </p>
+            {!permissions.accessibility && (
+              <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>لاكتشاف التطبيق المفتوح فوراً</p>
+            )}
+          </div>
+          {!permissions.accessibility && (
+            <button
+              onClick={() => NoorGuard.requestAccessibilityPermission().then(() => NoorGuard.checkPermissions().then(setPermissions))}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0"
+              style={{ background: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
+              تفعيل
+            </button>
+          )}
+        </div>
+      </div>
+
+      {allGranted && enabled && (
+        <div className="flex items-center gap-2 px-1">
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#22c55e' }} />
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>الحارس مفعّل — يبدأ العمل عند دخول وقت الصلاة</p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 export function Settings() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
@@ -468,6 +597,9 @@ export function Settings() {
 
         {/* Notification Section */}
         <NotificationSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
+
+        {/* Prayer Guard Section */}
+        <PrayerGuardSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
 
         {/* Font Size */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
