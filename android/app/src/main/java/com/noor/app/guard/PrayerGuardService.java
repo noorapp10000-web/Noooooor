@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.accessibility.AccessibilityEvent;
 
 import com.batoulapps.adhan.CalculationMethod;
@@ -16,11 +14,8 @@ import com.batoulapps.adhan.Coordinates;
 import com.batoulapps.adhan.PrayerTimes;
 import com.batoulapps.adhan.data.DateComponents;
 
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class PrayerGuardService extends AccessibilityService {
 
@@ -29,38 +24,25 @@ public class PrayerGuardService extends AccessibilityService {
     private static final String[] PRAYER_KEYS     = {"fajr", "dhuhr", "asr", "maghrib", "isha"};
     private static final String[] PRAYER_NAMES_AR = {"الفجر", "الظهر", "العصر", "المغرب", "العشاء"};
 
-    private static final Set<String> SYSTEM_PKGS = new HashSet<>(Arrays.asList(
-        "android",
-        "com.android.systemui",
-        "com.android.settings",
-        "com.android.packageinstaller",
-        "com.google.android.permissioncontroller",
-        "com.android.inputmethod.latin",
-        "com.samsung.android.inputmethod",
-        "com.google.android.inputmethod.latin"
-    ));
-
     private PrayerGuardOverlay overlay;
-    private String             lastForegroundPkg = "";
-    private String             launcherPkg       = "";
-    private final Handler      handler           = new Handler(Looper.getMainLooper());
-    private Runnable           pendingEval;
+    private String             launcherPkg  = "";
+    private String             lastShownPkg = "";
 
     @Override
     public void onServiceConnected() {
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes          = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
         info.feedbackType        = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        info.flags               = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS |
-                                   AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
-        info.notificationTimeout = 100;
+        info.flags               = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
+        info.notificationTimeout = 200;
         setServiceInfo(info);
+
+        launcherPkg = detectLauncherPackage();
 
         overlay = new PrayerGuardOverlay(this, (prayerKey, dateKey) -> {
             PrayerGuardPrefs.setPrayed(PrayerGuardService.this, dateKey, prayerKey, true);
+            lastShownPkg = "";
         });
-
-        launcherPkg = detectLauncherPackage();
     }
 
     @Override
@@ -68,65 +50,41 @@ public class PrayerGuardService extends AccessibilityService {
         if (event == null) return;
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
 
+        // If overlay is already visible — do nothing at all, let it stay
+        if (overlay != null && overlay.isShowing()) return;
+
         CharSequence pkgSeq = event.getPackageName();
         if (pkgSeq == null) return;
         String pkg = pkgSeq.toString();
 
-        if (SYSTEM_PKGS.contains(pkg)) return;
+        // Ignore our own app, the launcher, and anything that is not a real app window
+        if (pkg.equals(OUR_PACKAGE)) return;
+        if (pkg.equals(launcherPkg)) return;
+        if (isSystemPackage(pkg)) return;
 
-        if (pkg.equals(OUR_PACKAGE)) {
-            cancelPending();
-            handler.post(() -> overlay.hide());
-            lastForegroundPkg = pkg;
-            return;
-        }
+        // Same app still in foreground — don't re-trigger
+        if (pkg.equals(lastShownPkg)) return;
 
-        if (isLauncherPkg(pkg)) {
-            cancelPending();
-            lastForegroundPkg = pkg;
-            return;
-        }
+        // A genuinely new app was opened — check once
+        lastShownPkg = pkg;
 
-        if (pkg.equals(lastForegroundPkg)) return;
-        lastForegroundPkg = pkg;
-
-        cancelPending();
-        pendingEval = () -> evaluateFor(pkg);
-        handler.postDelayed(pendingEval, 400);
-    }
-
-    private void evaluateFor(String pkg) {
-        if (!PrayerGuardPrefs.isEnabled(this)) {
-            overlay.hide();
-            return;
-        }
+        if (!PrayerGuardPrefs.isEnabled(this)) return;
 
         PrayerWindowInfo window = getCurrentPrayerWindow();
-        if (window == null) {
-            overlay.hide();
-            return;
-        }
+        if (window == null) return;
 
         String dateKey = PrayerGuardPrefs.todayKey();
-        if (PrayerGuardPrefs.hasPrayed(this, dateKey, window.key)) {
-            overlay.hide();
-            return;
-        }
+        if (PrayerGuardPrefs.hasPrayed(this, dateKey, window.key)) return;
 
         overlay.show(window.nameAr, window.key, dateKey);
     }
 
-    private void cancelPending() {
-        if (pendingEval != null) {
-            handler.removeCallbacks(pendingEval);
-            pendingEval = null;
-        }
-    }
-
-    private boolean isLauncherPkg(String pkg) {
-        if (pkg.equals(launcherPkg)) return true;
-        if (launcherPkg.isEmpty()) launcherPkg = detectLauncherPackage();
-        return pkg.equals(launcherPkg);
+    private boolean isSystemPackage(String pkg) {
+        if (pkg.startsWith("android")) return true;
+        if (pkg.startsWith("com.android.")) return true;
+        if (pkg.startsWith("com.google.android.inputmethod")) return true;
+        if (pkg.startsWith("com.samsung.android.inputmethod")) return true;
+        return false;
     }
 
     private String detectLauncherPackage() {
@@ -135,9 +93,8 @@ public class PrayerGuardService extends AccessibilityService {
             homeIntent.addCategory(Intent.CATEGORY_HOME);
             List<ResolveInfo> list = getPackageManager()
                 .queryIntentActivities(homeIntent, PackageManager.MATCH_DEFAULT_ONLY);
-            if (list != null && !list.isEmpty()) {
-                ResolveInfo ri = list.get(0);
-                if (ri.activityInfo != null) return ri.activityInfo.packageName;
+            if (list != null && !list.isEmpty() && list.get(0).activityInfo != null) {
+                return list.get(0).activityInfo.packageName;
             }
         } catch (Exception ignored) {}
         return "";
@@ -152,8 +109,7 @@ public class PrayerGuardService extends AccessibilityService {
 
             Coordinates coords = new Coordinates(lat, lng);
             CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
-            DateComponents dc = DateComponents.from(new Date());
-            PrayerTimes pt = new PrayerTimes(coords, dc, params);
+            PrayerTimes pt = new PrayerTimes(coords, DateComponents.from(new Date()), params);
 
             long now = System.currentTimeMillis();
             Date[] times = {pt.fajr, pt.dhuhr, pt.asr, pt.maghrib, pt.isha};
@@ -176,14 +132,12 @@ public class PrayerGuardService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
-        cancelPending();
         if (overlay != null) overlay.hide();
         super.onDestroy();
     }
 
     private static class PrayerWindowInfo {
-        final String key;
-        final String nameAr;
+        final String key, nameAr;
         PrayerWindowInfo(String k, String n) { key = k; nameAr = n; }
     }
 }
