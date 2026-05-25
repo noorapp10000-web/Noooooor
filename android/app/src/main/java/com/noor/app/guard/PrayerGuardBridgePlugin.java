@@ -92,9 +92,18 @@ public class PrayerGuardBridgePlugin extends Plugin {
                 getContext().getContentResolver(),
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
             );
-            if (enabledServices == null) return false;
-            String componentName = getContext().getPackageName() + "/.guard.PrayerGuardService";
-            return enabledServices.contains(componentName);
+            if (enabledServices == null || enabledServices.isEmpty()) return false;
+
+            android.content.ComponentName myComponent = new android.content.ComponentName(
+                getContext().getPackageName(),
+                PrayerGuardService.class.getName()
+            );
+            String flat = myComponent.flattenToString();
+
+            for (String svc : enabledServices.split(":")) {
+                if (svc.trim().equalsIgnoreCase(flat)) return true;
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }

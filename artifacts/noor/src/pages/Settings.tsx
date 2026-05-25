@@ -431,25 +431,43 @@ function PrayerGuardSection({
   sectionBg, borderColor, textColor, subText,
 }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
   const isNative = Capacitor.isNativePlatform();
-  const [enabled,       setEnabled]       = useState(false);
-  const [permissions,   setPermissions]   = useState({ overlay: false, accessibility: false });
-  const [loading,       setLoading]       = useState(true);
+  const [enabled,     setEnabled]     = useState(false);
+  const [permissions, setPermissions] = useState({ overlay: false, accessibility: false });
+  const [loading,     setLoading]     = useState(true);
+
+  async function refreshState() {
+    if (!isNative) return;
+    try {
+      const [en, perms] = await Promise.all([NoorGuard.isEnabled(), NoorGuard.checkPermissions()]);
+      setEnabled(en.enabled);
+      setPermissions(perms);
+    } catch {}
+  }
 
   useEffect(() => {
     if (!isNative) { setLoading(false); return; }
-    Promise.all([
-      NoorGuard.isEnabled(),
-      NoorGuard.checkPermissions(),
-    ]).then(([en, perms]) => {
-      setEnabled(en.enabled);
-      setPermissions(perms);
-    }).catch(() => {}).finally(() => setLoading(false));
+    refreshState().finally(() => setLoading(false));
+
+    function onVisible() {
+      if (document.visibilityState === 'visible') refreshState();
+    }
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [isNative]);
 
   async function handleToggle() {
     const next = !enabled;
     setEnabled(next);
     await NoorGuard.setEnabled({ enabled: next }).catch(() => {});
+  }
+
+  async function handleGrantOverlay() {
+    await NoorGuard.requestOverlayPermission().catch(() => {});
+    setTimeout(() => NoorGuard.checkPermissions().then(setPermissions).catch(() => {}), 1500);
+  }
+
+  async function handleGrantAccessibility() {
+    await NoorGuard.requestAccessibilityPermission().catch(() => {});
   }
 
   if (!isNative) {
@@ -513,7 +531,7 @@ function PrayerGuardSection({
           </div>
           {!permissions.overlay && (
             <button
-              onClick={() => NoorGuard.requestOverlayPermission().then(() => NoorGuard.checkPermissions().then(setPermissions))}
+              onClick={handleGrantOverlay}
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0"
               style={{ background: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
               منح
@@ -536,7 +554,7 @@ function PrayerGuardSection({
           </div>
           {!permissions.accessibility && (
             <button
-              onClick={() => NoorGuard.requestAccessibilityPermission().then(() => NoorGuard.checkPermissions().then(setPermissions))}
+              onClick={handleGrantAccessibility}
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0"
               style={{ background: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
               تفعيل
