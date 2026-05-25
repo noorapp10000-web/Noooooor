@@ -9,8 +9,8 @@ function getMascotSrc(): string {
     if (!uid) return '/mascot.png';
     const raw = localStorage.getItem(`noor_rtdb_cache_${uid}`);
     if (!raw) return '/mascot.png';
-    const profile = JSON.parse(raw) as Record<string, unknown>;
-    return profile.gender === 'female' ? '/mascot-female.png' : '/mascot.png';
+    const data = JSON.parse(raw) as { profile?: { gender?: string } };
+    return data?.profile?.gender === 'female' ? '/mascot-female.png' : '/mascot.png';
   } catch {
     return '/mascot.png';
   }

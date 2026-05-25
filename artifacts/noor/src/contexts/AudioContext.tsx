@@ -29,6 +29,8 @@ const AudioCtx = createContext<AudioContextType | null>(null);
 const audioEl = new Audio();
 audioEl.preload = 'auto';
 audioEl.hidden = true;
+audioEl.setAttribute('playsinline', '');
+audioEl.setAttribute('webkit-playsinline', '');
 document.body.appendChild(audioEl);
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -284,27 +286,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audioEl.load();
     audioEl.play().catch(() => {});
     setState(s => ({ ...s, reciterId, reciterName, serverUrl, surahNum, surahName, isLoading: true, currentTime: 0 }));
-
     updateMediaSession(surahName, reciterName);
-    registerMediaSessionHandlers(
-      () => { userPausedRef.current = false; audioEl.play().catch(() => {}); },
-      () => { userPausedRef.current = true;  audioEl.pause(); },
-      () => {
-        const cur = stateRef.current;
-        if (!cur.surahNum || cur.surahNum >= 114) return;
-        play({ reciterId: cur.reciterId, reciterName: cur.reciterName, serverUrl: cur.serverUrl,
-               surahNum: cur.surahNum + 1, surahName: '' });
-      },
-      () => {
-        const cur = stateRef.current;
-        if (!cur.surahNum || cur.surahNum <= 1) return;
-        play({ reciterId: cur.reciterId, reciterName: cur.reciterName, serverUrl: cur.serverUrl,
-               surahNum: cur.surahNum - 1, surahName: '' });
-      },
-      (details) => {
-        if (details.seekTime !== undefined) audioEl.currentTime = details.seekTime;
-      },
-    );
   }, []);
 
   playRef.current = play;
@@ -369,6 +351,40 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem('noor_autoplay', String(next)); } catch {}
       return { ...s, autoPlay: next };
     });
+  }, []);
+
+  /* ── Register MediaSession action handlers ONCE at mount ── */
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.setActionHandler('play', () => {
+        userPausedRef.current = false;
+        audioEl.play().catch(() => {});
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        userPausedRef.current = true;
+        audioEl.pause();
+      });
+      navigator.mediaSession.setActionHandler('stop', () => {
+        userPausedRef.current = true;
+        audioEl.pause();
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        const cur = stateRef.current;
+        if (!cur.surahNum || cur.surahNum >= 114 || !playRef.current) return;
+        playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
+          serverUrl: cur.serverUrl, surahNum: cur.surahNum + 1, surahName: '' });
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        const cur = stateRef.current;
+        if (!cur.surahNum || cur.surahNum <= 1 || !playRef.current) return;
+        playRef.current({ reciterId: cur.reciterId, reciterName: cur.reciterName,
+          serverUrl: cur.serverUrl, surahNum: cur.surahNum - 1, surahName: '' });
+      });
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined) audioEl.currentTime = details.seekTime;
+      });
+    } catch {}
   }, []);
 
   /* ── Keep audio alive in background / lock screen ── */
