@@ -407,7 +407,7 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
           </div>
         </button>
 
-        <input ref={importRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImportFile} />
+        <input ref={importRef} type="file" accept="*" className="hidden" onChange={handleImportFile} />
         <button onClick={() => importRef.current?.click()} disabled={importing}
           className="w-full rounded-xl p-3.5 flex items-center gap-3 transition-all active:scale-[0.97] disabled:opacity-60"
           style={{ background: importResult?.ok ? 'rgba(34,197,94,0.1)' : importResult?.ok === false ? 'rgba(239,68,68,0.08)' : 'rgba(193,154,107,0.08)', border: `1.5px solid ${importResult?.ok ? 'rgba(34,197,94,0.35)' : importResult?.ok === false ? 'rgba(239,68,68,0.25)' : 'rgba(193,154,107,0.25)'}` }}>
