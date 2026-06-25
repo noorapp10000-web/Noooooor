@@ -151,6 +151,7 @@ public class PrayerWidgetService extends Service {
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         for (int widgetId : ids) {
+          try {
             Bundle options = awm.getAppWidgetOptions(widgetId);
             int minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,  250);
             int minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160);
@@ -318,6 +319,7 @@ public class PrayerWidgetService extends Service {
 
             rv.setOnClickPendingIntent(R.id.wg_root, openPi);
             awm.updateAppWidget(widgetId, rv);
+          } catch (Exception ignored) {}
         }
     }
 
