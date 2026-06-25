@@ -1,130 +1,322 @@
 import './_group.css';
 
-interface SkyConfig {
-  topColor: string;
-  midColor: string;
-  bottomColor: string;
-  sunOrMoon?: { x: number; y: number; size: number; color: string; glow: string };
-  stars?: boolean;
-  label: string;
-  labelColor: string;
-  timeLabel: string;
-  primaryText: string;
-  secondaryText: string;
-}
-
 const GOLDEN = '#C19A6B';
 
-function Stars() {
-  const pts = [
-    [12,18],[45,8],[78,22],[110,6],[142,19],[175,11],[208,25],[240,5],[272,15],[305,9],
-    [338,21],[28,42],[61,35],[94,48],[127,31],[160,44],[193,38],[226,52],[258,28],[291,41],
-    [324,34],[357,47],[8,68],[41,61],[74,75],[107,58],[140,71],[173,65],[206,78],[238,55],
-    [271,68],[304,62],[337,75],[22,95],[55,88],[88,102],[121,85],[154,98],[187,92],[220,105],
-  ];
+/* ─── Utility: unique SVG IDs ───────────────────────────────────── */
+let _uid = 0;
+const uid = () => `pw-${++_uid}`;
+
+/* ─── Stars ─────────────────────────────────────────────────────── */
+const STARS = Array.from({ length: 90 }, (_, i) => {
+  const h = Math.sin(i * 127.1) * 0.5 + 0.5;
+  const k = Math.sin(i * 311.7) * 0.5 + 0.5;
+  const m = Math.sin(i * 74.3) * 0.5 + 0.5;
+  return {
+    x: (Math.sin(i * 563.1) * 0.5 + 0.5) * 100,
+    y: (Math.sin(i * 291.3) * 0.5 + 0.5) * 100,
+    r: h > 0.85 ? 1.5 : h > 0.6 ? 1.0 : 0.55,
+    op: 0.35 + k * 0.6,
+    twinkle: m > 0.7,
+  };
+});
+
+function Stars({ opacity = 1 }: { opacity?: number }) {
   return (
-    <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', opacity:0.85 }}>
-      {pts.map(([x,y],i) => (
-        <circle key={i} cx={x} cy={y} r={Math.random()<0.3?1.2:0.7} fill="white" opacity={0.5+Math.random()*0.5} />
+    <svg
+      style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none' }}
+      preserveAspectRatio="xMidYMid slice"
+      opacity={opacity}
+    >
+      {STARS.map((s, i) => (
+        <circle key={i} cx={`${s.x}%`} cy={`${s.y}%`} r={s.r}
+          fill={s.twinkle ? '#E8F0FF' : '#FFFFFF'} opacity={s.op} />
       ))}
     </svg>
   );
 }
 
-function SunOrMoon({ cfg }: { cfg: NonNullable<SkyConfig['sunOrMoon']> }) {
+/* ─── Clouds via SVG turbulence ─────────────────────────────────── */
+interface CloudLayerProps {
+  color: string;
+  color2?: string;
+  baseFreqX?: number;
+  baseFreqY?: number;
+  numOctaves?: number;
+  seed?: number;
+  yRange?: [number, number];
+  opacity?: number;
+  blendMode?: string;
+}
+
+function CloudLayer({
+  color, color2,
+  baseFreqX = 0.012, baseFreqY = 0.018,
+  numOctaves = 5, seed = 1,
+  yRange = [0, 55],
+  opacity = 0.55,
+  blendMode = 'normal',
+}: CloudLayerProps) {
+  const filterId = uid();
+  const maskId = uid();
+  const [y1, y2] = yRange;
   return (
-    <div style={{
-      position:'absolute',
-      left: `${cfg.x}%`,
-      top: `${cfg.y}%`,
-      width: cfg.size,
-      height: cfg.size,
-      borderRadius:'50%',
-      background: cfg.color,
-      boxShadow: cfg.glow,
-      transform:'translate(-50%,-50%)',
-      pointerEvents:'none',
-    }} />
+    <svg
+      style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', mixBlendMode: blendMode as any, opacity }}
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <filter id={filterId} x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency={`${baseFreqX} ${baseFreqY}`}
+            numOctaves={numOctaves} seed={seed} result="noise" />
+          <feColorMatrix type="matrix"
+            values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 3 -1.2"
+            result="cloud" />
+          <feComposite in="cloud" in2="SourceGraphic" operator="in" />
+        </filter>
+        <linearGradient id={maskId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset={`${y1}%`} stopColor="black" stopOpacity="1" />
+          <stop offset={`${y2}%`} stopColor="black" stopOpacity="1" />
+          <stop offset="100%" stopColor="black" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%"
+        fill={color}
+        filter={`url(#${filterId})`}
+        mask={`url(#${maskId})`}
+      />
+      {color2 && (
+        <rect width="100%" height="100%"
+          fill={color2} opacity={0.5}
+          filter={`url(#${filterId})`}
+          mask={`url(#${maskId})`}
+        />
+      )}
+    </svg>
   );
 }
 
-export function PrayerWidget({ sky }: { sky: SkyConfig }) {
-  const gradient = `linear-gradient(180deg, ${sky.topColor} 0%, ${sky.midColor} 55%, ${sky.bottomColor} 100%)`;
-
+/* ─── Sun ────────────────────────────────────────────────────────── */
+function Sun({ cx, cy, size, core, glow }: {
+  cx:number; cy:number; size:number; core:string; glow:string;
+}) {
+  const g1 = uid(); const g2 = uid(); const g3 = uid();
+  const glowR = size * 2.8;
   return (
-    <div style={{ background: gradient, borderRadius:22, width:340, height:470, position:'relative', overflow:'hidden', boxShadow:'0 8px 40px rgba(0,0,0,0.5)', border:'1px solid rgba(193,154,107,0.3)' }}>
+    <svg
+      style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none' }}
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <radialGradient id={g1} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={glow} stopOpacity="0.5" />
+          <stop offset="40%" stopColor={glow} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={glow} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={g2} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={glow} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={glow} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={g3} cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stopColor="#FFFEF5" />
+          <stop offset="45%" stopColor={core} />
+          <stop offset="100%" stopColor={glow} />
+        </radialGradient>
+      </defs>
+      <ellipse cx={`${cx}%`} cy={`${cy}%`} rx={glowR * 1.6} ry={glowR * 1.4} fill={`url(#${g1})`} />
+      <ellipse cx={`${cx}%`} cy={`${cy}%`} rx={glowR} ry={glowR * 0.9} fill={`url(#${g2})`} />
+      <circle cx={`${cx}%`} cy={`${cy}%`} r={size / 2} fill={`url(#${g3})`} />
+    </svg>
+  );
+}
 
-      {sky.stars && <Stars />}
-      {sky.sunOrMoon && <SunOrMoon cfg={sky.sunOrMoon} />}
+/* ─── Moon ───────────────────────────────────────────────────────── */
+function Moon({ cx, cy, size, phase }: {
+  cx:number; cy:number; size:number; phase:'full'|'crescent'|'quarter'
+}) {
+  const gId = uid(); const cId = uid();
+  const r = size / 2;
+  return (
+    <svg
+      style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none' }}
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <radialGradient id={gId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(190,210,255,0.28)" />
+          <stop offset="100%" stopColor="rgba(190,210,255,0)" />
+        </radialGradient>
+        <radialGradient id={cId} cx="38%" cy="32%" r="70%">
+          <stop offset="0%" stopColor="#FEFCF4" />
+          <stop offset="55%" stopColor="#EEF2FF" />
+          <stop offset="100%" stopColor="#C4D0F0" />
+        </radialGradient>
+        <clipPath id={`clip-${cId}`}>
+          <circle cx={`${cx}%`} cy={`${cy}%`} r={r} />
+        </clipPath>
+      </defs>
+      <circle cx={`${cx}%`} cy={`${cy}%`} r={r * 3.5} fill={`url(#${gId})`} />
+      <circle cx={`${cx}%`} cy={`${cy}%`} r={r} fill={`url(#${cId})`} />
+      {phase === 'crescent' && (
+        <circle
+          cx={`${cx + r * 0.55}%`} cy={`${cy - r * 0.06}%`} r={r * 1.02}
+          fill="#0B1535"
+          clipPath={`url(#clip-${cId})`}
+        />
+      )}
+      {phase === 'quarter' && (
+        <rect
+          x={`${cx}%`} y={`${cy - r}%`} width={`${r}%`} height={`${r * 2}%`}
+          fill="#0B1535"
+          clipPath={`url(#clip-${cId})`}
+        />
+      )}
+    </svg>
+  );
+}
 
-      <div style={{ position:'relative', zIndex:2, padding:'12px 14px', height:'100%', display:'flex', flexDirection:'column' }}>
+/* ─── Horizon glow ───────────────────────────────────────────────── */
+function HorizonGlow({ color, opacity = 0.35 }: { color:string; opacity?:number }) {
+  const g = uid();
+  return (
+    <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none' }} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={g} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0" />
+          <stop offset="100%" stopColor={color} stopOpacity={opacity} />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill={`url(#${g})`} />
+    </svg>
+  );
+}
 
-        {/* HEADER */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+/* ─── Types ──────────────────────────────────────────────────────── */
+export interface SkyConfig {
+  sky: string;
+  stars?: number;
+  sun?: { cx:number; cy:number; size:number; core:string; glow:string };
+  moon?: { cx:number; cy:number; size:number; phase:'full'|'crescent'|'quarter' };
+  clouds?: CloudLayerProps[];
+  hazeColor?: string;
+  hazeOpacity?: number;
+  nextPrayer: string;
+}
+
+/* ─── Widget ─────────────────────────────────────────────────────── */
+export function PrayerWidget({ sky }: { sky: SkyConfig }) {
+  return (
+    <div style={{
+      width:340, height:490,
+      borderRadius:26,
+      overflow:'hidden',
+      position:'relative',
+      boxShadow:'0 20px 70px rgba(0,0,0,0.7)',
+      border:'1px solid rgba(255,255,255,0.1)',
+      fontFamily:"'Tajawal', sans-serif",
+    }}>
+      {/* SKY */}
+      <div style={{ position:'absolute', inset:0, background:sky.sky }} />
+
+      {sky.stars !== undefined && <Stars opacity={sky.stars} />}
+      {sky.moon && <Moon {...sky.moon} />}
+      {sky.sun && <Sun {...sky.sun} />}
+      {sky.clouds?.map((c, i) => <CloudLayer key={i} {...c} />)}
+      {sky.hazeColor && <HorizonGlow color={sky.hazeColor} opacity={sky.hazeOpacity} />}
+
+      {/* vignette */}
+      <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 120% 100% at 50% 50%, transparent 35%, rgba(0,0,0,0.32) 100%)', pointerEvents:'none' }} />
+
+      {/* CONTENT */}
+      <div style={{ position:'relative', zIndex:5, height:'100%', display:'flex', flexDirection:'column', padding:'13px 14px', direction:'rtl' }}>
+
+        {/* Row 1 */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-            <span style={{ fontSize:14, fontWeight:700, color:'#fff' }}>نُور</span>
-            <div style={{ width:24, height:24, borderRadius:6, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12 }}>◑</div>
+            <span style={{ fontSize:16, fontWeight:900, color:'#fff', textShadow:'0 1px 10px rgba(0,0,0,0.7)' }}>نُور</span>
+            <div style={{ width:26, height:26, borderRadius:8, background:'rgba(255,255,255,0.15)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.22)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'#fff' }}>◑</div>
           </div>
-          <div style={{ textAlign:'left', display:'flex', alignItems:'center', gap:4 }}>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill={GOLDEN}><path d="M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13C19,5.13 15.87,2 12,2zM12,11.5c-1.38,0-2.5,-1.12-2.5,-2.5s1.12,-2.5 2.5,-2.5 2.5,1.12 2.5,2.5-1.12,2.5-2.5,2.5z"/></svg>
-            <span style={{ fontSize:9, color:'rgba(255,255,255,0.85)' }}>بورسعيد</span>
+          <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+            <svg width="8" height="11" viewBox="0 0 24 30" fill={GOLDEN}>
+              <path d="M12 0C7.6 0 4 3.6 4 8c0 6 8 18 8 18s8-12 8-18c0-4.4-3.6-8-8-8zm0 11c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
+            </svg>
+            <span style={{ fontSize:9.5, color:'rgba(255,255,255,0.9)', textShadow:'0 1px 5px rgba(0,0,0,0.55)' }}>بورسعيد</span>
           </div>
         </div>
-        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
-          <span style={{ fontSize:8.5, color:GOLDEN+'AA' }}>SEIF KAMEL</span>
-          <span style={{ fontSize:8.5, color:GOLDEN+'AA' }}>الصلاة الحالية: العشاء</span>
+        {/* Row 2 */}
+        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+          <span style={{ fontSize:9, color:GOLDEN+'AA' }}>SEIF KAMEL</span>
+          <span style={{ fontSize:9, color:GOLDEN+'AA' }}>الصلاة الحالية: العشاء</span>
         </div>
 
-        {/* SKY LABEL */}
-        <div style={{ textAlign:'center', marginBottom:4 }}>
-          <span style={{ fontSize:8, color:sky.labelColor, fontWeight:600, letterSpacing:1, textTransform:'uppercase', background:'rgba(0,0,0,0.18)', borderRadius:20, padding:'2px 10px' }}>
-            {sky.label}
+        {/* GLASS CARD */}
+        <div style={{
+          flex:1,
+          borderRadius:18,
+          background:'rgba(8,12,32,0.36)',
+          backdropFilter:'blur(18px)',
+          WebkitBackdropFilter:'blur(18px)',
+          border:'1px solid rgba(255,255,255,0.14)',
+          boxShadow:'inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 28px rgba(0,0,0,0.3)',
+          padding:'12px 16px',
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6,
+        }}>
+          <span style={{ fontSize:9, color:GOLDEN+'99', letterSpacing:1 }}>الصلاة القادمة</span>
+          <span style={{ fontSize:30, fontWeight:900, color:'#fff', textShadow:'0 3px 18px rgba(0,0,0,0.55)', lineHeight:1.05 }}>
+            {sky.nextPrayer}
           </span>
-        </div>
+          <span style={{ fontSize:8.5, color:'rgba(255,255,255,0.5)' }}>متبقي على الأذان</span>
 
-        {/* MAIN CARD */}
-        <div style={{ flex:1, background:'rgba(0,0,0,0.22)', backdropFilter:'blur(8px)', borderRadius:14, border:'1px solid rgba(255,255,255,0.1)', padding:'10px 12px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6 }}>
-          <span style={{ fontSize:9, color:GOLDEN+'99' }}>الصلاة القادمة</span>
-          <span style={{ fontSize:26, fontWeight:700, color:'#fff', textShadow:'0 2px 12px rgba(0,0,0,0.5)' }}>الفجر</span>
-          <span style={{ fontSize:8, color:GOLDEN+'88', marginTop:-4 }}>متبقي على الأذان</span>
-
-          <div style={{ display:'flex', gap:8, alignItems:'center', direction:'ltr' }}>
-            {['05','48','31'].map((v,i) => (
-              <>
-                <div key={i} style={{ width:44, height:44, borderRadius:10, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:700, color:'#fff' }}>{v}</div>
-                {i<2 && <span style={{ color:GOLDEN+'CC', fontSize:20, fontWeight:700 }}>:</span>}
-              </>
+          {/* Countdown */}
+          <div style={{ display:'flex', gap:8, alignItems:'center', direction:'ltr', marginTop:3 }}>
+            {[['05','ساعة'], ['48','دقيقة'], ['31','ثانية']].map(([v, l], i, arr) => (
+              <span key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                  <span style={{
+                    width:50, height:50, borderRadius:13,
+                    background:'rgba(255,255,255,0.09)',
+                    border:'1px solid rgba(255,255,255,0.16)',
+                    boxShadow:'inset 0 1px 0 rgba(255,255,255,0.07)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontSize:22, fontWeight:800, color:'#fff',
+                    textShadow:'0 2px 8px rgba(0,0,0,0.4)',
+                  }}>{v}</span>
+                  <span style={{ fontSize:7.5, color:GOLDEN+'88' }}>{l}</span>
+                </span>
+                {i < arr.length - 1 && (
+                  <span style={{ color:GOLDEN, fontSize:22, fontWeight:700, marginBottom:14 }}>:</span>
+                )}
+              </span>
             ))}
           </div>
 
-          <div style={{ display:'flex', gap:14, fontSize:7.5, color:GOLDEN+'88', marginTop:-2 }}>
-            {['ساعة','دقيقة','ثانية'].map(l => <span key={l} style={{ width:44, textAlign:'center' }}>{l}</span>)}
-          </div>
-
-          <span style={{ fontSize:9, color:'rgba(255,255,255,0.8)', marginTop:2 }}>وقت الأذان 4:00 ص</span>
+          <span style={{ fontSize:9.5, color:'rgba(255,255,255,0.7)', marginTop:1 }}>وقت الأذان 4:00 ص</span>
 
           {/* Progress bar */}
-          <div style={{ width:'100%', height:5, background:'rgba(255,255,255,0.12)', borderRadius:999, marginTop:4, overflow:'hidden' }}>
-            <div style={{ width:'9%', height:'100%', background:`linear-gradient(90deg, ${GOLDEN}, ${GOLDEN}CC)`, borderRadius:999 }} />
+          <div style={{ width:'100%', height:4, background:'rgba(255,255,255,0.08)', borderRadius:999, overflow:'hidden' }}>
+            <div style={{ width:'9%', height:'100%', background:`linear-gradient(90deg,${GOLDEN}88,${GOLDEN})`, borderRadius:999 }} />
           </div>
         </div>
 
         {/* PRAYERS ROW */}
-        <div style={{ display:'flex', gap:3, marginTop:8 }}>
+        <div style={{ display:'flex', gap:5, marginTop:9 }}>
           {[
-            {n:'الفجر',t:'4:00',active:true},
-            {n:'الظهر',t:'12:54',active:false},
-            {n:'العصر',t:'4:32',active:false},
-            {n:'المغرب',t:'7:59',active:false},
-            {n:'العشاء',t:'9:34',active:false},
+            {n:'الفجر', t:'4:00', a:true},
+            {n:'الظهر', t:'12:54', a:false},
+            {n:'العصر', t:'4:32', a:false},
+            {n:'المغرب', t:'7:59', a:false},
+            {n:'العشاء', t:'9:34', a:false},
           ].map(p => (
-            <div key={p.n} style={{ flex:1, borderRadius:8, background: p.active ? `${GOLDEN}30` : 'rgba(255,255,255,0.08)', border: p.active ? `1px solid ${GOLDEN}60` : '1px solid rgba(255,255,255,0.08)', padding:'5px 2px', textAlign:'center' }}>
-              <div style={{ fontSize:7, color:'rgba(255,255,255,0.75)', marginBottom:2 }}>{p.n}</div>
-              <div style={{ fontSize:8, fontWeight:700, color: p.active ? GOLDEN : 'rgba(255,255,255,0.6)' }}>{p.t}</div>
+            <div key={p.n} style={{
+              flex:1, borderRadius:10, padding:'6px 2px', textAlign:'center',
+              background: p.a ? `rgba(193,154,107,0.20)` : 'rgba(255,255,255,0.07)',
+              border: p.a ? `1px solid ${GOLDEN}50` : '1px solid rgba(255,255,255,0.07)',
+              backdropFilter:'blur(8px)',
+            }}>
+              <div style={{ fontSize:7.5, color:'rgba(255,255,255,0.65)', marginBottom:3 }}>{p.n}</div>
+              <div style={{ fontSize:9, fontWeight:700, color: p.a ? GOLDEN : 'rgba(255,255,255,0.5)' }}>{p.t}</div>
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

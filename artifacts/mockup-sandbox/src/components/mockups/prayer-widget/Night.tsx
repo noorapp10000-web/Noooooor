@@ -3,18 +3,18 @@ import './_group.css';
 
 export function Night() {
   return (
-    <div style={{ minHeight:'100vh', background:'#111', display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div style={{ minHeight:'100vh', background:'#06080F', display:'flex', alignItems:'center', justifyContent:'center' }}>
       <PrayerWidget sky={{
-        topColor: '#020408',
-        midColor: '#050C18',
-        bottomColor: '#080E1E',
-        stars: true,
-        sunOrMoon: { x: 72, y: 18, size: 26, color: 'radial-gradient(circle, #FFFDE7 0%, #FFF9C4 40%, transparent 70%)', glow: '0 0 18px 6px rgba(255,253,220,0.5), 0 0 40px 15px rgba(255,253,220,0.2)' },
-        label: 'ليل',
-        labelColor: 'rgba(200,210,255,0.7)',
-        timeLabel: '2:30 ص',
-        primaryText: 'الفجر',
-        secondaryText: 'متبقي 1:28',
+        sky: 'linear-gradient(180deg, #020408 0%, #03070F 30%, #050B18 60%, #070D1E 100%)',
+        stars: 0.92,
+        moon: { cx:71, cy:17, size:34, phase:'crescent' },
+        clouds: [
+          { color:'#2030508', baseFreqX:0.009, baseFreqY:0.014, numOctaves:5, seed:4, yRange:[25,70], opacity:0.06 },
+          { color:'#151C35', baseFreqX:0.011, baseFreqY:0.016, numOctaves:4, seed:17, yRange:[40,80], opacity:0.08 },
+        ],
+        hazeColor: '#040918',
+        hazeOpacity: 0.6,
+        nextPrayer: 'الفجر',
       }} />
     </div>
   );

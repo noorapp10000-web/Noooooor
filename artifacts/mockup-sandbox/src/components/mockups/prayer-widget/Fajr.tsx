@@ -3,18 +3,19 @@ import './_group.css';
 
 export function Fajr() {
   return (
-    <div style={{ minHeight:'100vh', background:'#111', display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div style={{ minHeight:'100vh', background:'#100818', display:'flex', alignItems:'center', justifyContent:'center' }}>
       <PrayerWidget sky={{
-        topColor: '#0D0620',
-        midColor: '#3D1050',
-        bottomColor: '#7B2D6E',
-        stars: true,
-        sunOrMoon: { x: 50, y: 88, size: 40, color: 'radial-gradient(circle, #FFD580 0%, #FF8C42 50%, transparent 75%)', glow: '0 0 30px 12px rgba(255,160,60,0.5), 0 0 70px 30px rgba(255,100,20,0.25)' },
-        label: 'الفجر',
-        labelColor: 'rgba(255,180,150,0.9)',
-        timeLabel: '3:50 ص',
-        primaryText: 'الفجر',
-        secondaryText: 'متبقي 0:10',
+        sky: 'linear-gradient(180deg, #06030F 0%, #160828 18%, #340D48 36%, #621545 52%, #9B2848 66%, #C84458 78%, #E07070 90%, #F0A080 100%)',
+        stars: 0.5,
+        moon: { cx:76, cy:13, size:22, phase:'quarter' },
+        clouds: [
+          { color:'#C06878', baseFreqX:0.010, baseFreqY:0.013, numOctaves:6, seed:8, yRange:[48,88], opacity:0.55 },
+          { color:'#904060', baseFreqX:0.013, baseFreqY:0.017, numOctaves:5, seed:23, yRange:[55,92], opacity:0.38 },
+          { color:'#E09090', baseFreqX:0.008, baseFreqY:0.011, numOctaves:4, seed:41, yRange:[65,95], opacity:0.28 },
+        ],
+        hazeColor: '#D05050',
+        hazeOpacity: 0.3,
+        nextPrayer: 'الفجر',
       }} />
     </div>
   );

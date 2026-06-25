@@ -3,17 +3,19 @@ import './_group.css';
 
 export function Sunset() {
   return (
-    <div style={{ minHeight:'100vh', background:'#111', display:'flex', alignItems:'center', justifyContent:'center' }}>
+    <div style={{ minHeight:'100vh', background:'#120810', display:'flex', alignItems:'center', justifyContent:'center' }}>
       <PrayerWidget sky={{
-        topColor: '#1A1040',
-        midColor: '#8B2010',
-        bottomColor: '#E8601A',
-        sunOrMoon: { x: 18, y: 68, size: 44, color: 'radial-gradient(circle, #FFE0A0 0%, #FF9030 45%, #E03000 75%, transparent 100%)', glow: '0 0 35px 14px rgba(255,120,30,0.65), 0 0 80px 35px rgba(200,60,10,0.35)' },
-        label: 'الغروب',
-        labelColor: 'rgba(255,200,130,0.95)',
-        timeLabel: '7:59 م',
-        primaryText: 'العشاء',
-        secondaryText: 'متبقي 1:35',
+        sky: 'linear-gradient(180deg, #080520 0%, #180A30 12%, #380C38 24%, #6E1428 38%, #A82010 52%, #D04810 64%, #E87020 76%, #F5A030 86%, #FAC840 94%, #FDE878 100%)',
+        sun: { cx:16, cy:73, size:46, core:'#FFF0C0', glow:'#E87020' },
+        clouds: [
+          { color:'#D06830', color2:'#C04828', baseFreqX:0.010, baseFreqY:0.014, numOctaves:6, seed:7, yRange:[18,65], opacity:0.70 },
+          { color:'#E08840', baseFreqX:0.013, baseFreqY:0.018, numOctaves:5, seed:31, yRange:[28,72], opacity:0.55 },
+          { color:'#B85030', baseFreqX:0.009, baseFreqY:0.012, numOctaves:5, seed:53, yRange:[38,80], opacity:0.42 },
+          { color:'#703050', baseFreqX:0.012, baseFreqY:0.016, numOctaves:4, seed:67, yRange:[10,50], opacity:0.35 },
+        ],
+        hazeColor: '#D04010',
+        hazeOpacity: 0.48,
+        nextPrayer: 'العشاء',
       }} />
     </div>
   );
