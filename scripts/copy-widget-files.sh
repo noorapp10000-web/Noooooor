@@ -34,6 +34,12 @@ cp "$WIDGET_SRC/drawable/widget_number_bg.xml" "$ANDROID_RES/drawable/widget_num
 echo "  [drawable] widget_progress.xml  (golden progress bar)"
 cp "$WIDGET_SRC/drawable/widget_progress.xml" "$ANDROID_RES/drawable/widget_progress.xml"
 
+echo "  [drawable] widget_prayer_cell_bg.xml  (prayer cell normal)"
+cp "$WIDGET_SRC/drawable/widget_prayer_cell_bg.xml"        "$ANDROID_RES/drawable/widget_prayer_cell_bg.xml"
+
+echo "  [drawable] widget_prayer_cell_active_bg.xml  (prayer cell active)"
+cp "$WIDGET_SRC/drawable/widget_prayer_cell_active_bg.xml" "$ANDROID_RES/drawable/widget_prayer_cell_active_bg.xml"
+
 # ── XML (widget provider info) ───────────────────────────────────────────────
 echo "  [xml] prayer_widget_info.xml"
 cp "$WIDGET_SRC/xml/prayer_widget_info.xml"   "$ANDROID_RES/xml/prayer_widget_info.xml"
