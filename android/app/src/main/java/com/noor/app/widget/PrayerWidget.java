@@ -64,24 +64,11 @@ public class PrayerWidget extends AppWidgetProvider {
 
     private void applyPlaceholder(Context context, AppWidgetManager awm, int widgetId) {
         try {
-            Bundle opts = awm.getAppWidgetOptions(widgetId);
-            int minW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250);
-            int minH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160);
-
-            int layoutId;
-            if (minW < 180 || minH < 110) {
-                layoutId = R.layout.widget_prayer_small;
-            } else if (minH < 160) {
-                layoutId = R.layout.widget_prayer_medium;
-            } else {
-                layoutId = R.layout.widget_prayer;
-            }
-
             SharedPreferences prefs = context.getSharedPreferences(
                 PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE);
             boolean isDark = !"light".equals(prefs.getString(PrayerWidgetService.KEY_WIDGET_THEME, "dark"));
 
-            RemoteViews rv = new RemoteViews(context.getPackageName(), layoutId);
+            RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.widget_unified);
             rv.setInt(R.id.wg_root, "setBackgroundResource",
                 isDark ? R.drawable.widget_bg : R.drawable.widget_bg_light);
             awm.updateAppWidget(widgetId, rv);
