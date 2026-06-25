@@ -33,19 +33,6 @@ import com.noor.app.R;
 import java.util.Calendar;
 import java.util.Date;
 
-/**
- * نُور — Foreground Service for per-second widget updates.
- *
- * New features (glassmorphism update):
- *   • Size-aware layouts: large (4×3+) / medium (4×2) / small (2×2)
- *   • Prayer emoji icons  (🌅☀️🌤️🌇🌙)
- *   • Hijri date          (API 24+ via android.icu.util.IslamicCalendar)
- *   • City name display   (📍 القاهرة)
- *   • Progress bar        between prev and next prayer
- *
- * Prayer times are calculated natively via the adhan library using
- * lat/lng stored by WidgetBridgePlugin. No internet required.
- */
 public class PrayerWidgetService extends Service {
 
     public static final String PREFS_NAME = "NoorWidget";
@@ -148,7 +135,6 @@ public class PrayerWidgetService extends Service {
             this, 0, openApp,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Each widget gets its own layout based on its current size on screen
         for (int widgetId : ids) {
             Bundle options = awm.getAppWidgetOptions(widgetId);
             int minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,  250);
@@ -174,45 +160,61 @@ public class PrayerWidgetService extends Service {
                 int s = (int)((remaining % 60_000L) / 1_000L);
 
                 String nextLabel = state.nextEmoji + " " + state.nextName;
+                String cityText  = (city != null && !city.isEmpty()) ? "📍 " + city : "";
 
+                // All sizes: prayer name + countdown + city + hijri + adhan time
                 rv.setTextViewText(R.id.wg_prayer_name, nextLabel);
-                rv.setTextViewText(R.id.wg_hours,   pad2(h));
-                rv.setTextViewText(R.id.wg_minutes, pad2(m));
+                rv.setTextViewText(R.id.wg_hours,       pad2(h));
+                rv.setTextViewText(R.id.wg_minutes,     pad2(m));
+                rv.setTextViewText(R.id.wg_seconds,     pad2(s));
+                rv.setTextViewText(R.id.wg_city,        cityText);
+                rv.setTextViewText(R.id.wg_hijri_date,  hijri);
+                rv.setTextViewText(R.id.wg_adhan_time,  "وقت الأذان " + state.nextFormattedTime);
 
-                if (layoutId != R.layout.widget_prayer_small) {
-                    rv.setTextViewText(R.id.wg_seconds, pad2(s));
-                    rv.setProgressBar(R.id.wg_progress, 100, state.progress, false);
+                // All sizes: progress bar
+                rv.setProgressBar(R.id.wg_progress, 100, state.progress, false);
+
+                // Large + medium: progress labels, %, all 5 prayer times, active highlight
+                if (layoutId == R.layout.widget_prayer || layoutId == R.layout.widget_prayer_medium) {
+                    rv.setTextViewText(R.id.wg_prev_prayer,   state.prevEmoji + " " + state.prevName);
+                    rv.setTextViewText(R.id.wg_next_prayer,   nextLabel);
+                    rv.setTextViewText(R.id.wg_progress_pct,  state.progress + "% مكتمل");
+
+                    rv.setTextViewText(R.id.wg_fajr_time,    state.allTimes[0]);
+                    rv.setTextViewText(R.id.wg_dhuhr_time,   state.allTimes[1]);
+                    rv.setTextViewText(R.id.wg_asr_time,     state.allTimes[2]);
+                    rv.setTextViewText(R.id.wg_maghrib_time, state.allTimes[3]);
+                    rv.setTextViewText(R.id.wg_isha_time,    state.allTimes[4]);
+
+                    // Reset all prayer boxes to normal background
+                    rv.setInt(R.id.wg_fajr_box,    "setBackgroundResource", R.drawable.widget_prayer_cell_bg);
+                    rv.setInt(R.id.wg_dhuhr_box,   "setBackgroundResource", R.drawable.widget_prayer_cell_bg);
+                    rv.setInt(R.id.wg_asr_box,     "setBackgroundResource", R.drawable.widget_prayer_cell_bg);
+                    rv.setInt(R.id.wg_maghrib_box, "setBackgroundResource", R.drawable.widget_prayer_cell_bg);
+                    rv.setInt(R.id.wg_isha_box,    "setBackgroundResource", R.drawable.widget_prayer_cell_bg);
+
+                    // Highlight the next (upcoming) prayer
+                    int[] boxIds = {
+                        R.id.wg_fajr_box, R.id.wg_dhuhr_box, R.id.wg_asr_box,
+                        R.id.wg_maghrib_box, R.id.wg_isha_box
+                    };
+                    if (state.nextIdx >= 0 && state.nextIdx < boxIds.length) {
+                        rv.setInt(boxIds[state.nextIdx], "setBackgroundResource",
+                            R.drawable.widget_prayer_cell_active_bg);
+                    }
                 }
 
-                // Large widget: all extras
-                if (layoutId == R.layout.widget_prayer) {
-                    rv.setTextViewText(R.id.wg_hijri_date, hijri);
-                    rv.setTextViewText(R.id.wg_city,
-                        (city != null && !city.isEmpty()) ? "📍 " + city : "");
-                    rv.setTextViewText(R.id.wg_prev_prayer,
-                        state.prevEmoji + " " + state.prevName);
-                    rv.setTextViewText(R.id.wg_next_prayer, nextLabel);
-                }
-
-                // Medium widget: city only
-                if (layoutId == R.layout.widget_prayer_medium) {
-                    rv.setTextViewText(R.id.wg_city,
-                        (city != null && !city.isEmpty()) ? "📍 " + city : "");
-                }
-
-                // Update notification with live countdown
+                // Update notification
                 String cd = pad2(h) + ":" + pad2(m) + ":" + pad2(s);
                 getSystemService(NotificationManager.class)
                     .notify(NOTIF_ID, buildNotification(nextLabel, cd));
 
             } else {
-                // No location set yet — prompt user to open the app
+                // No location — prompt user
                 rv.setTextViewText(R.id.wg_prayer_name, "🕌 افتح التطبيق");
                 rv.setTextViewText(R.id.wg_hours,   "--");
                 rv.setTextViewText(R.id.wg_minutes, "--");
-                if (layoutId != R.layout.widget_prayer_small) {
-                    rv.setTextViewText(R.id.wg_seconds, "--");
-                }
+                rv.setTextViewText(R.id.wg_seconds, "--");
             }
 
             rv.setOnClickPendingIntent(R.id.wg_root, openPi);
@@ -220,7 +222,7 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Prayer state: previous + next + progress ─────────────────────────────
+    // ── Prayer state ─────────────────────────────────────────────────────────
     private PrayerState getPrayerState(float lat, float lng) {
         try {
             Coordinates coords = new Coordinates(lat, lng);
@@ -234,7 +236,13 @@ public class PrayerWidgetService extends Service {
                 pt.asr.getTime(), pt.maghrib.getTime(), pt.isha.getTime()
             };
 
-            // Find the next upcoming prayer
+            // Formatted times for all 5 prayers
+            String[] allTimes = new String[5];
+            for (int i = 0; i < 5; i++) {
+                allTimes[i] = formatTime12(new Date(times[i]));
+            }
+
+            // Find next upcoming prayer
             int nextIdx = -1;
             for (int i = 0; i < times.length; i++) {
                 if (times[i] > now) { nextIdx = i; break; }
@@ -242,8 +250,10 @@ public class PrayerWidgetService extends Service {
 
             long nextMs, prevMs;
             String nextName, nextEmoji, prevName, prevEmoji;
+            int resolvedNextIdx;
 
             if (nextIdx >= 0) {
+                resolvedNextIdx = nextIdx;
                 nextMs    = times[nextIdx];
                 nextName  = PRAYER_NAMES[nextIdx];
                 nextEmoji = PRAYER_EMOJIS[nextIdx];
@@ -253,7 +263,6 @@ public class PrayerWidgetService extends Service {
                     prevName  = PRAYER_NAMES[nextIdx - 1];
                     prevEmoji = PRAYER_EMOJIS[nextIdx - 1];
                 } else {
-                    // Before Fajr — previous prayer is yesterday's Isha
                     Calendar yesterday = Calendar.getInstance();
                     yesterday.add(Calendar.DAY_OF_YEAR, -1);
                     PrayerTimes ptY = new PrayerTimes(coords,
@@ -263,7 +272,8 @@ public class PrayerWidgetService extends Service {
                     prevEmoji = PRAYER_EMOJIS[4];
                 }
             } else {
-                // After Isha — next prayer is tomorrow's Fajr
+                // After Isha — next is tomorrow's Fajr
+                resolvedNextIdx = 0;
                 prevMs    = times[4];
                 prevName  = PRAYER_NAMES[4];
                 prevEmoji = PRAYER_EMOJIS[4];
@@ -277,12 +287,11 @@ public class PrayerWidgetService extends Service {
                 nextEmoji = PRAYER_EMOJIS[0];
             }
 
-            // Progress (0–100): how far between prevMs and nextMs
             int progress = 0;
             long total = nextMs - prevMs;
             if (total > 0) {
                 progress = (int)(((now - prevMs) * 100L) / total);
-                if (progress < 0) progress = 0;
+                if (progress < 0)   progress = 0;
                 if (progress > 100) progress = 100;
             }
 
@@ -290,7 +299,7 @@ public class PrayerWidgetService extends Service {
                 prevName, prevEmoji, prevMs,
                 nextName, nextEmoji, nextMs,
                 formatTime12(new Date(nextMs)),
-                progress
+                progress, resolvedNextIdx, allTimes
             );
 
         } catch (Exception e) {
@@ -298,15 +307,15 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Hijri date (API 24+ via android.icu) ─────────────────────────────────
+    // ── Hijri date ────────────────────────────────────────────────────────────
     private String getHijriDate() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "";
         try {
             android.icu.util.IslamicCalendar cal = new android.icu.util.IslamicCalendar();
             int day      = cal.get(android.icu.util.Calendar.DATE);
-            int monthIdx = cal.get(android.icu.util.Calendar.MONTH);        // 0-based
+            int monthIdx = cal.get(android.icu.util.Calendar.MONTH);
             int year     = cal.get(android.icu.util.Calendar.YEAR);
-            int dowIdx   = cal.get(android.icu.util.Calendar.DAY_OF_WEEK) - 1; // SUNDAY=1 → index 0
+            int dowIdx   = cal.get(android.icu.util.Calendar.DAY_OF_WEEK) - 1;
             String dayName   = (dowIdx >= 0 && dowIdx < HIJRI_DAYS.length)
                                ? HIJRI_DAYS[dowIdx] : "";
             String monthName = (monthIdx >= 0 && monthIdx < HIJRI_MONTHS.length)
@@ -365,7 +374,6 @@ public class PrayerWidgetService extends Service {
             .build();
     }
 
-    // ── Static start helper ───────────────────────────────────────────────────
     public static void start(Context context) {
         Intent intent = new Intent(context, PrayerWidgetService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -377,16 +385,18 @@ public class PrayerWidgetService extends Service {
 
     // ── Data model ────────────────────────────────────────────────────────────
     private static class PrayerState {
-        final String prevName, prevEmoji;
-        final long   prevTimeMs;
-        final String nextName, nextEmoji;
-        final long   nextTimeMs;
-        final String nextFormattedTime;
-        final int    progress;
+        final String   prevName, prevEmoji;
+        final long     prevTimeMs;
+        final String   nextName, nextEmoji;
+        final long     nextTimeMs;
+        final String   nextFormattedTime;
+        final int      progress;
+        final int      nextIdx;
+        final String[] allTimes;
 
         PrayerState(String prevName, String prevEmoji, long prevTimeMs,
                     String nextName, String nextEmoji, long nextTimeMs,
-                    String nextFormattedTime, int progress) {
+                    String nextFormattedTime, int progress, int nextIdx, String[] allTimes) {
             this.prevName          = prevName;
             this.prevEmoji         = prevEmoji;
             this.prevTimeMs        = prevTimeMs;
@@ -395,6 +405,8 @@ public class PrayerWidgetService extends Service {
             this.nextTimeMs        = nextTimeMs;
             this.nextFormattedTime = nextFormattedTime;
             this.progress          = progress;
+            this.nextIdx           = nextIdx;
+            this.allTimes          = allTimes;
         }
     }
 }
