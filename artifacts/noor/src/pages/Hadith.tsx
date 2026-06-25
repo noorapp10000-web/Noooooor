@@ -21,12 +21,12 @@ function useDarkMode() {
 
 /* ── Book definitions ── */
 const BOOKS = [
-  { slug: 'sahih-bukhari',  name: 'صحيح البخاري',   iconBg: '#8B1A1A' },
-  { slug: 'sahih-muslim',   name: 'صحيح مسلم',      iconBg: '#1A3A7A' },
-  { slug: 'al-tirmidhi',   name: 'جامع الترمذي',    iconBg: '#1C2F6E' },
-  { slug: 'abu-dawood',    name: 'سنن أبي داود',    iconBg: '#6B3010' },
-  { slug: 'ibn-e-majah',   name: 'سنن ابن ماجه',    iconBg: '#7A5010' },
-  { slug: 'sunan-nasai',   name: 'سنن النسائي',     iconBg: '#9B1515' },
+  { slug: 'sahih-bukhari',  name: 'صحيح البخاري',   iconBg: '#8B1A1A', count: 7580 },
+  { slug: 'sahih-muslim',   name: 'صحيح مسلم',      iconBg: '#1A3A7A', count: 7360 },
+  { slug: 'al-tirmidhi',   name: 'جامع الترمذي',    iconBg: '#1C2F6E', count: 3924 },
+  { slug: 'abu-dawood',    name: 'سنن أبي داود',    iconBg: '#6B3010', count: 5272 },
+  { slug: 'ibn-e-majah',   name: 'سنن ابن ماجه',    iconBg: '#7A5010', count: 4338 },
+  { slug: 'sunan-nasai',   name: 'سنن النسائي',     iconBg: '#9B1515', count: 5679 },
 ];
 
 type Book = typeof BOOKS[0];
@@ -610,7 +610,7 @@ function BookList({ onSelect }: { onSelect: (b: Book) => void }) {
                 {book.name}
               </p>
               <p className="text-xs font-semibold mt-0.5" style={{ color: book.iconBg, fontFamily: '"Tajawal", sans-serif', opacity: 0.9 }}>
-                {isDark ? '…' : 'اضغط للقراءة'}
+                {book.count.toLocaleString('ar-EG')} حديث
               </p>
             </div>
             <div className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: book.iconBg }}>
