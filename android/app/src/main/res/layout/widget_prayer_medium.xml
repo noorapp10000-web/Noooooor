@@ -58,14 +58,27 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="end">
-            <TextView
-                android:id="@+id/wg_city"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=""
-                android:textColor="#CCFFFFFF"
-                android:textSize="8sp"
-                android:gravity="end" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layoutDirection="rtl">
+                <ImageView
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:src="@drawable/ic_location_pin"
+                    android:layout_marginEnd="2dp"
+                    android:alpha="0.85" />
+                <TextView
+                    android:id="@+id/wg_city"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="8sp"
+                    android:gravity="end" />
+            </LinearLayout>
             <TextView
                 android:id="@+id/wg_hijri_date"
                 android:layout_width="wrap_content"
@@ -218,6 +231,11 @@
         android:max="100"
         android:progress="50"
         android:layoutDirection="ltr" />
+
+    <!-- Hidden placeholders — prevent RemoteViews crash when service sets these IDs -->
+    <TextView android:id="@+id/wg_day_pct"        android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_current_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_remaining_text" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
 
     <!-- ── 5 Prayers compact row with icons ── -->
     <LinearLayout

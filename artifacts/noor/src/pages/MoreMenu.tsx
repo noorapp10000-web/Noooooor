@@ -578,21 +578,70 @@ export function MoreMenu() {
         <button
           onClick={toggleTheme}
           className="w-full flex items-center justify-between bg-card p-3.5 rounded-2xl border border-border/40 hover-elevate"
+          data-testid="button-toggle-theme"
         >
           <div className="flex items-center gap-3.5">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
-              style={{ background: theme === 'dark' ? 'linear-gradient(145deg, #2a2a5c, #181832)' : 'linear-gradient(145deg, #8B6340, #5c3e1e)' }}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md relative overflow-hidden"
+              style={{
+                background: theme === 'dark'
+                  ? 'linear-gradient(145deg, #0f172a, #1e1b4b)'
+                  : 'linear-gradient(145deg, #f59e0b, #b45309)',
+              }}
             >
-              {theme === 'light' ? <Moon className="w-5 h-5 text-white" /> : <Sun className="w-5 h-5 text-white" />}
+              {theme === 'dark' ? (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="white" fillOpacity="0.95" />
+                  <circle cx="19" cy="5" r="1" fill="white" fillOpacity="0.7" />
+                  <circle cx="22" cy="9" r="0.7" fill="white" fillOpacity="0.5" />
+                  <circle cx="20" cy="2" r="0.6" fill="white" fillOpacity="0.6" />
+                </svg>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="4.5" fill="white" fillOpacity="0.95" />
+                  {[0,45,90,135,180,225,270,315].map((deg,i) => {
+                    const rad=deg*Math.PI/180;
+                    return <line key={i} x1={12+6.2*Math.cos(rad)} y1={12+6.2*Math.sin(rad)} x2={12+(i%2===0?8.5:7.8)*Math.cos(rad)} y2={12+(i%2===0?8.5:7.8)*Math.sin(rad)} stroke="white" strokeWidth={i%2===0?1.8:1.2} strokeOpacity="0.85" strokeLinecap="round"/>;
+                  })}
+                </svg>
+              )}
             </div>
             <div className="text-right">
-              <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>الوضع الليلي</span>
-              <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{theme === 'dark' ? 'مفعّل حالياً' : 'غير مفعّل'}</span>
+              <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                {theme === 'dark' ? 'الوضع الليلي' : 'الوضع النهاري'}
+              </span>
+              <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                {theme === 'dark' ? 'اضغط للتبديل إلى النهاري' : 'اضغط للتبديل إلى الليلي'}
+              </span>
             </div>
           </div>
-          <div className={`w-12 h-6 rounded-full relative transition-all duration-300 flex-shrink-0 ${theme === 'dark' ? 'bg-primary' : 'bg-border'}`}>
-            <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-300 ${theme === 'dark' ? 'left-0.5' : 'right-0.5'}`} />
+          <div
+            className="w-13 h-7 rounded-full relative transition-all duration-300 flex-shrink-0 flex-shrink-0"
+            style={{
+              width: 52,
+              height: 28,
+              background: theme === 'dark'
+                ? 'linear-gradient(90deg, #6366f1, #8b5cf6)'
+                : 'rgba(0,0,0,0.12)',
+              border: theme === 'dark' ? 'none' : '1.5px solid rgba(0,0,0,0.1)',
+              position: 'relative',
+            }}
+          >
+            <div
+              className="absolute top-0.5 w-6 h-6 rounded-full shadow-md transition-all duration-300 flex items-center justify-center"
+              style={{
+                width: 22,
+                height: 22,
+                top: 3,
+                left: theme === 'dark' ? 27 : 3,
+                background: theme === 'dark' ? 'white' : 'white',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              }}
+            >
+              {theme === 'dark'
+                ? <Moon className="w-3 h-3" style={{ color: '#6366f1' }} />
+                : <Sun className="w-3 h-3" style={{ color: '#f59e0b' }} />}
+            </div>
           </div>
         </button>
       </div>

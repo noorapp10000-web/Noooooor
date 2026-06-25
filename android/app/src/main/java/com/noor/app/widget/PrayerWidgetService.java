@@ -203,7 +203,7 @@ public class PrayerWidgetService extends Service {
             rv.setTextColor(R.id.wg_adhan_time,  isDark ? 0xCCFFFFFF : 0xFF3D2B0F);
 
             // ── Username & city ────────────────────────────────────────────
-            String cityText = (city != null && !city.isEmpty()) ? "📍 " + city : "";
+            String cityText = (city != null && !city.isEmpty()) ? city : "";
             rv.setTextViewText(R.id.wg_city, cityText);
             if (!username.isEmpty()) {
                 rv.setTextViewText(R.id.wg_username, username);
@@ -226,7 +226,7 @@ public class PrayerWidgetService extends Service {
                 rv.setTextViewText(R.id.wg_hours,   pad2(h));
                 rv.setTextViewText(R.id.wg_minutes, pad2(m));
                 rv.setTextViewText(R.id.wg_seconds, pad2(s));
-                rv.setTextViewText(R.id.wg_adhan_time, "🕐 وقت الأذان " + state.nextFormattedTime);
+                rv.setTextViewText(R.id.wg_adhan_time, "وقت الأذان " + state.nextFormattedTime);
 
                 // Next prayer icon in main card
                 if (state.nextIdx >= 0 && state.nextIdx < PRAYER_ICONS.length) {

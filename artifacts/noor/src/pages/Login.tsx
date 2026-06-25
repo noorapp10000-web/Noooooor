@@ -53,6 +53,7 @@ export function Login({ onComplete }: LoginProps) {
   const [canNext, setCanNext] = useState(false);
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
+  const [savedName, setSavedName] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -88,6 +89,7 @@ export function Login({ onComplete }: LoginProps) {
   function handleNameNext() {
     const val = nameInputRef.current?.value?.trim() ?? '';
     if (!val) return;
+    setSavedName(val);
     setStep('city');
   }
 
@@ -113,7 +115,7 @@ export function Login({ onComplete }: LoginProps) {
     if (!gov) return;
 
     const uid = getOrCreateLocalUid();
-    const userName = nameInputRef.current?.value?.trim() || 'ذاكر';
+    const userName = savedName || nameInputRef.current?.value?.trim() || '';
     const profile: UserProfile = {
       uid,
       name: userName,

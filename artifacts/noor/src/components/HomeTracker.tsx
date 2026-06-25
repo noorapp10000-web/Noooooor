@@ -34,158 +34,165 @@ function getTodayDateKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/* ── 3D Prayer icons ────────────────────────────────────────────── */
+/* ── Prayer icons — realistic ───────────────────────────────────── */
 function FajrIcon({ done }: { done: boolean }) {
+  const c = done ? { sky: '#4ade80', glow: '#22c55e', moon: '#bbf7d0', star: '#86efac' }
+                 : { sky: '#93c5fd', glow: '#f97316', moon: '#fde68a', star: '#fcd34d' };
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
       <defs>
-        <radialGradient id="fajrGrad" cx="35%" cy="25%" r="70%">
-          <stop offset="0%" stopColor={done ? '#a7f3d0' : '#ffe4a0'} />
-          <stop offset="100%" stopColor={done ? '#22c55e' : '#c5a059'} />
+        <linearGradient id={`fajrSky${done}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={done ? '#14532d' : '#1e3a5f'} />
+          <stop offset="60%" stopColor={done ? '#166534' : '#374151'} />
+          <stop offset="100%" stopColor={done ? '#4ade80' : '#f97316'} stopOpacity="0.5" />
+        </linearGradient>
+        <radialGradient id={`fajrGlow${done}`} cx="50%" cy="100%" r="60%">
+          <stop offset="0%" stopColor={c.glow} stopOpacity="0.6" />
+          <stop offset="100%" stopColor={c.glow} stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`fajrMoon${done}`} cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={c.moon} />
+          <stop offset="100%" stopColor={done ? '#86efac' : '#fbbf24'} />
         </radialGradient>
       </defs>
-      {/* Horizon line */}
-      <line x1="2" y1="20" x2="26" y2="20" stroke={done ? '#22c55e' : '#c5a059'} strokeWidth="1.5" strokeOpacity="0.5" strokeLinecap="round" />
-      {/* Sun peeking (half circle) */}
-      <circle cx="14" cy="20" r="5.5" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.9" />
-      <circle cx="14" cy="20" r="5.5" fill="url(#fajrGrad)" />
-      <path d="M 8.5 20 A 5.5 5.5 0 0 0 19.5 20" fill="white" fillOpacity="0.15" />
-      <circle cx="12.5" cy="18.5" r="1.8" fill="white" fillOpacity="0.35" />
-      {/* Dawn rays */}
-      {[-40, -20, 0, 20, 40].map((a, i) => {
-        const rad = (a - 90) * Math.PI / 180;
-        return (
-          <line key={i}
-            x1={14 + 7.5 * Math.cos(rad)} y1={20 + 7.5 * Math.sin(rad)}
-            x2={14 + 9.5 * Math.cos(rad)} y2={20 + 9.5 * Math.sin(rad)}
-            stroke={done ? '#22c55e' : '#c5a059'} strokeWidth="1.5" strokeOpacity="0.7" strokeLinecap="round" />
-        );
+      <rect x="0" y="0" width="28" height="28" rx="4" fill={`url(#fajrSky${done})`} />
+      <ellipse cx="14" cy="28" rx="14" ry="6" fill={`url(#fajrGlow${done})`} />
+      <line x1="1" y1="22" x2="27" y2="22" stroke={c.glow} strokeWidth="1" strokeOpacity="0.5" strokeLinecap="round" />
+      {[-35,-18,0,18,35].map((a,i) => {
+        const rad=(a-90)*Math.PI/180;
+        return <line key={i} x1={14+9*Math.cos(rad)} y1={22+9*Math.sin(rad)} x2={14+11.5*Math.cos(rad)} y2={22+11.5*Math.sin(rad)} stroke={c.glow} strokeWidth="1.2" strokeOpacity="0.65" strokeLinecap="round"/>;
       })}
-      {/* Stars */}
-      <circle cx="6" cy="10" r="1" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.6" />
-      <circle cx="5.5" cy="9.6" r="0.4" fill="white" fillOpacity="0.7" />
-      <circle cx="22" cy="8" r="0.7" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.5" />
+      <path d="M 18 9 A 5.5 5.5 0 1 1 12.5 14.5 4.5 4.5 0 0 0 18 9 Z" fill={`url(#fajrMoon${done})`} />
+      <circle cx="21" cy="6" r="0.9" fill={c.star} fillOpacity="0.9" />
+      <circle cx="21.4" cy="5.6" r="0.35" fill="white" fillOpacity="0.8" />
+      <circle cx="7" cy="8" r="0.65" fill={c.star} fillOpacity="0.8" />
+      <circle cx="25" cy="11" r="0.5" fill={c.star} fillOpacity="0.7" />
     </svg>
   );
 }
 
 function DhuhrIcon({ done }: { done: boolean }) {
+  const col = done ? '#22c55e' : '#f59e0b';
+  const hi  = done ? '#bbf7d0' : '#fef9c3';
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
       <defs>
-        <radialGradient id="dhuhrGrad" cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stopColor={done ? '#a7f3d0' : '#fff0b0'} />
-          <stop offset="100%" stopColor={done ? '#22c55e' : '#c5a059'} />
+        <radialGradient id={`dhuhrSun${done}`} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={hi} />
+          <stop offset="60%" stopColor={done ? '#4ade80' : '#fbbf24'} />
+          <stop offset="100%" stopColor={col} />
+        </radialGradient>
+        <radialGradient id={`dhuhrGlow${done}`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={col} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={col} stopOpacity="0" />
         </radialGradient>
       </defs>
-      {/* Glow */}
-      <circle cx="14" cy="14" r="8" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.08" />
-      {/* Shadow */}
-      <circle cx="14.5" cy="14.5" r="5.5" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.2" />
-      {/* Sun */}
-      <circle cx="14" cy="14" r="5.5" fill="url(#dhuhrGrad)" />
-      <circle cx="12" cy="12" r="2.2" fill="white" fillOpacity="0.35" />
-      <circle cx="12.5" cy="12.5" r="1" fill="white" fillOpacity="0.45" />
-      {/* Rays */}
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-        const rad = deg * Math.PI / 180;
-        return (
-          <line key={i}
-            x1={14 + 6.8 * Math.cos(rad)} y1={14 + 6.8 * Math.sin(rad)}
-            x2={14 + (i % 2 === 0 ? 8.8 : 8) * Math.cos(rad)} y2={14 + (i % 2 === 0 ? 8.8 : 8) * Math.sin(rad)}
-            stroke={done ? '#22c55e' : '#c5a059'} strokeWidth={i % 2 === 0 ? 1.8 : 1.2} strokeOpacity="0.75" strokeLinecap="round" />
-        );
+      <circle cx="14" cy="14" r="13" fill={`url(#dhuhrGlow${done})`} />
+      {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i) => {
+        const rad=deg*Math.PI/180;
+        const len=i%3===0?4:i%3===1?2.8:2;
+        const w=i%3===0?1.8:1.1;
+        return <line key={i} x1={14+7.5*Math.cos(rad)} y1={14+7.5*Math.sin(rad)} x2={14+(7.5+len)*Math.cos(rad)} y2={14+(7.5+len)*Math.sin(rad)} stroke={col} strokeWidth={w} strokeOpacity="0.8" strokeLinecap="round"/>;
       })}
+      <circle cx="14.4" cy="14.4" r="6.5" fill={col} fillOpacity="0.2" />
+      <circle cx="14" cy="14" r="6.5" fill={`url(#dhuhrSun${done})`} />
+      <circle cx="11.5" cy="11.5" r="2.5" fill="white" fillOpacity="0.3" />
+      <circle cx="12" cy="12" r="1.2" fill="white" fillOpacity="0.5" />
     </svg>
   );
 }
 
 function AsrIcon({ done }: { done: boolean }) {
+  const col = done ? '#22c55e' : '#d97706';
+  const hi  = done ? '#bbf7d0' : '#fed7aa';
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
       <defs>
-        <radialGradient id="asrGrad" cx="35%" cy="25%" r="70%">
-          <stop offset="0%" stopColor={done ? '#a7f3d0' : '#ffd580'} />
-          <stop offset="100%" stopColor={done ? '#22c55e' : '#b08030'} />
+        <linearGradient id={`asrBg${done}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={done ? '#14532d' : '#7c2d12'} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={done ? '#22c55e' : '#f97316'} stopOpacity="0.08" />
+        </linearGradient>
+        <radialGradient id={`asrSun${done}`} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={hi} />
+          <stop offset="100%" stopColor={col} />
         </radialGradient>
       </defs>
-      <circle cx="14" cy="14" r="5.5" fill="url(#asrGrad)" />
-      <circle cx="12" cy="12" r="2" fill="white" fillOpacity="0.3" />
-      {/* Afternoon slanted rays */}
-      {[20, 65, 110, 155, 200, 245].map((deg, i) => {
-        const rad = deg * Math.PI / 180;
-        return (
-          <line key={i}
-            x1={14 + 6.5 * Math.cos(rad)} y1={14 + 6.5 * Math.sin(rad)}
-            x2={14 + 8.5 * Math.cos(rad)} y2={14 + 8.5 * Math.sin(rad)}
-            stroke={done ? '#22c55e' : '#c5a059'} strokeWidth="1.5" strokeOpacity="0.7" strokeLinecap="round" />
-        );
+      <rect x="0" y="0" width="28" height="28" rx="4" fill={`url(#asrBg${done})`} />
+      <line x1="2" y1="23" x2="26" y2="23" stroke={col} strokeWidth="1" strokeOpacity="0.3" strokeLinecap="round" />
+      <ellipse cx="14" cy="23" rx="9" ry="1.5" fill={col} fillOpacity="0.1" />
+      {[25,60,100,140,175,220].map((deg,i) => {
+        const rad=deg*Math.PI/180;
+        return <line key={i} x1={14+7*Math.cos(rad)} y1={14+7*Math.sin(rad)} x2={14+9.5*Math.cos(rad)} y2={14+9.5*Math.sin(rad)} stroke={col} strokeWidth="1.4" strokeOpacity="0.7" strokeLinecap="round"/>;
       })}
-      {/* Shadow on ground */}
-      <ellipse cx="14" cy="24" rx="6" ry="1.5" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.15" />
-      <line x1="14" y1="19.5" x2="20" y2="24" stroke={done ? '#22c55e' : '#c5a059'} strokeWidth="1" strokeOpacity="0.3" strokeLinecap="round" />
+      <circle cx="14.3" cy="14.3" r="6.2" fill={col} fillOpacity="0.18" />
+      <circle cx="14" cy="14" r="6" fill={`url(#asrSun${done})`} />
+      <circle cx="11.8" cy="11.8" r="2" fill="white" fillOpacity="0.3" />
+      <line x1="14" y1="20" x2="22" y2="23" stroke={col} strokeWidth="1.2" strokeOpacity="0.25" strokeLinecap="round" />
     </svg>
   );
 }
 
 function MaghribIcon({ done }: { done: boolean }) {
+  const col = done ? '#22c55e' : '#ea580c';
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
       <defs>
-        <radialGradient id="maghribGrad" cx="35%" cy="25%" r="70%">
-          <stop offset="0%" stopColor={done ? '#a7f3d0' : '#ffb060'} />
-          <stop offset="100%" stopColor={done ? '#22c55e' : '#8b4a1a'} />
+        <linearGradient id={`maghribSky${done}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={done ? '#14532d' : '#4c1d95'} stopOpacity="0.8" />
+          <stop offset="45%" stopColor={done ? '#166534' : '#9a3412'} stopOpacity="0.6" />
+          <stop offset="100%" stopColor={done ? '#4ade80' : '#f97316'} stopOpacity="0.4" />
+        </linearGradient>
+        <radialGradient id={`maghribSun${done}`} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={done ? '#bbf7d0' : '#fde68a'} />
+          <stop offset="60%" stopColor={done ? '#4ade80' : '#fb923c'} />
+          <stop offset="100%" stopColor={col} />
         </radialGradient>
+        <radialGradient id={`maghribGlow${done}`} cx="50%" cy="100%" r="70%">
+          <stop offset="0%" stopColor={col} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={col} stopOpacity="0" />
+        </radialGradient>
+        <clipPath id="aboveHzn">
+          <rect x="0" y="0" width="28" height="21" />
+        </clipPath>
       </defs>
-      {/* Sky gradient band */}
-      <rect x="0" y="14" width="28" height="6" rx="0" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.06" />
-      {/* Horizon */}
-      <line x1="2" y1="20" x2="26" y2="20" stroke={done ? '#22c55e' : '#c5a059'} strokeWidth="1.5" strokeOpacity="0.4" strokeLinecap="round" />
-      {/* Setting sun — partly below horizon */}
-      <clipPath id="aboveHorizon">
-        <rect x="0" y="0" width="28" height="20" />
-      </clipPath>
-      <circle cx="14" cy="20" r="6" fill="url(#maghribGrad)" clipPath="url(#aboveHorizon)" />
-      <path d="M 8 20 A 6 6 0 0 0 20 20" fill="white" fillOpacity="0.15" />
-      {/* Warm glow */}
-      <ellipse cx="14" cy="20" rx="10" ry="3" fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.12" />
-      {/* Horizon rays */}
-      {[-50, -25, 0, 25, 50].map((a, i) => {
-        const rad = (a - 90) * Math.PI / 180;
-        return (
-          <line key={i}
-            x1={14 + 7.5 * Math.cos(rad)} y1={20 + 7.5 * Math.sin(rad)}
-            x2={14 + 10 * Math.cos(rad)} y2={20 + 10 * Math.sin(rad)}
-            stroke={done ? '#22c55e' : '#c5a059'} strokeWidth="1.2" strokeOpacity="0.55" strokeLinecap="round"
-            clipPath="url(#aboveHorizon)" />
-        );
+      <rect x="0" y="0" width="28" height="28" rx="4" fill={`url(#maghribSky${done})`} />
+      <ellipse cx="14" cy="28" rx="16" ry="8" fill={`url(#maghribGlow${done})`} />
+      <line x1="1" y1="21" x2="27" y2="21" stroke={col} strokeWidth="1" strokeOpacity="0.45" strokeLinecap="round" />
+      {[-45,-22,0,22,45].map((a,i) => {
+        const rad=(a-90)*Math.PI/180;
+        return <line key={i} x1={14+8.5*Math.cos(rad)} y1={21+8.5*Math.sin(rad)} x2={14+11*Math.cos(rad)} y2={21+11*Math.sin(rad)} stroke={col} strokeWidth="1.2" strokeOpacity="0.55" strokeLinecap="round" clipPath="url(#aboveHzn)"/>;
       })}
+      <circle cx="14" cy="21" r="7" fill={`url(#maghribSun${done})`} clipPath="url(#aboveHzn)" />
+      <path d="M 7 21 A 7 7 0 0 0 21 21" fill="white" fillOpacity="0.12" />
+      <circle cx="11.5" cy="18" r="2.2" fill="white" fillOpacity="0.22" />
     </svg>
   );
 }
 
 function IshaIcon({ done }: { done: boolean }) {
+  const stars = [{ cx: 22, cy: 6, r: 1.1 }, { cx: 25, cy: 13, r: 0.7 }, { cx: 20, cy: 3.5, r: 0.7 }, { cx: 24, cy: 19, r: 0.5 }];
+  const col = done ? '#22c55e' : '#8b5cf6';
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
       <defs>
-        <radialGradient id="ishaGrad" cx="30%" cy="25%" r="70%">
-          <stop offset="0%" stopColor={done ? '#a7f3d0' : '#c8b0ff'} />
-          <stop offset="100%" stopColor={done ? '#22c55e' : '#6b4fa0'} />
+        <linearGradient id={`ishaBg${done}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={done ? '#14532d' : '#1e1b4b'} />
+          <stop offset="100%" stopColor={done ? '#166534' : '#2e1065'} />
+        </linearGradient>
+        <radialGradient id={`ishaMoon${done}`} cx="30%" cy="28%" r="72%">
+          <stop offset="0%" stopColor={done ? '#d1fae5' : '#ddd6fe'} />
+          <stop offset="60%" stopColor={done ? '#4ade80' : '#a78bfa'} />
+          <stop offset="100%" stopColor={col} />
         </radialGradient>
       </defs>
-      {/* Moon shadow */}
-      <path d="M 20 14.5 A 9 9 0 1 1 11 5 7 7 0 0 0 20 14.5 Z"
-        fill={done ? '#22c55e' : '#6b4fa0'} fillOpacity="0.2" transform="translate(0.4,0.4)" />
-      {/* Moon */}
-      <path d="M 20 14.5 A 9 9 0 1 1 11 5 7 7 0 0 0 20 14.5 Z"
-        fill="url(#ishaGrad)" />
-      {/* Highlight */}
-      <path d="M 11 5 Q 7 7 5 11 Q 5 8 8 5 Z" fill="white" fillOpacity="0.25" />
-      {/* Stars */}
-      {[{ cx: 21, cy: 7, r: 1.1 }, { cx: 24, cy: 12, r: 0.75 }, { cx: 19, cy: 4.5, r: 0.75 }].map((s, i) => (
+      <rect x="0" y="0" width="28" height="28" rx="4" fill={`url(#ishaBg${done})`} />
+      <path d="M 19 15 A 9.5 9.5 0 1 1 9.5 5.5 7.5 7.5 0 0 0 19 15 Z" fill={col} fillOpacity="0.2" transform="translate(0.5,0.5)" />
+      <path d="M 19 15 A 9.5 9.5 0 1 1 9.5 5.5 7.5 7.5 0 0 0 19 15 Z" fill={`url(#ishaMoon${done})`} />
+      <path d="M 9.5 5.5 Q 5.5 8 4 13 Q 4.5 8 8 5 Z" fill="white" fillOpacity="0.2" />
+      {stars.map((s, i) => (
         <g key={i}>
-          <circle cx={s.cx} cy={s.cy} r={s.r} fill={done ? '#22c55e' : '#c5a059'} fillOpacity="0.9" />
-          <circle cx={s.cx - s.r * 0.35} cy={s.cy - s.r * 0.35} r={s.r * 0.45} fill="white" fillOpacity="0.7" />
+          <circle cx={s.cx} cy={s.cy} r={s.r} fill={done ? '#86efac' : '#c4b5fd'} fillOpacity="0.95" />
+          <circle cx={s.cx - s.r * 0.4} cy={s.cy - s.r * 0.4} r={s.r * 0.42} fill="white" fillOpacity="0.8" />
         </g>
       ))}
     </svg>

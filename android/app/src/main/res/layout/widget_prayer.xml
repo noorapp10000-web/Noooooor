@@ -64,14 +64,27 @@
             android:orientation="vertical"
             android:gravity="end">
 
-            <TextView
-                android:id="@+id/wg_city"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=""
-                android:textColor="#CCFFFFFF"
-                android:textSize="9sp"
-                android:gravity="end" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layoutDirection="rtl">
+                <ImageView
+                    android:layout_width="9dp"
+                    android:layout_height="9dp"
+                    android:src="@drawable/ic_location_pin"
+                    android:layout_marginEnd="2dp"
+                    android:alpha="0.85" />
+                <TextView
+                    android:id="@+id/wg_city"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="9sp"
+                    android:gravity="end" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/wg_current_prayer"

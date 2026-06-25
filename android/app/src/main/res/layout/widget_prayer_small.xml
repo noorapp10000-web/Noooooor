@@ -16,14 +16,27 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:layout_marginBottom="3dp">
-        <TextView
-            android:id="@+id/wg_city"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text=""
-            android:textColor="#AAFFFFFF"
-            android:textSize="7.5sp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layoutDirection="rtl">
+            <ImageView
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:src="@drawable/ic_location_pin"
+                android:layout_marginEnd="2dp"
+                android:alpha="0.75" />
+            <TextView
+                android:id="@+id/wg_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#AAFFFFFF"
+                android:textSize="7.5sp" />
+        </LinearLayout>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -120,5 +133,11 @@
         android:layout_marginTop="3dp"
         android:gravity="center" />
 
-    <TextView android:id="@+id/wg_hijri_date" android:layout_width="1dp" android:layout_height="1dp" android:text="" android:textColor="#00000000" android:textSize="1sp" android:visibility="gone" />
+    <!-- Hidden placeholders — prevent RemoteViews crash when service sets these IDs -->
+    <TextView android:id="@+id/wg_hijri_date"     android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_username"        android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_day_pct"         android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_current_prayer"  android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_remaining_text"  android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <ImageView android:id="@+id/wg_theme_toggle"   android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
 </LinearLayout>
