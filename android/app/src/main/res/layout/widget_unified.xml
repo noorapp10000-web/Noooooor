@@ -41,7 +41,6 @@
                     android:layout_width="26dp"
                     android:layout_height="26dp"
                     android:layout_marginStart="5dp"
-                   
                     android:background="#30FFFFFF"
                     android:padding="4dp"
                     android:scaleType="fitCenter" />
@@ -69,12 +68,6 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layoutDirection="rtl">
-                <ImageView
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                   
-                    android:layout_marginEnd="2dp"
-                    android:alpha="0.85" />
                 <TextView
                     android:id="@+id/wg_city"
                     android:layout_width="wrap_content"
@@ -130,7 +123,7 @@
             android:textSize="8sp"
             android:visibility="gone" />
 
-        <!-- Prayer name row -->
+        <!-- Prayer name row — icons hidden via Java (vector = EMUI crash) -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -142,9 +135,9 @@
                 android:id="@+id/wg_prayer_name_icon"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-               
                 android:scaleType="fitCenter"
-                android:layout_marginEnd="5dp" />
+                android:layout_marginEnd="5dp"
+                android:visibility="gone" />
             <TextView
                 android:id="@+id/wg_prayer_name"
                 android:layout_width="wrap_content"
@@ -297,23 +290,19 @@
             android:layout_marginTop="4dp"
             android:visibility="gone" />
 
-        <!-- Progress bar: simple track + fill (no ProgressBar widget) -->
-        <FrameLayout
+        <!-- Progress bar using ProgressBar widget (View plain is not allowed in RemoteViews) -->
+        <ProgressBar
             android:id="@+id/wg_progress_container"
+            style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="5dp"
             android:layout_marginTop="4dp"
-            android:visibility="gone">
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#30FFFFFF" />
-            <View
-                android:id="@+id/wg_progress_fill"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:background="#C19A6B" />
-        </FrameLayout>
+            android:progressDrawable="@drawable/widget_progress"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="50"
+            android:layoutDirection="ltr"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/wg_remaining_text"
@@ -348,7 +337,7 @@
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_fajr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_fajr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" android:visibility="gone" />
             <TextView android:id="@+id/wg_fajr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الفجر" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_fajr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -365,7 +354,7 @@
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_asr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_asr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" android:visibility="gone" />
             <TextView android:id="@+id/wg_asr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_asr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -382,7 +371,7 @@
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_dhuhr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_dhuhr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" android:visibility="gone" />
             <TextView android:id="@+id/wg_dhuhr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الظهر" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_dhuhr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -399,7 +388,7 @@
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_maghrib_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_maghrib_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" android:visibility="gone" />
             <TextView android:id="@+id/wg_maghrib_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المغرب" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_maghrib_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -416,7 +405,7 @@
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_isha_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_isha_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" android:visibility="gone" />
             <TextView android:id="@+id/wg_isha_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العشاء" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_isha_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -454,12 +443,14 @@
                 android:textSize="6.5sp" />
         </LinearLayout>
 
-        <View
+        <!-- Separator: TextView used instead of plain View (View not allowed in RemoteViews) -->
+        <TextView
             android:layout_width="1dp"
             android:layout_height="18dp"
             android:background="#25FFFFFF"
             android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp" />
+            android:layout_marginEnd="6dp"
+            android:text="" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -487,7 +478,7 @@
     </LinearLayout>
 
     <!-- ══ ALWAYS-GONE PLACEHOLDERS ══ -->
-    <TextView android:id="@+id/wg_prev_prayer"    android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
-    <TextView android:id="@+id/wg_next_prayer"    android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_prev_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_next_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
 
 </LinearLayout>
