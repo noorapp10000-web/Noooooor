@@ -42,6 +42,7 @@ public class PrayerWidgetService extends Service {
     public static final String KEY_WIDGET_THEME = "widgetTheme";
     public static final String KEY_CITY         = "cityName";
     public static final String KEY_USERNAME     = "username";
+    public static final String KEY_HIJRI_DATE   = "hijriDate";
 
     private static final String CHANNEL_ID = "noor_widget_ch";
     private static final int    NOTIF_ID   = 9001;
@@ -133,11 +134,14 @@ public class PrayerWidgetService extends Service {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         float  lat      = prefs.getFloat(KEY_LAT, Float.MIN_VALUE);
         float  lng      = prefs.getFloat(KEY_LNG, Float.MIN_VALUE);
-        String city     = prefs.getString(KEY_CITY, "");
-        String username = prefs.getString(KEY_USERNAME, "");
-        boolean isDark  = !"light".equals(prefs.getString(KEY_WIDGET_THEME, "dark"));
+        String city       = prefs.getString(KEY_CITY, "");
+        String username   = prefs.getString(KEY_USERNAME, "");
+        boolean isDark    = !"light".equals(prefs.getString(KEY_WIDGET_THEME, "dark"));
 
-        String hijri = getHijriDate();
+        // Use hijri date sent from JS (respects user's hijri adjustment).
+        // Falls back to native calculation only if JS hasn't sent one yet.
+        String storedHijri = prefs.getString(KEY_HIJRI_DATE, "");
+        String hijri = !storedHijri.isEmpty() ? storedHijri : getHijriDate();
         int dayPct   = getDayPercent();
         PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng) : null;
 

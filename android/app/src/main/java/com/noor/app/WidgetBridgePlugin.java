@@ -25,15 +25,19 @@ public class WidgetBridgePlugin extends Plugin {
             return;
         }
 
-        String city = call.getString("city", "");
+        String city      = call.getString("city", "");
+        String username  = call.getString("username", "");
+        String hijriDate = call.getString("hijriDate", "");
 
         SharedPreferences prefs = getContext().getSharedPreferences(
             PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE
         );
         prefs.edit()
-            .putFloat(PrayerWidgetService.KEY_LAT,  lat)
-            .putFloat(PrayerWidgetService.KEY_LNG,  lng)
-            .putString(PrayerWidgetService.KEY_CITY, city != null ? city : "")
+            .putFloat(PrayerWidgetService.KEY_LAT,        lat)
+            .putFloat(PrayerWidgetService.KEY_LNG,        lng)
+            .putString(PrayerWidgetService.KEY_CITY,      city      != null ? city      : "")
+            .putString(PrayerWidgetService.KEY_USERNAME,  username  != null ? username  : "")
+            .putString(PrayerWidgetService.KEY_HIJRI_DATE, hijriDate != null ? hijriDate : "")
             .putLong("savedAt", System.currentTimeMillis())
             .apply();
 

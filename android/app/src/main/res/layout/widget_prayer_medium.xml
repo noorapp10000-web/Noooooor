@@ -192,39 +192,21 @@
     </LinearLayout>
 
     <!-- ── Progress ── -->
-    <LinearLayout
+    <!-- Percentage label above the bar only — no prev/next prayer names on sides -->
+    <TextView
+        android:id="@+id/wg_progress_pct"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:text=""
+        android:gravity="center"
+        android:textColor="#77C19A6B"
+        android:textSize="7sp"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="2dp"
-        android:layoutDirection="ltr">
-        <TextView
-            android:id="@+id/wg_prev_prayer"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#60C19A6B"
-            android:textSize="7sp"
-            android:gravity="start" />
-        <TextView
-            android:id="@+id/wg_progress_pct"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#77C19A6B"
-            android:textSize="7sp" />
-        <TextView
-            android:id="@+id/wg_next_prayer"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#60C19A6B"
-            android:textSize="7sp"
-            android:gravity="end" />
-    </LinearLayout>
+        android:layout_marginBottom="2dp" />
+
+    <!-- Hidden placeholders -->
+    <TextView android:id="@+id/wg_prev_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_next_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
 
     <ProgressBar
         android:id="@+id/wg_progress"

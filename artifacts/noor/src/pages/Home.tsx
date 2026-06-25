@@ -271,14 +271,30 @@ export function Home() {
   const [countdown, setCountdown] = useState('');
 
   // ── Android Widget Bridge ────────────────────────────────────────────────
-  // Runs on the native APK only. Sends 3 days of prayer timestamps to SharedPreferences
-  // so the home screen widget countdown works even when the app is fully closed.
+  // Sends prayer times + city + username + hijri date to SharedPreferences so the
+  // widget works even when the app is fully closed. Re-runs when any of these change.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     if (!lat || !lng) return;
     const prayers = buildWidgetPayload(lat, lng);
-    NoorWidget.setPrayerTimes({ prayers, lat, lng }).catch(() => {});
-  }, [lat, lng]);
+    const todayHijri = (() => {
+      if (hijri && hijriAdjust === 0) {
+        return `${hijri.day} ${hijri.month?.ar ?? ''} ${hijri.year} هـ`;
+      }
+      const d = new Date(Date.now() + hijriAdjust * 86400000);
+      return new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      }).format(d);
+    })();
+    NoorWidget.setPrayerTimes({
+      prayers,
+      lat,
+      lng,
+      city: userProfile?.governorateName ?? '',
+      username: userProfile?.name ?? '',
+      hijriDate: todayHijri,
+    }).catch(() => {});
+  }, [lat, lng, userProfile?.governorateName, userProfile?.name, hijri, hijriAdjust]);
 
   useEffect(() => {
     if (!times || dateOffset !== 0) return;

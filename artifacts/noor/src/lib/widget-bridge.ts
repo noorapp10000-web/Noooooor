@@ -11,14 +11,19 @@ export interface NoorWidgetPlugin {
     prayers: PrayerEntry[];
     lat: number;
     lng: number;
+    city?: string;
+    username?: string;
+    hijriDate?: string;
   }): Promise<void>;
   setTheme(data: { theme: 'light' | 'dark' }): Promise<void>;
+  setUsername(data: { username: string }): Promise<void>;
 }
 
 const NoorWidget = registerPlugin<NoorWidgetPlugin>('NoorWidget', {
   web: {
     async setPrayerTimes() {},
     async setTheme() {},
+    async setUsername() {},
   } as NoorWidgetPlugin,
 });
 
