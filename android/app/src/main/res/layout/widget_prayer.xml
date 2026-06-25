@@ -556,10 +556,11 @@
 
         <ProgressBar
             android:id="@+id/wg_progress"
-            style="?android:attr/progressBarStyleHorizontal"
+            style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="5dp"
             android:progressDrawable="@drawable/widget_progress"
+            android:indeterminate="false"
             android:max="100"
             android:progress="50"
             android:layoutDirection="ltr"
