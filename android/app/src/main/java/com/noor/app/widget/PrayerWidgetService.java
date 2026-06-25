@@ -46,6 +46,17 @@ public class PrayerWidgetService extends Service {
     public static final String KEY_USERNAME     = "username";
     public static final String KEY_HIJRI_DATE   = "hijriDate";
 
+    // Cached prayer times — written after each successful state compute,
+    // read immediately by PrayerWidget before the service starts
+    public static final String KEY_CACHE_FAJR    = "c_fajr";
+    public static final String KEY_CACHE_DHUHR   = "c_dhuhr";
+    public static final String KEY_CACHE_ASR     = "c_asr";
+    public static final String KEY_CACHE_MAGHRIB = "c_maghrib";
+    public static final String KEY_CACHE_ISHA    = "c_isha";
+    public static final String KEY_CACHE_NEXT    = "c_next";
+    public static final String KEY_CACHE_NEXT_T  = "c_next_t";
+    public static final String KEY_CACHE_PREV    = "c_prev";
+
     private static final String CHANNEL_ID = "noor_widget_ch";
     private static final int    NOTIF_ID   = 9001;
 
@@ -145,6 +156,24 @@ public class PrayerWidgetService extends Service {
         int dayPct   = getDayPercent();
 
         PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng) : null;
+
+        // Persist latest prayer times so PrayerWidget can show them immediately
+        // (before this service has a chance to run) — only write when next prayer changes
+        if (state != null) {
+            String prevCached = prefs.getString(KEY_CACHE_NEXT, "");
+            if (!state.nextName.equals(prevCached)) {
+                prefs.edit()
+                    .putString(KEY_CACHE_FAJR,    state.allTimes[0])
+                    .putString(KEY_CACHE_DHUHR,   state.allTimes[1])
+                    .putString(KEY_CACHE_ASR,     state.allTimes[2])
+                    .putString(KEY_CACHE_MAGHRIB, state.allTimes[3])
+                    .putString(KEY_CACHE_ISHA,    state.allTimes[4])
+                    .putString(KEY_CACHE_NEXT,    state.nextName)
+                    .putString(KEY_CACHE_NEXT_T,  state.nextFormattedTime)
+                    .putString(KEY_CACHE_PREV,    state.prevName)
+                    .apply();
+            }
+        }
 
         Intent openApp = new Intent(this, MainActivity.class);
         openApp.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
