@@ -1,24 +1,55 @@
-# نُور — تكامل ويدجت Android
+# نُور — تكامل ويدجت Android (المحدَّث)
 
 ## ما الذي يفعله هذا الويدجت؟
-- يعرض على شاشة الهاتف عداداً حياً (ساعات:دقائق:ثوان) للصلاة القادمة
-- يعمل حتى لو التطبيق مقفول تماماً من الخلفية
-- يتحدث كل ثانية عبر Foreground Service
-- يستأنف تلقائياً بعد إعادة تشغيل الهاتف
-- يوفر الطاقة: يتوقف عن التحديث عند إيقاف الشاشة ويستأنف فور فتحها
-- بيانات الصلاة مخزنة لـ 3 أيام قادمة — لا تحتاج إنترنت
+
+- عداد حي (ساعات:دقائق:ثوان) للصلاة القادمة
+- **شريط تقدم الوقت** بين الصلاة السابقة والقادمة
+- **التاريخ الهجري** (API 24+)
+- **أيقونة الصلاة** (🌅🌤️☀️🌇🌙) قبل الاسم
+- **اسم المدينة** في رأس الويدجت
+- **3 أحجام** للويدجت (كبير / متوسط / صغير) — تلقائي حسب حجم الويدجت على الشاشة
+- يعمل حتى لو التطبيق مقفول تماماً
+- يتوقف عند إيقاف الشاشة لتوفير البطارية
+- بيانات الصلاة مخزنة لـ 3 أيام قادمة
+
+---
+
+## الملفات
+
+### Layout
+| الملف | الاستخدام |
+|--------|-----------|
+| `res/layout/widget_prayer.xml` | **كبير** 4×3 — كل الميزات |
+| `res/layout/widget_prayer_medium.xml` | **متوسط** 4×2 — بدون تاريخ هجري |
+| `res/layout/widget_prayer_small.xml` | **صغير** 2×2 — اسم الصلاة + hh:mm فقط |
+
+### Drawable
+| الملف | الوصف |
+|--------|--------|
+| `res/drawable/widget_bg.xml` | خلفية glassmorphism داكنة |
+| `res/drawable/widget_card_bg.xml` | بطاقة زجاجية شفافة |
+| `res/drawable/widget_number_bg.xml` | خلفية أرقام العداد |
+| `res/drawable/widget_progress.xml` | شريط التقدم الذهبي |
+
+### Kotlin
+| الملف | الوصف |
+|--------|--------|
+| `java/widget/PrayerWidgetService.kt` | Service رئيسي — كل منطق التحديث |
+| `java/widget/PrayerWidget.kt` | AppWidgetProvider |
+| `java/widget/BootReceiver.kt` | إعادة التشغيل بعد reboot |
+| `java/WidgetBridgePlugin.kt` | Capacitor plugin — جسر JS ↔ Android |
 
 ---
 
 ## خطوات التكامل
 
-### 1. تحديد اسم الحزمة (Package Name)
+### 1. تحديد اسم الحزمة
 
-افتح `android/app/src/main/AndroidManifest.xml` وانظر إلى السطر:
+افتح `android/app/src/main/AndroidManifest.xml`:
 ```xml
 <manifest xmlns:android="..." package="YOUR_ACTUAL_PACKAGE_NAME">
 ```
-استبدل `YOUR_PACKAGE_NAME` في جميع ملفات `.kt` بهذه القيمة.
+استبدل `YOUR_PACKAGE_NAME` في جميع ملفات `.kt`.
 
 ---
 
@@ -26,19 +57,21 @@
 
 ```
 android-widget/res/layout/widget_prayer.xml
-  → android/app/src/main/res/layout/widget_prayer.xml
+android-widget/res/layout/widget_prayer_medium.xml
+android-widget/res/layout/widget_prayer_small.xml
+  → android/app/src/main/res/layout/
 
 android-widget/res/xml/prayer_widget_info.xml
-  → android/app/src/main/res/xml/prayer_widget_info.xml
+  → android/app/src/main/res/xml/
 
 android-widget/res/drawable/widget_bg.xml
 android-widget/res/drawable/widget_card_bg.xml
 android-widget/res/drawable/widget_number_bg.xml
+android-widget/res/drawable/widget_progress.xml
   → android/app/src/main/res/drawable/
 
 android-widget/res/values/widget_strings.xml
-  → android/app/src/main/res/values/widget_strings.xml
-  (أو أضف المحتوى إلى strings.xml الموجود)
+  → android/app/src/main/res/values/
 
 android-widget/java/widget/PrayerWidget.kt
 android-widget/java/widget/PrayerWidgetService.kt
@@ -51,9 +84,9 @@ android-widget/java/WidgetBridgePlugin.kt
 
 ---
 
-### 3. إنشاء أيقونة الإشعار
+### 3. أيقونة الإشعار
 
-أنشئ ملف `ic_stat_noor.xml` في `res/drawable/` (أيقونة بيضاء على شفاف):
+أنشئ `res/drawable/ic_stat_noor.xml`:
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -66,9 +99,9 @@ android-widget/java/WidgetBridgePlugin.kt
 
 ---
 
-### 4. تعديل AndroidManifest.xml
+### 4. AndroidManifest.xml
 
-أضف داخل `<manifest>` (قبل `<application>`):
+أضف داخل `<manifest>`:
 ```xml
 <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -77,7 +110,6 @@ android-widget/java/WidgetBridgePlugin.kt
 
 أضف داخل `<application>`:
 ```xml
-<!-- ── Widget ──────────────────────────────────────────────────────── -->
 <receiver
     android:name=".widget.PrayerWidget"
     android:exported="true">
@@ -121,35 +153,83 @@ class MainActivity : BridgeActivity() {
 
 ---
 
-### 6. الكود الموجود في التطبيق
+### 6. استدعاء البلاجن من JavaScript
 
-ملف `src/lib/widget-bridge.ts` و`src/pages/Home.tsx` محدّثان تلقائياً.
-التطبيق يرسل بيانات الصلاة للويدجت تلقائياً عند كل فتح.
+```typescript
+import { Plugins } from '@capacitor/core';
+const { NoorWidget } = Plugins as any;
+
+// استدعه عند فتح التطبيق أو تحديث مواقيت الصلاة
+await NoorWidget.setPrayerTimes({
+  prayers: [
+    { name: "الفجر",  timeMs: 1700000000000, timeStr: "04:35" },
+    { name: "الظهر",  timeMs: 1700043600000, timeStr: "12:05" },
+    { name: "العصر",  timeMs: 1700061600000, timeStr: "15:30" },
+    { name: "المغرب", timeMs: 1700079600000, timeStr: "18:20" },
+    { name: "العشاء", timeMs: 1700089200000, timeStr: "19:50" },
+    // أضف 3 أيام على الأقل لضمان عمل الويدجت بدون إنترنت
+  ],
+  city: "القاهرة",  // اسم المدينة — يظهر في رأس الويدجت
+  lat: 30.0,
+  lng: 31.2,
+});
+```
+
+**تنبيه:** `timeMs` هو Unix timestamp بالميلي ثانية (`Date.getTime()`).
 
 ---
 
-## ملاحظات مهمة
+## أحجام الويدجت
 
-### Android 14+ (API 34)
-إذا استخدمت `targetSdk = 34+` في `build.gradle`، يجب إضافة:
-```xml
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-```
-وهذا موجود مسبقاً في الخطوة 4.
+الخدمة تختار التصميم تلقائياً حسب حجم الويدجت على الشاشة:
 
-### الإشعار الدائم
-Android يطلب إشعاراً دائماً للـ Foreground Service. الإشعار:
-- أولوية MIN (أصغر ظهور ممكن)
-- بلا صوت أو اهتزاز
-- المستخدم يستطيع إخفاءه من إعدادات الإشعارات
-- يُحدَّث تلقائياً ليعرض اسم الصلاة + العداد
+| الحجم | الأبعاد التقريبية | ما يُعرَض |
+|--------|-------------------|-----------|
+| **كبير** | ≥ 180×155dp | كل الميزات: تاريخ هجري + مدينة + اسم صلاة + عداد + شريط تقدم |
+| **متوسط** | ≥ 180×130dp | مدينة + اسم صلاة + عداد + شريط تقدم |
+| **صغير** | < 180×130dp | اسم صلاة + hh:mm فقط |
 
-### إذا كان الويدجت يعرض "--"
+المستخدم يغير الحجم بالسحب — الويدجت يتكيف تلقائياً.
+
+---
+
+## التاريخ الهجري
+
+يستخدم `android.icu.util.IslamicCalendar` المدمج في Android منذ API 24.  
+على الأجهزة الأقدم (API 21–23) لا يُعرض التاريخ الهجري.
+
+---
+
+## أيقونات الصلوات
+
+| الصلاة | الأيقونة |
+|---------|----------|
+| الفجر  | 🌅 |
+| الشروق | 🌄 |
+| الظهر  | ☀️ |
+| العصر  | 🌤️ |
+| المغرب | 🌇 |
+| العشاء | 🌙 |
+
+---
+
+## تصميم Glassmorphism
+
+الخلفية طبقتان:
+1. تدرج داكن (نيلي/بنفسجي) بشفافية 80% يسمح بظهور الخلفية خلف الويدجت
+2. طبقة ذهبية خفيفة + حافة ذهبية شفافة تعطي المظهر الزجاجي
+
+> ملاحظة: Android RemoteViews لا يدعم blur حقيقي. التأثير محاكى بالشفافية.
+
+---
+
+## إذا كان الويدجت يعرض "--"
+
 افتح التطبيق مرة واحدة — سيُخزن بيانات الصلاة للأيام الثلاثة القادمة.
 
-### اختبار الويدجت
+## اختبار الويدجت
+
 1. بناء وتثبيت APK
-2. اضغط طويلاً على الشاشة الرئيسية → Widgets → ابحث عن "نُور"
-3. اسحبه إلى الشاشة
+2. اضغط طويلاً على الشاشة → Widgets → "نُور"
+3. اسحبه وغيّر حجمه (صغير / متوسط / كبير) لترى التصميمات الثلاثة
 4. افتح التطبيق مرة واحدة لتزويد الويدجت بالبيانات
-5. سيبدأ العداد يعمل فوراً
