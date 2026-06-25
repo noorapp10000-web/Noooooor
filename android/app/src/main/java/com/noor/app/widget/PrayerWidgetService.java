@@ -194,6 +194,9 @@ public class PrayerWidgetService extends Service {
                 rv.setInt(R.id.wg_root, "setBackgroundResource",
                     isDark ? R.drawable.widget_bg : R.drawable.widget_bg_light);
 
+                // Theme toggle is now a TextView — show sun/moon glyph
+                rv.setTextViewText(R.id.wg_theme_toggle, isDark ? "◑" : "☀");
+                rv.setTextColor(R.id.wg_theme_toggle, isDark ? 0xFFFFFFFF : 0xFF7A5C2E);
                 rv.setInt(R.id.wg_theme_toggle, "setBackgroundResource",
                     isDark ? R.drawable.widget_theme_btn_bg_dark : R.drawable.widget_theme_btn_bg_light);
                 rv.setOnClickPendingIntent(R.id.wg_theme_toggle, togglePi);
@@ -210,6 +213,12 @@ public class PrayerWidgetService extends Service {
                 rv.setTextColor(R.id.wg_hours,   textPrimary);
                 rv.setTextColor(R.id.wg_minutes, textPrimary);
                 rv.setTextColor(R.id.wg_seconds, textPrimary);
+
+                // Counter box backgrounds: semi-transparent white in dark, semi-transparent black in light
+                int counterBg = isDark ? 0x20FFFFFF : 0x18000000;
+                rv.setInt(R.id.wg_hours,   "setBackgroundColor", counterBg);
+                rv.setInt(R.id.wg_minutes, "setBackgroundColor", counterBg);
+                rv.setInt(R.id.wg_seconds, "setBackgroundColor", counterBg);
 
                 float counterSp, prayerNameSp, adhanSp;
                 if (tier == TIER_LARGE) {
@@ -281,6 +290,7 @@ public class PrayerWidgetService extends Service {
                     if (tier == TIER_MEDIUM || tier == TIER_LARGE) {
                         rv.setTextViewText(R.id.wg_progress_pct,
                             state.progress + "% من الوقت بين " + state.prevName + " و" + state.nextName);
+                        rv.setProgressBar(R.id.wg_progress_container, 100, state.progress, false);
                         rv.setTextViewText(R.id.wg_prev_prayer, state.prevName);
                         rv.setTextViewText(R.id.wg_next_prayer, state.nextName);
                         rv.setTextViewText(R.id.wg_remaining_text,
