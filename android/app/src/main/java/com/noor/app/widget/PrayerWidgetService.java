@@ -214,11 +214,12 @@ public class PrayerWidgetService extends Service {
                 rv.setTextColor(R.id.wg_minutes, textPrimary);
                 rv.setTextColor(R.id.wg_seconds, textPrimary);
 
-                // Counter box backgrounds: semi-transparent white in dark, semi-transparent black in light
-                int counterBg = isDark ? 0x20FFFFFF : 0x18000000;
-                rv.setInt(R.id.wg_hours,   "setBackgroundColor", counterBg);
-                rv.setInt(R.id.wg_minutes, "setBackgroundColor", counterBg);
-                rv.setInt(R.id.wg_seconds, "setBackgroundColor", counterBg);
+                // Counter box backgrounds: rounded corners via drawable
+                int counterBoxRes = isDark ? R.drawable.widget_counter_box_dark
+                                           : R.drawable.widget_counter_box_light;
+                rv.setInt(R.id.wg_hours,   "setBackgroundResource", counterBoxRes);
+                rv.setInt(R.id.wg_minutes, "setBackgroundResource", counterBoxRes);
+                rv.setInt(R.id.wg_seconds, "setBackgroundResource", counterBoxRes);
 
                 float counterSp, prayerNameSp, adhanSp;
                 if (tier == TIER_LARGE) {

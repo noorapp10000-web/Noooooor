@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Active cell: warm golden fill -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#40C19A6B" />
+            <gradient
+                android:type="linear"
+                android:angle="90"
+                android:startColor="#60C19A6B"
+                android:endColor="#50A87D4E" />
             <corners android:radius="8dp" />
         </shape>
     </item>

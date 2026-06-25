@@ -166,11 +166,12 @@ public class PrayerWidget extends AppWidgetProvider {
             rv.setInt(R.id.wg_theme_toggle, "setBackgroundResource",
                 isDark ? R.drawable.widget_theme_btn_bg_dark : R.drawable.widget_theme_btn_bg_light);
 
-            // Counter box backgrounds: visible in both dark and light modes
-            int counterBg = isDark ? 0x20FFFFFF : 0x18000000;
-            rv.setInt(R.id.wg_hours,   "setBackgroundColor", counterBg);
-            rv.setInt(R.id.wg_minutes, "setBackgroundColor", counterBg);
-            rv.setInt(R.id.wg_seconds, "setBackgroundColor", counterBg);
+            // Counter box backgrounds: rounded corners via drawable
+            int counterBoxRes = isDark ? R.drawable.widget_counter_box_dark
+                                       : R.drawable.widget_counter_box_light;
+            rv.setInt(R.id.wg_hours,   "setBackgroundResource", counterBoxRes);
+            rv.setInt(R.id.wg_minutes, "setBackgroundResource", counterBoxRes);
+            rv.setInt(R.id.wg_seconds, "setBackgroundResource", counterBoxRes);
 
             rv.setTextViewText(R.id.wg_city, city);
             rv.setTextColor(R.id.wg_city, textSecondary);
