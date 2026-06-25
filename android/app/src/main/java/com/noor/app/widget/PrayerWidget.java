@@ -5,6 +5,10 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.widget.RemoteViews;
+
+import com.noor.app.R;
 
 public class PrayerWidget extends AppWidgetProvider {
 
@@ -12,6 +16,9 @@ public class PrayerWidget extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        for (int id : appWidgetIds) {
+            applyPlaceholder(context, appWidgetManager, id);
+        }
         PrayerWidgetService.start(context);
     }
 
@@ -26,6 +33,13 @@ public class PrayerWidget extends AppWidgetProvider {
     }
 
     @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
+                                          int appWidgetId, Bundle newOptions) {
+        applyPlaceholder(context, appWidgetManager, appWidgetId);
+        PrayerWidgetService.start(context);
+    }
+
+    @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (ACTION_TOGGLE_THEME.equals(intent.getAction())) {
@@ -36,5 +50,31 @@ public class PrayerWidget extends AppWidgetProvider {
             prefs.edit().putString(PrayerWidgetService.KEY_WIDGET_THEME, next).apply();
             PrayerWidgetService.start(context);
         }
+    }
+
+    private void applyPlaceholder(Context context, AppWidgetManager awm, int widgetId) {
+        try {
+            Bundle opts = awm.getAppWidgetOptions(widgetId);
+            int minW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250);
+            int minH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160);
+
+            int layoutId;
+            if (minW < 180 || minH < 110) {
+                layoutId = R.layout.widget_prayer_small;
+            } else if (minH < 150) {
+                layoutId = R.layout.widget_prayer_medium;
+            } else {
+                layoutId = R.layout.widget_prayer;
+            }
+
+            SharedPreferences prefs = context.getSharedPreferences(
+                PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE);
+            boolean isDark = !"light".equals(prefs.getString(PrayerWidgetService.KEY_WIDGET_THEME, "dark"));
+
+            RemoteViews rv = new RemoteViews(context.getPackageName(), layoutId);
+            rv.setInt(R.id.wg_root, "setBackgroundResource",
+                isDark ? R.drawable.widget_bg : R.drawable.widget_bg_light);
+            awm.updateAppWidget(widgetId, rv);
+        } catch (Exception ignored) {}
     }
 }
