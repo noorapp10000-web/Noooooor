@@ -71,7 +71,7 @@ public class PrayerWidget extends AppWidgetProvider {
             int layoutId;
             if (minW < 180 || minH < 110) {
                 layoutId = R.layout.widget_prayer_small;
-            } else if (minH < 150) {
+            } else if (minH < 150 || minH > 450) {
                 layoutId = R.layout.widget_prayer_medium;
             } else {
                 layoutId = R.layout.widget_prayer;
