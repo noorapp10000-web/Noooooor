@@ -473,10 +473,14 @@ public class PrayerWidgetService extends Service {
 
     public static void start(Context context) {
         Intent intent = new Intent(context, PrayerWidgetService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
-        } else {
-            context.startService(intent);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception e) {
+            try { context.startService(intent); } catch (Exception ignored) {}
         }
     }
 
