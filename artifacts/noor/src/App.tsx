@@ -149,7 +149,7 @@ function syncWidgetTheme() {
 }
 
 function App() {
-  const [splashDone, setSplashDone] = useState(false);
+  const [splashDone, setSplashDone] = useState(() => sessionStorage.getItem('noor_splash_shown') === '1');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   // Global error shield — prevent uncaught errors from crashing WebView
@@ -182,6 +182,7 @@ function App() {
   }, []);
 
   const handleSplashDone = useCallback(() => {
+    sessionStorage.setItem('noor_splash_shown', '1');
     setSplashDone(true);
     document.documentElement.dir = 'rtl';
   }, []);

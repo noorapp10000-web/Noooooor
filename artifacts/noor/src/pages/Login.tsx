@@ -64,8 +64,7 @@ export function Login({ onComplete }: LoginProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  function syncName() {
-    const val = nameInputRef.current?.value ?? '';
+  function syncName(val: string) {
     setName(val);
     setCanNext(val.trim().length > 0);
   }
@@ -88,9 +87,8 @@ export function Login({ onComplete }: LoginProps) {
   }
 
   function handleNameNext() {
-    const val = nameInputRef.current?.value ?? name;
-    if (!val.trim()) return;
-    setName(val.trim());
+    if (!name.trim()) return;
+    setName(name.trim());
     setStep('city');
   }
 
@@ -242,17 +240,16 @@ export function Login({ onComplete }: LoginProps) {
                   <input
                     ref={nameInputRef}
                     type="text"
-                    defaultValue=""
+                    value={name}
                     placeholder="اسمك..."
                     maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
                     style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
                     onFocus={() => setFocused(true)}
-                    onBlur={() => { setFocused(false); syncName(); }}
-                    onInput={syncName}
-                    onChange={syncName}
-                    onCompositionEnd={syncName}
-                    onKeyDown={e => { syncName(); if (e.key === 'Enter' && nameInputRef.current?.value.trim()) handleNameNext(); }}
+                    onBlur={() => setFocused(false)}
+                    onChange={e => syncName(e.target.value)}
+                    onCompositionEnd={e => syncName((e.target as HTMLInputElement).value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && name.trim()) handleNameNext(); }}
                   />
                 </div>
               </div>

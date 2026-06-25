@@ -380,6 +380,7 @@ function HadithReader({
   const [page, setPage] = useState(1);
   const [highlightNum, setHighlightNum] = useState<number | undefined>(initialHadithNum);
   const [searchQuery, setSearchQuery] = useState('');
+  const [committedQuery, setCommittedQuery] = useState('');
   const [searchMode, setSearchMode] = useState(false);
 
   useEffect(() => {
@@ -447,7 +448,7 @@ function HadithReader({
             className="overflow-hidden mb-4"
           >
             <div
-              className="flex items-center gap-2 rounded-2xl px-4 py-3"
+              className="flex items-center gap-2 rounded-2xl px-4 py-3 mb-2"
               style={{
                 background: isDark ? 'rgba(193,154,107,0.06)' : 'rgba(255,255,255,0.8)',
                 border: '1.5px solid rgba(193,154,107,0.3)',
@@ -460,27 +461,42 @@ function HadithReader({
                 placeholder="ابحث في الكتاب..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && searchQuery.trim()) setCommittedQuery(searchQuery); }}
                 className="flex-1 bg-transparent outline-none text-right"
                 style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#2C1E16' }}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')}>
+                <button onClick={() => { setSearchQuery(''); setCommittedQuery(''); }}>
                   <X className="w-4 h-4 text-[#C19A6B]" />
                 </button>
               )}
             </div>
+            <button
+              onClick={() => { if (searchQuery.trim()) setCommittedQuery(searchQuery); }}
+              disabled={!searchQuery.trim()}
+              className="w-full py-2.5 rounded-2xl text-sm font-bold transition-all disabled:opacity-40"
+              style={{
+                background: 'linear-gradient(135deg, #C19A6B, #a07840)',
+                color: '#fff',
+                fontFamily: '"Tajawal", sans-serif',
+                boxShadow: searchQuery.trim() ? '0 2px 10px rgba(193,154,107,0.35)' : 'none',
+              }}
+            >
+              بحث الآن
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Search results */}
-      {searchMode && searchQuery && (
+      {searchMode && committedQuery && (
         <SearchResults
-          query={searchQuery}
+          query={committedQuery}
           book={book}
           onOpenBook={(b, num) => {
             setSearchMode(false);
             setSearchQuery('');
+            setCommittedQuery('');
             const idx = hadiths.findIndex(h => h.n === num);
             if (idx !== -1) {
               const p = Math.floor(idx / PAGE_SIZE) + 1;
@@ -492,7 +508,7 @@ function HadithReader({
       )}
 
       {/* Regular content */}
-      {!(searchMode && searchQuery) && (
+      {!(searchMode && committedQuery) && (
         <>
           {loading && (
             <div className="space-y-3">
