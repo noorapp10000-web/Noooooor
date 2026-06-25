@@ -360,7 +360,7 @@ public class PrayerWidgetService extends Service {
             rv.setInt(R.id.wg_main_card, "setBackgroundResource",
                 isDark ? R.drawable.widget_card_bg : R.drawable.widget_card_bg_light);
         } else {
-            rv.setInt(R.id.wg_main_card, "setBackgroundResource", android.R.color.transparent);
+            rv.setInt(R.id.wg_main_card, "setBackgroundColor", 0x00000000);
         }
 
         // Main card inner elements

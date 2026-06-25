@@ -315,17 +315,6 @@
                 android:background="#C19A6B" />
         </FrameLayout>
 
-        <!-- Hidden ProgressBar kept for setProgressBar() compatibility -->
-        <ProgressBar
-            android:id="@+id/wg_progress"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:progressDrawable="@drawable/widget_progress"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="0"
-            android:visibility="gone" />
-
         <TextView
             android:id="@+id/wg_remaining_text"
             android:layout_width="match_parent"
