@@ -160,7 +160,7 @@ public class PrayerWidgetService extends Service {
             int layoutId;
             if (minW < 180 || minH < 110) {
                 layoutId = R.layout.widget_prayer_small;
-            } else if (minH < 150 || minH > 450) {
+            } else if (minH < 160) {
                 layoutId = R.layout.widget_prayer_medium;
             } else {
                 layoutId = R.layout.widget_prayer;
@@ -169,14 +169,20 @@ public class PrayerWidgetService extends Service {
             // ── حجم الخطوط بناءً على ارتفاع الويدجت ─────────────────────────
             float counterSp, prayerNameSp, adhanSp, labelSp;
             if (layoutId == R.layout.widget_prayer) {
-                if (minH >= 300) {
-                    counterSp    = 30f; prayerNameSp = 28f;
+                if (minH >= 500) {
+                    counterSp    = 36f; prayerNameSp = 34f;
+                    adhanSp      = 13f; labelSp      = 11f;
+                } else if (minH >= 380) {
+                    counterSp    = 32f; prayerNameSp = 30f;
+                    adhanSp      = 12f; labelSp      = 10f;
+                } else if (minH >= 280) {
+                    counterSp    = 28f; prayerNameSp = 26f;
                     adhanSp      = 11f; labelSp      = 9f;
-                } else if (minH >= 220) {
-                    counterSp    = 26f; prayerNameSp = 24f;
+                } else if (minH >= 200) {
+                    counterSp    = 24f; prayerNameSp = 22f;
                     adhanSp      = 10f; labelSp      = 8.5f;
                 } else {
-                    counterSp    = 22f; prayerNameSp = 22f;
+                    counterSp    = 20f; prayerNameSp = 20f;
                     adhanSp      = 9f;  labelSp      = 7.5f;
                 }
             } else if (layoutId == R.layout.widget_prayer_medium) {
