@@ -11,6 +11,7 @@ import { AudioProvider } from "@/contexts/AudioContext";
 import { AppSettingsProvider, useAppSettings } from "@/contexts/AppSettingsContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BatteryOptPrompt } from "@/components/BatteryOptPrompt";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { TutorialMascot } from "@/components/TutorialMascot";
 import { TutorialProvider } from "@/components/TutorialMascotContext";
 
@@ -282,6 +283,7 @@ function App() {
 
   return (
     <>
+      <OfflineBanner />
       {!splashDone && <SplashScreen onDone={handleSplashDone} />}
       {splashDone && isLoggedIn === null && LoadingScreen}
       {splashDone && isLoggedIn === false && (
