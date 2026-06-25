@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.TypedValue;
 import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
@@ -165,6 +166,27 @@ public class PrayerWidgetService extends Service {
                 layoutId = R.layout.widget_prayer;
             }
 
+            // ── حجم الخطوط بناءً على ارتفاع الويدجت ─────────────────────────
+            float counterSp, prayerNameSp, adhanSp, labelSp;
+            if (layoutId == R.layout.widget_prayer) {
+                if (minH >= 300) {
+                    counterSp    = 30f; prayerNameSp = 28f;
+                    adhanSp      = 11f; labelSp      = 9f;
+                } else if (minH >= 220) {
+                    counterSp    = 26f; prayerNameSp = 24f;
+                    adhanSp      = 10f; labelSp      = 8.5f;
+                } else {
+                    counterSp    = 22f; prayerNameSp = 22f;
+                    adhanSp      = 9f;  labelSp      = 7.5f;
+                }
+            } else if (layoutId == R.layout.widget_prayer_medium) {
+                counterSp    = 17f; prayerNameSp = 17f;
+                adhanSp      = 8f;  labelSp      = 7f;
+            } else {
+                counterSp    = 15f; prayerNameSp = 15f;
+                adhanSp      = 7.5f; labelSp     = 7f;
+            }
+
             RemoteViews rv = new RemoteViews(getPackageName(), layoutId);
 
             // ── Theme colors ────────────────────────────────────────────────
@@ -206,6 +228,13 @@ public class PrayerWidgetService extends Service {
             rv.setTextColor(R.id.wg_hours,   textPrimary);
             rv.setTextColor(R.id.wg_minutes, textPrimary);
             rv.setTextColor(R.id.wg_seconds, textPrimary);
+
+            // ── Text size scaling ───────────────────────────────────────────
+            rv.setTextViewTextSize(R.id.wg_hours,       TypedValue.COMPLEX_UNIT_SP, counterSp);
+            rv.setTextViewTextSize(R.id.wg_minutes,     TypedValue.COMPLEX_UNIT_SP, counterSp);
+            rv.setTextViewTextSize(R.id.wg_seconds,     TypedValue.COMPLEX_UNIT_SP, counterSp);
+            rv.setTextViewTextSize(R.id.wg_prayer_name, TypedValue.COMPLEX_UNIT_SP, prayerNameSp);
+            rv.setTextViewTextSize(R.id.wg_adhan_time,  TypedValue.COMPLEX_UNIT_SP, adhanSp);
 
             // ── Prayer name ─────────────────────────────────────────────────
             rv.setTextColor(R.id.wg_prayer_name, textPrimary);
