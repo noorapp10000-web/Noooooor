@@ -197,7 +197,7 @@ public class PrayerWidget extends AppWidgetProvider {
             if (hasCached) {
                 rv.setTextViewText(R.id.wg_prayer_name,    cachedNext);
                 rv.setTextViewText(R.id.wg_adhan_time,     "وقت الأذان " + cachedNextT);
-                rv.setTextViewText(R.id.wg_current_prayer, "الصلاة الحالية: " + cachedPrev);
+                rv.setTextViewText(R.id.wg_current_prayer, " · " + cachedPrev);
                 rv.setTextViewText(R.id.wg_hours,   "--");
                 rv.setTextViewText(R.id.wg_minutes, "--");
                 rv.setTextViewText(R.id.wg_seconds, "--");

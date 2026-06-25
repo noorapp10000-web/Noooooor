@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Warm cream base — semi-transparent like dark mode (~78% opacity) -->
+    <!-- Warm cream base — ~62% opacity (A0) so wallpaper shows through like dark mode -->
     <item>
         <shape android:shape="rectangle">
             <gradient
                 android:type="linear"
                 android:angle="135"
-                android:startColor="#C8F5EDD8"
-                android:endColor="#C8EEE0C4" />
+                android:startColor="#A0F5EDD8"
+                android:endColor="#A0EEE0C4" />
             <corners android:radius="24dp" />
         </shape>
     </item>
