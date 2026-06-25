@@ -19,37 +19,47 @@ public class PrayerWidget extends AppWidgetProvider {
         for (int id : appWidgetIds) {
             applyPlaceholder(context, appWidgetManager, id);
         }
-        PrayerWidgetService.start(context);
+        safeStart(context);
     }
 
     @Override
     public void onEnabled(Context context) {
-        PrayerWidgetService.start(context);
+        safeStart(context);
     }
 
     @Override
     public void onDisabled(Context context) {
-        context.stopService(new Intent(context, PrayerWidgetService.class));
+        try {
+            context.stopService(new Intent(context, PrayerWidgetService.class));
+        } catch (Exception ignored) {}
     }
 
     @Override
     public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
                                           int appWidgetId, Bundle newOptions) {
         applyPlaceholder(context, appWidgetManager, appWidgetId);
-        PrayerWidgetService.start(context);
+        safeStart(context);
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (ACTION_TOGGLE_THEME.equals(intent.getAction())) {
-            SharedPreferences prefs = context.getSharedPreferences(
-                PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE);
-            String current = prefs.getString(PrayerWidgetService.KEY_WIDGET_THEME, "dark");
-            String next = "dark".equals(current) ? "light" : "dark";
-            prefs.edit().putString(PrayerWidgetService.KEY_WIDGET_THEME, next).apply();
-            PrayerWidgetService.start(context);
+            try {
+                SharedPreferences prefs = context.getSharedPreferences(
+                    PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE);
+                String current = prefs.getString(PrayerWidgetService.KEY_WIDGET_THEME, "dark");
+                String next = "dark".equals(current) ? "light" : "dark";
+                prefs.edit().putString(PrayerWidgetService.KEY_WIDGET_THEME, next).apply();
+            } catch (Exception ignored) {}
+            safeStart(context);
         }
+    }
+
+    private static void safeStart(Context context) {
+        try {
+            PrayerWidgetService.start(context);
+        } catch (Exception ignored) {}
     }
 
     private void applyPlaceholder(Context context, AppWidgetManager awm, int widgetId) {
