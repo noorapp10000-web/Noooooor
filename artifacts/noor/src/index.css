@@ -86,10 +86,22 @@
     background-attachment: fixed;
     overscroll-behavior-y: contain;
   }
-  
+
   .dark body {
-    background-blend-mode: overlay;
+    background-blend-mode: screen;
     background-color: hsl(20 18% 8%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .backdrop-blur-sm, .backdrop-blur, .backdrop-blur-md, .backdrop-blur-lg {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -105,11 +117,15 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
+  .will-animate {
+    will-change: transform, opacity;
+  }
+
   .ayah-text {
     @apply font-serif text-3xl leading-[2.5] text-center;
   }
-  
+
   .quran-container {
     background-color: var(--color-card);
     border: 2px solid hsl(var(--primary) / 0.5);

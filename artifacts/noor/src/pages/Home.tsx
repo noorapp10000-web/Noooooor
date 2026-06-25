@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapPin, ChevronLeft, ChevronRight, X, Check, Copy, Share2 } from 'lucide-react';
 import { usePrayerTimes } from '@/hooks/use-api';
 import { HomeTracker } from '@/components/HomeTracker';
@@ -37,6 +37,26 @@ function DailyAyah() {
 
   const ayah = getTodayAyah();
 
+  const S = useMemo(() => ({
+    card: {
+      background: isDark
+        ? 'linear-gradient(135deg, rgba(30,20,5,0.95) 0%, rgba(50,32,8,0.9) 100%)'
+        : 'linear-gradient(135deg, rgba(255,248,235,0.98) 0%, rgba(244,234,210,0.95) 100%)',
+      border: `1px solid rgba(193,154,107,${isDark ? '0.3' : '0.25'})`,
+      boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(193,154,107,0.12)',
+    },
+    header: {
+      background: isDark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.1)',
+      borderBottom: `1px solid rgba(193,154,107,${isDark ? '0.2' : '0.15'})`,
+    },
+    titleColor: isDark ? '#C19A6B' : '#7A4F1E',
+    badgeBg: isDark ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.15)',
+    badgeColor: isDark ? '#E8C98A' : '#8B5E2A',
+    ayahColor: isDark ? 'rgba(255,248,230,0.93)' : 'rgba(25,15,5,0.9)',
+    shareBg: isDark ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.15)',
+    shareColor: isDark ? '#E8C98A' : '#6B4218',
+  }), [isDark]);
+
   async function handleCopy() {
     const text = `${ayah.surah} — الآية ${ayah.ayah}\n\n${ayah.text}`;
     try { await navigator.clipboard.writeText(text); } catch {}
@@ -45,37 +65,17 @@ function DailyAyah() {
   }
 
   return (
-    <div
-      className="rounded-3xl overflow-hidden"
-      style={{
-        background: isDark
-          ? 'linear-gradient(135deg, rgba(30,20,5,0.95) 0%, rgba(50,32,8,0.9) 100%)'
-          : 'linear-gradient(135deg, rgba(255,248,235,0.98) 0%, rgba(244,234,210,0.95) 100%)',
-        border: `1px solid rgba(193,154,107,${isDark ? '0.3' : '0.25'})`,
-        boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(193,154,107,0.12)',
-      }}
-      dir="rtl"
-    >
+    <div className="rounded-3xl overflow-hidden" style={S.card} dir="rtl">
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-2.5"
-        style={{
-          background: isDark
-            ? 'rgba(193,154,107,0.12)'
-            : 'rgba(193,154,107,0.1)',
-          borderBottom: `1px solid rgba(193,154,107,${isDark ? '0.2' : '0.15'})`,
-        }}
-      >
+      <div className="flex items-center justify-between px-4 py-2.5" style={S.header}>
         <div className="flex items-center gap-2">
           <span style={{ fontSize: 16 }}>📖</span>
-          <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? '#C19A6B' : '#7A4F1E' }}>
+          <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: S.titleColor }}>
             آية اليوم
           </span>
         </div>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{
-          fontFamily: '"Tajawal", sans-serif',
-          background: isDark ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.15)',
-          color: isDark ? '#E8C98A' : '#8B5E2A',
+          fontFamily: '"Tajawal", sans-serif', background: S.badgeBg, color: S.badgeColor,
         }}>
           {ayah.surah} : {ayah.ayah}
         </span>
@@ -83,15 +83,10 @@ function DailyAyah() {
 
       {/* Ayah text */}
       <div className="px-5 pt-5 pb-3">
-        <p
-          className="text-center leading-loose"
-          style={{
-            fontFamily: '"Scheherazade New", "Amiri", serif',
-            fontSize: '1.25rem',
-            lineHeight: '2.4rem',
-            color: isDark ? 'rgba(255,248,230,0.93)' : 'rgba(25,15,5,0.9)',
-          }}
-        >
+        <p className="text-center leading-loose" style={{
+          fontFamily: '"Scheherazade New", "Amiri", serif',
+          fontSize: '1.25rem', lineHeight: '2.4rem', color: S.ayahColor,
+        }}>
           {ayah.text}
         </p>
       </div>
@@ -103,11 +98,9 @@ function DailyAyah() {
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
           style={{
             fontFamily: '"Tajawal", sans-serif',
-            background: copied
-              ? (isDark ? 'rgba(34,197,94,0.18)' : 'rgba(34,197,94,0.12)')
-              : (isDark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.1)'),
+            background: copied ? (isDark ? 'rgba(34,197,94,0.18)' : 'rgba(34,197,94,0.12)') : (isDark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.1)'),
             border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(193,154,107,0.3)'}`,
-            color: copied ? '#16a34a' : (isDark ? '#C19A6B' : '#7A4F1E'),
+            color: copied ? '#16a34a' : S.titleColor,
           }}
         >
           {copied ? <span>✓</span> : <Copy className="w-3.5 h-3.5" />}
@@ -116,12 +109,7 @@ function DailyAyah() {
         <button
           onClick={() => shareDailyAyah(ayah)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-          style={{
-            fontFamily: '"Tajawal", sans-serif',
-            background: isDark ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.15)',
-            border: '1px solid rgba(193,154,107,0.4)',
-            color: isDark ? '#E8C98A' : '#6B4218',
-          }}
+          style={{ fontFamily: '"Tajawal", sans-serif', background: S.shareBg, border: '1px solid rgba(193,154,107,0.4)', color: S.shareColor }}
         >
           <Share2 className="w-3.5 h-3.5" />
           مشاركة

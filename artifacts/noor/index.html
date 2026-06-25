@@ -18,6 +18,24 @@
     <link rel="stylesheet" href="/fonts/fonts.css" />
   </head>
   <body>
+    <script>
+      (function() {
+        try {
+          var uid = localStorage.getItem('noor_uid');
+          var theme = 'light';
+          if (uid) {
+            var raw = localStorage.getItem('noor_rtdb_cache_' + uid);
+            if (raw) {
+              var cache = JSON.parse(raw);
+              if (cache && cache.settings && cache.settings.theme) {
+                theme = cache.settings.theme;
+              }
+            }
+          }
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch(e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

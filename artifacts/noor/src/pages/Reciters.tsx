@@ -9,7 +9,20 @@ import { getOrCreateLocalUid } from '@/lib/rtdb';
 import { getSettingCache, queueRTDBUpdate, getCurrentUid } from '@/lib/rtdb';
 import { useToast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
-import { useTheme } from 'next-themes';
+
+function useTheme() {
+  const [resolvedTheme, setResolvedTheme] = useState(() =>
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setResolvedTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+  return { resolvedTheme };
+}
 
 type FavoriteReciter = {
   key: string;

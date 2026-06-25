@@ -79,15 +79,20 @@ function VideoPlayer({
       }
     };
 
-    video.addEventListener('playing', () => setStatus('playing'));
-    video.addEventListener('error', () => setStatus('error'));
-    video.addEventListener('waiting', () => {
-      if (status === 'playing') setStatus('loading');
-    });
+    const onPlaying = () => setStatus('playing');
+    const onError   = () => setStatus('error');
+    const onWaiting = () => { if (status === 'playing') setStatus('loading'); };
+
+    video.addEventListener('playing', onPlaying);
+    video.addEventListener('error',   onError);
+    video.addEventListener('waiting', onWaiting);
 
     setupHls();
 
     return () => {
+      video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('error',   onError);
+      video.removeEventListener('waiting', onWaiting);
       if (hlsInstance && typeof (hlsInstance as { destroy?: () => void }).destroy === 'function') {
         (hlsInstance as { destroy: () => void }).destroy();
       }

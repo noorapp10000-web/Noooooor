@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTutorial } from '@/components/TutorialMascotContext';
 import { useQuranSurahs, useSurah, useTafsir } from '@/hooks/use-api';
 import { useUserSetting } from '@/hooks/use-user-setting';
@@ -107,7 +107,7 @@ async function getTafsirIndex(): Promise<Record<string, string>> {
 function MoshafSheet({ dark, onClose }: { dark: boolean; onClose: () => void }) {
   const [moshafList, setMoshafList] = useState<MoshafType[]>([]);
   useEffect(() => {
-    fetch('/data/moshaf.json').then(r => r.json()).then(setMoshafList).catch(() => {});
+    fetch('/data/moshaf.json').then(r => r.json()).then(setMoshafList).catch(() => setMoshafList([]));
   }, []);
   const bg = dark ? '#1a1208' : '#fdfbf0';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
@@ -398,8 +398,7 @@ export function Quran() {
   const decreaseFontSize = () => setFontSize(prev => Math.max(prev - FONT_STEP, FONT_MIN));
   const lineHeight = (fontSize * 2.0).toFixed(2) + 'rem';
 
-  // Theme-dependent color palette
-  const C = {
+  const C = useMemo(() => ({
     pageBg: dark ? '#0f0c07' : '#FDFBF5',
     headerBg: dark ? '#130f08' : '#F7EDD6',
     headerBorder: dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.35)',
@@ -430,7 +429,7 @@ export function Quran() {
     btnBorder: dark ? 'rgba(193,154,107,0.25)' : 'rgba(193,154,107,0.4)',
     bookmarkBg: dark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.12)',
     bookmarkBorder: dark ? 'rgba(193,154,107,0.35)' : 'rgba(193,154,107,0.5)',
-  };
+  }), [dark]);
 
   useEffect(() => {
     if (!wordAudioRef.current) {

@@ -1,0 +1,5 @@
+- [Dark mode flash fix](dark-mode-flash.md) — theme is set via inline script in index.html before React mounts; reads localStorage noor_uid + noor_rtdb_cache_{uid}.
+- [Islamic pattern dark mode](islamic-pattern-dark.md) — blend-mode must be screen in .dark + explicit background-color; multiply inverts in dark.
+- [Removed packages](removed-packages.md) — cmdk, date-fns, next-themes, embla-carousel, react-day-picker, input-otp, react-resizable-panels, recharts, mp4-muxer removed.
+- [IslamicTV event listener leak pattern](event-listener-cleanup.md) — always use named functions + removeEventListener for HLS/video event cleanup.
+- [Theme hook pattern](theme-hook-pattern.md) — use local MutationObserver hook (useDarkMode) not next-themes; all pages follow this pattern.
