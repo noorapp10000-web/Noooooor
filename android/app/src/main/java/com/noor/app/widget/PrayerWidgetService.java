@@ -1,5 +1,6 @@
 package com.noor.app.widget;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -46,8 +47,6 @@ public class PrayerWidgetService extends Service {
     public static final String KEY_USERNAME     = "username";
     public static final String KEY_HIJRI_DATE   = "hijriDate";
 
-    // Cached prayer times — written after each successful state compute,
-    // read immediately by PrayerWidget before the service starts
     public static final String KEY_CACHE_FAJR    = "c_fajr";
     public static final String KEY_CACHE_DHUHR   = "c_dhuhr";
     public static final String KEY_CACHE_ASR     = "c_asr";
@@ -60,21 +59,12 @@ public class PrayerWidgetService extends Service {
     private static final String CHANNEL_ID = "noor_widget_ch";
     private static final int    NOTIF_ID   = 9001;
 
-    // Size tiers
     private static final int TIER_SMALL  = 0;
     private static final int TIER_MEDIUM = 1;
     private static final int TIER_LARGE  = 2;
 
     private static final String[] PRAYER_NAMES = {
         "الفجر", "الظهر", "العصر", "المغرب", "العشاء"
-    };
-
-    private static final int[] PRAYER_ICONS = {
-        R.drawable.ic_prayer_fajr,
-        R.drawable.ic_prayer_dhuhr,
-        R.drawable.ic_prayer_asr,
-        R.drawable.ic_prayer_maghrib,
-        R.drawable.ic_prayer_isha
     };
 
     private static final String[] HIJRI_MONTHS = {
@@ -138,7 +128,6 @@ public class PrayerWidgetService extends Service {
 
     @Override public IBinder onBind(Intent i) { return null; }
 
-    // ── Core update logic ────────────────────────────────────────────────────
     private void performUpdate() {
         AppWidgetManager awm = AppWidgetManager.getInstance(this);
         int[] ids = awm.getAppWidgetIds(new ComponentName(this, PrayerWidget.class));
@@ -157,8 +146,6 @@ public class PrayerWidgetService extends Service {
 
         PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng) : null;
 
-        // Persist latest prayer times so PrayerWidget can show them immediately
-        // (before this service has a chance to run) — only write when next prayer changes
         if (state != null) {
             String prevCached = prefs.getString(KEY_CACHE_NEXT, "");
             if (!state.nextName.equals(prevCached)) {
@@ -195,51 +182,35 @@ public class PrayerWidgetService extends Service {
 
                 int tier = getSizeTier(minW, minH);
 
-                // ── ALWAYS use the single unified layout ──────────────────────
                 RemoteViews rv = new RemoteViews(getPackageName(), R.layout.widget_unified);
 
-                // ── Apply visibility for this size tier ───────────────────────
                 applyVisibility(rv, tier, isDark);
 
-                // ── Theme colors ──────────────────────────────────────────────
                 int textPrimary   = isDark ? 0xFFFFFFFF : 0xFF1A1A1A;
                 int textSecondary = isDark ? 0xCCFFFFFF : 0xFF3D2B0F;
                 int textMuted     = isDark ? 0xAAFFFFFF : 0xFF5A4A30;
                 int textSubtle    = isDark ? 0x55FFFFFF : 0xFF8A7060;
 
-                // ── Root background ───────────────────────────────────────────
                 rv.setInt(R.id.wg_root, "setBackgroundResource",
                     isDark ? R.drawable.widget_bg : R.drawable.widget_bg_light);
 
-                // ── Theme toggle ──────────────────────────────────────────────
-                rv.setImageViewResource(R.id.wg_theme_toggle,
-                    isDark ? R.drawable.ic_widget_theme_dark : R.drawable.ic_widget_theme_light);
                 rv.setInt(R.id.wg_theme_toggle, "setBackgroundResource",
                     isDark ? R.drawable.widget_theme_btn_bg_dark : R.drawable.widget_theme_btn_bg_light);
                 rv.setOnClickPendingIntent(R.id.wg_theme_toggle, togglePi);
 
-                // ── App title ─────────────────────────────────────────────────
                 rv.setTextColor(R.id.wg_app_title, textPrimary);
 
-                // ── City ──────────────────────────────────────────────────────
                 rv.setTextViewText(R.id.wg_city, city != null ? city : "");
                 rv.setTextColor(R.id.wg_city, textSecondary);
 
-                // ── Username ──────────────────────────────────────────────────
                 if (username != null && !username.isEmpty()) {
                     rv.setTextViewText(R.id.wg_username, username);
                 }
 
-                // ── Countdown box backgrounds ─────────────────────────────────
-                int numBg = isDark ? R.drawable.widget_number_bg : R.drawable.widget_number_bg_light;
-                rv.setInt(R.id.wg_hours,   "setBackgroundResource", numBg);
-                rv.setInt(R.id.wg_minutes, "setBackgroundResource", numBg);
-                rv.setInt(R.id.wg_seconds, "setBackgroundResource", numBg);
                 rv.setTextColor(R.id.wg_hours,   textPrimary);
                 rv.setTextColor(R.id.wg_minutes, textPrimary);
                 rv.setTextColor(R.id.wg_seconds, textPrimary);
 
-                // ── Font sizes based on tier ──────────────────────────────────
                 float counterSp, prayerNameSp, adhanSp;
                 if (tier == TIER_LARGE) {
                     if (minH >= 400) {
@@ -260,21 +231,17 @@ public class PrayerWidgetService extends Service {
                 rv.setTextViewTextSize(R.id.wg_prayer_name, TypedValue.COMPLEX_UNIT_SP, prayerNameSp);
                 rv.setTextViewTextSize(R.id.wg_adhan_time,  TypedValue.COMPLEX_UNIT_SP, adhanSp);
 
-                // ── Prayer name color ─────────────────────────────────────────
                 rv.setTextColor(R.id.wg_prayer_name, textPrimary);
                 rv.setTextColor(R.id.wg_adhan_time,  textSecondary);
 
-                // ── Hijri date (both positions) ───────────────────────────────
                 rv.setTextViewText(R.id.wg_hijri_date,        hijri);
                 rv.setTextViewText(R.id.wg_hijri_date_bottom, hijri);
 
-                // ── Day percent ───────────────────────────────────────────────
                 rv.setTextViewText(R.id.wg_day_pct, dayPct + "%");
-                rv.setTextColor(R.id.wg_day_pct, textPrimary);
+                rv.setTextColor(R.id.wg_day_pct,       textPrimary);
                 rv.setTextColor(R.id.wg_day_pct_label, textSubtle);
                 rv.setTextColor(R.id.wg_hijri_label,   textSubtle);
 
-                // ── Medium/Large specific colors ──────────────────────────────
                 if (tier == TIER_MEDIUM || tier == TIER_LARGE) {
                     rv.setTextColor(R.id.wg_hours_label,   0xFFC19A6B);
                     rv.setTextColor(R.id.wg_minutes_label, 0xFFC19A6B);
@@ -288,7 +255,14 @@ public class PrayerWidgetService extends Service {
                     rv.setTextColor(R.id.wg_isha_label,    cellLabelColor);
                 }
 
-                // ── Prayer data ───────────────────────────────────────────────
+                // Always hide icon ImageViews — vector drawables crash RemoteViews on EMUI
+                rv.setViewVisibility(R.id.wg_prayer_name_icon, View.GONE);
+                rv.setViewVisibility(R.id.wg_fajr_icon,        View.GONE);
+                rv.setViewVisibility(R.id.wg_asr_icon,         View.GONE);
+                rv.setViewVisibility(R.id.wg_dhuhr_icon,       View.GONE);
+                rv.setViewVisibility(R.id.wg_maghrib_icon,     View.GONE);
+                rv.setViewVisibility(R.id.wg_isha_icon,        View.GONE);
+
                 if (state != null) {
                     long remaining = state.nextTimeMs - System.currentTimeMillis();
                     if (remaining < 0) remaining = 0;
@@ -304,10 +278,6 @@ public class PrayerWidgetService extends Service {
                     rv.setTextViewText(R.id.wg_adhan_time,  "وقت الأذان " + state.nextFormattedTime);
                     rv.setTextViewText(R.id.wg_current_prayer, "الصلاة الحالية: " + state.prevName);
 
-                    if (state.nextIdx >= 0 && state.nextIdx < PRAYER_ICONS.length) {
-                        rv.setImageViewResource(R.id.wg_prayer_name_icon, PRAYER_ICONS[state.nextIdx]);
-                    }
-
                     if (tier == TIER_MEDIUM || tier == TIER_LARGE) {
                         rv.setTextViewText(R.id.wg_progress_pct,
                             state.progress + "% من الوقت بين " + state.prevName + " و" + state.nextName);
@@ -322,18 +292,10 @@ public class PrayerWidgetService extends Service {
                         rv.setTextViewText(R.id.wg_maghrib_time, state.allTimes[3]);
                         rv.setTextViewText(R.id.wg_isha_time,    state.allTimes[4]);
 
-                        rv.setImageViewResource(R.id.wg_fajr_icon,    R.drawable.ic_prayer_fajr);
-                        rv.setImageViewResource(R.id.wg_dhuhr_icon,   R.drawable.ic_prayer_dhuhr);
-                        rv.setImageViewResource(R.id.wg_asr_icon,     R.drawable.ic_prayer_asr);
-                        rv.setImageViewResource(R.id.wg_maghrib_icon, R.drawable.ic_prayer_maghrib);
-                        rv.setImageViewResource(R.id.wg_isha_icon,    R.drawable.ic_prayer_isha);
-
-                        int normalCell = isDark
-                            ? R.drawable.widget_prayer_cell_bg
-                            : R.drawable.widget_prayer_cell_bg_light;
-                        int activeCell = isDark
-                            ? R.drawable.widget_prayer_cell_active_bg
-                            : R.drawable.widget_prayer_cell_active_bg_light;
+                        int normalCell = isDark ? R.drawable.widget_prayer_cell_bg
+                                                : R.drawable.widget_prayer_cell_bg_light;
+                        int activeCell = isDark ? R.drawable.widget_prayer_cell_active_bg
+                                                : R.drawable.widget_prayer_cell_active_bg_light;
 
                         int[] boxIds = {
                             R.id.wg_fajr_box, R.id.wg_dhuhr_box, R.id.wg_asr_box,
@@ -366,25 +328,21 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Size tier ─────────────────────────────────────────────────────────────
     private int getSizeTier(int minW, int minH) {
         if (minW < 180 || minH < 110) return TIER_SMALL;
         if (minH < 160)               return TIER_MEDIUM;
         return TIER_LARGE;
     }
 
-    // ── Visibility per tier ───────────────────────────────────────────────────
     private void applyVisibility(RemoteViews rv, int tier, boolean isDark) {
         boolean isMedium = (tier == TIER_MEDIUM);
         boolean isLarge  = (tier == TIER_LARGE);
         boolean isMediumOrLarge = isMedium || isLarge;
 
-        // Header extras
         rv.setViewVisibility(R.id.wg_username,        isMediumOrLarge ? View.VISIBLE : View.GONE);
         rv.setViewVisibility(R.id.wg_current_prayer,  isMediumOrLarge ? View.VISIBLE : View.GONE);
         rv.setViewVisibility(R.id.wg_hijri_date,      isMedium        ? View.VISIBLE : View.GONE);
 
-        // Main card background
         if (isMediumOrLarge) {
             rv.setInt(R.id.wg_main_card, "setBackgroundResource",
                 isDark ? R.drawable.widget_card_bg : R.drawable.widget_card_bg_light);
@@ -392,7 +350,6 @@ public class PrayerWidgetService extends Service {
             rv.setInt(R.id.wg_main_card, "setBackgroundColor", 0x00000000);
         }
 
-        // Main card inner elements
         rv.setViewVisibility(R.id.wg_next_prayer_label,  isMediumOrLarge ? View.VISIBLE : View.GONE);
         rv.setViewVisibility(R.id.wg_remaining_label,    isMediumOrLarge ? View.VISIBLE : View.GONE);
         rv.setViewVisibility(R.id.wg_hours_label,        isMediumOrLarge ? View.VISIBLE : View.GONE);
@@ -402,18 +359,15 @@ public class PrayerWidgetService extends Service {
         rv.setViewVisibility(R.id.wg_progress_container, isMediumOrLarge ? View.VISIBLE : View.GONE);
         rv.setViewVisibility(R.id.wg_remaining_text,     isLarge         ? View.VISIBLE : View.GONE);
 
-        // Prayers row
         rv.setViewVisibility(R.id.wg_prayers_row, isMediumOrLarge ? View.VISIBLE : View.GONE);
 
-        // Bottom bar (large only)
-        rv.setViewVisibility(R.id.wg_bottom_bar,         isLarge ? View.VISIBLE : View.GONE);
-        rv.setViewVisibility(R.id.wg_hijri_date_bottom,  isLarge ? View.VISIBLE : View.GONE);
-        rv.setViewVisibility(R.id.wg_day_pct,            isLarge ? View.VISIBLE : View.GONE);
-        rv.setViewVisibility(R.id.wg_day_pct_label,      isLarge ? View.VISIBLE : View.GONE);
-        rv.setViewVisibility(R.id.wg_hijri_label,        isLarge ? View.VISIBLE : View.GONE);
+        rv.setViewVisibility(R.id.wg_bottom_bar,        isLarge ? View.VISIBLE : View.GONE);
+        rv.setViewVisibility(R.id.wg_hijri_date_bottom, isLarge ? View.VISIBLE : View.GONE);
+        rv.setViewVisibility(R.id.wg_day_pct,           isLarge ? View.VISIBLE : View.GONE);
+        rv.setViewVisibility(R.id.wg_day_pct_label,     isLarge ? View.VISIBLE : View.GONE);
+        rv.setViewVisibility(R.id.wg_hijri_label,       isLarge ? View.VISIBLE : View.GONE);
     }
 
-    // ── Prayer state ─────────────────────────────────────────────────────────
     private PrayerState getPrayerState(float lat, float lng) {
         try {
             Coordinates coords = new Coordinates(lat, lng);
@@ -490,7 +444,6 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Hijri date ────────────────────────────────────────────────────────────
     private String getHijriDate() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "";
         try {
@@ -506,7 +459,6 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Day progress ──────────────────────────────────────────────────────────
     private int getDayPercent() {
         Calendar cal = Calendar.getInstance();
         int h = cal.get(Calendar.HOUR_OF_DAY);
@@ -515,7 +467,6 @@ public class PrayerWidgetService extends Service {
         return (int)(((h * 3600L + m * 60 + s) * 100) / 86400);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
     private String formatTime12(Date date) {
         Calendar c = Calendar.getInstance();
         c.setTime(date);
@@ -530,7 +481,6 @@ public class PrayerWidgetService extends Service {
         return n < 10 ? "0" + n : String.valueOf(n);
     }
 
-    // ── Foreground notification ───────────────────────────────────────────────
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(
@@ -576,7 +526,33 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Data model ────────────────────────────────────────────────────────────
+    /**
+     * Schedule an AlarmManager repeating update as fallback for EMUI/Huawei devices
+     * where startForegroundService is blocked by battery restrictions.
+     * The alarm fires every 30 seconds via the widget's onUpdate broadcast.
+     */
+    public static void scheduleAlarmFallback(Context context) {
+        try {
+            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (am == null) return;
+
+            Intent intent = new Intent(context, PrayerWidget.class);
+            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            PendingIntent pi = PendingIntent.getBroadcast(
+                context, 7777, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            long interval = 30_000L;
+            long trigger  = System.currentTimeMillis() + interval;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi);
+            } else {
+                am.setRepeating(AlarmManager.RTC_WAKEUP, trigger, interval, pi);
+            }
+        } catch (Exception ignored) {}
+    }
+
     private static class PrayerState {
         final String   prevName;
         final long     prevTimeMs;

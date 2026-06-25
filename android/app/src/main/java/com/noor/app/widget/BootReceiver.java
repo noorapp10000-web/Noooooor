@@ -36,7 +36,12 @@ public class BootReceiver extends BroadcastReceiver {
             int[] ids = awm.getAppWidgetIds(widgetComponent);
 
             if (ids != null && ids.length > 0) {
-                PrayerWidgetService.start(context);
+                // Try the foreground service first
+                try {
+                    PrayerWidgetService.start(context);
+                } catch (Exception ignored) {}
+                // Always schedule AlarmManager as backup for EMUI/Huawei
+                PrayerWidgetService.scheduleAlarmFallback(context);
             }
         } catch (Exception ignored) {
         }

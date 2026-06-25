@@ -15,7 +15,6 @@ public class PrayerWidget extends AppWidgetProvider {
 
     public static final String ACTION_TOGGLE_THEME = "com.noor.app.widget.TOGGLE_THEME";
 
-    // Size tiers (mirrors PrayerWidgetService thresholds)
     private static final int TIER_SMALL  = 0;
     private static final int TIER_MEDIUM = 1;
     private static final int TIER_LARGE  = 2;
@@ -63,15 +62,25 @@ public class PrayerWidget extends AppWidgetProvider {
     }
 
     private static void safeStart(Context context) {
+        boolean serviceStarted = false;
         try {
             PrayerWidgetService.start(context);
+            serviceStarted = true;
         } catch (Exception ignored) {}
+
+        // On EMUI/Huawei the foreground service is often blocked by battery optimization.
+        // Schedule an AlarmManager fallback so the widget still updates periodically.
+        if (!serviceStarted) {
+            PrayerWidgetService.scheduleAlarmFallback(context);
+        }
+        // Always schedule the alarm as a belt-and-suspenders backup
+        PrayerWidgetService.scheduleAlarmFallback(context);
     }
 
     /**
      * Shows cached prayer times immediately when widget is added or resized.
-     * If no cache exists yet, shows a clean "نُور" display (no "جاري التحميل").
-     * The service will replace this with a live countdown within ~1 second.
+     * No vector drawables are used here — only text and shape/color backgrounds
+     * which are safe in RemoteViews on all launchers including EMUI.
      */
     private void applyStaticDisplay(Context context, AppWidgetManager awm, int widgetId) {
         try {
@@ -81,7 +90,6 @@ public class PrayerWidget extends AppWidgetProvider {
             boolean isDark = !"light".equals(prefs.getString(PrayerWidgetService.KEY_WIDGET_THEME, "dark"));
             String  city   = prefs.getString(PrayerWidgetService.KEY_CITY, "");
 
-            // Determine size tier
             Bundle options = awm.getAppWidgetOptions(widgetId);
             int minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250);
             int minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160);
@@ -91,8 +99,8 @@ public class PrayerWidget extends AppWidgetProvider {
 
             boolean isMediumOrLarge = (tier != TIER_SMALL);
             boolean isLarge         = (tier == TIER_LARGE);
+            boolean isMedium        = (tier == TIER_MEDIUM);
 
-            // Read cached prayer times written by the service
             String cachedFajr    = prefs.getString(PrayerWidgetService.KEY_CACHE_FAJR,    "");
             String cachedDhuhr   = prefs.getString(PrayerWidgetService.KEY_CACHE_DHUHR,   "");
             String cachedAsr     = prefs.getString(PrayerWidgetService.KEY_CACHE_ASR,     "");
@@ -103,22 +111,20 @@ public class PrayerWidget extends AppWidgetProvider {
             String cachedPrev    = prefs.getString(PrayerWidgetService.KEY_CACHE_PREV,    "");
             boolean hasCached    = !cachedFajr.isEmpty();
 
-            // Theme colors
             int textPrimary   = isDark ? 0xFFFFFFFF : 0xFF1A1A1A;
             int textSecondary = isDark ? 0xCCFFFFFF : 0xFF3D2B0F;
             int textSubtle    = isDark ? 0x55FFFFFF : 0xFF8A7060;
-            int numBg = isDark ? R.drawable.widget_number_bg : R.drawable.widget_number_bg_light;
 
             RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.widget_unified);
 
-            // ── Root background ───────────────────────────────────────────────
+            // Root background — shape/layer-list drawables work fine on EMUI
             rv.setInt(R.id.wg_root, "setBackgroundResource",
                 isDark ? R.drawable.widget_bg : R.drawable.widget_bg_light);
 
-            // ── Visibility per tier ───────────────────────────────────────────
+            // Visibility per tier
             rv.setViewVisibility(R.id.wg_username,          isMediumOrLarge ? View.VISIBLE : View.GONE);
             rv.setViewVisibility(R.id.wg_current_prayer,    isMediumOrLarge ? View.VISIBLE : View.GONE);
-            rv.setViewVisibility(R.id.wg_hijri_date,        (isMediumOrLarge && !isLarge) ? View.VISIBLE : View.GONE);
+            rv.setViewVisibility(R.id.wg_hijri_date,        isMedium        ? View.VISIBLE : View.GONE);
             rv.setViewVisibility(R.id.wg_next_prayer_label, isMediumOrLarge ? View.VISIBLE : View.GONE);
             rv.setViewVisibility(R.id.wg_remaining_label,   isMediumOrLarge ? View.VISIBLE : View.GONE);
             rv.setViewVisibility(R.id.wg_hours_label,       isMediumOrLarge ? View.VISIBLE : View.GONE);
@@ -134,7 +140,15 @@ public class PrayerWidget extends AppWidgetProvider {
             rv.setViewVisibility(R.id.wg_day_pct_label,     isLarge ? View.VISIBLE : View.GONE);
             rv.setViewVisibility(R.id.wg_hijri_label,       isLarge ? View.VISIBLE : View.GONE);
 
-            // ── Main card background ──────────────────────────────────────────
+            // Always hide vector icon ImageViews — they crash RemoteViews on EMUI
+            rv.setViewVisibility(R.id.wg_prayer_name_icon, View.GONE);
+            rv.setViewVisibility(R.id.wg_fajr_icon,        View.GONE);
+            rv.setViewVisibility(R.id.wg_asr_icon,         View.GONE);
+            rv.setViewVisibility(R.id.wg_dhuhr_icon,       View.GONE);
+            rv.setViewVisibility(R.id.wg_maghrib_icon,     View.GONE);
+            rv.setViewVisibility(R.id.wg_isha_icon,        View.GONE);
+
+            // Main card background
             if (isMediumOrLarge) {
                 rv.setInt(R.id.wg_main_card, "setBackgroundResource",
                     isDark ? R.drawable.widget_card_bg : R.drawable.widget_card_bg_light);
@@ -142,19 +156,13 @@ public class PrayerWidget extends AppWidgetProvider {
                 rv.setInt(R.id.wg_main_card, "setBackgroundColor", 0x00000000);
             }
 
-            // ── Countdown boxes ───────────────────────────────────────────────
-            rv.setInt(R.id.wg_hours,   "setBackgroundResource", numBg);
-            rv.setInt(R.id.wg_minutes, "setBackgroundResource", numBg);
-            rv.setInt(R.id.wg_seconds, "setBackgroundResource", numBg);
             rv.setTextColor(R.id.wg_hours,   textPrimary);
             rv.setTextColor(R.id.wg_minutes, textPrimary);
             rv.setTextColor(R.id.wg_seconds, textPrimary);
 
-            // ── City ──────────────────────────────────────────────────────────
             rv.setTextViewText(R.id.wg_city, city);
             rv.setTextColor(R.id.wg_city, textSecondary);
 
-            // ── Text colors ───────────────────────────────────────────────────
             rv.setTextColor(R.id.wg_prayer_name, textPrimary);
             rv.setTextColor(R.id.wg_adhan_time,  textSecondary);
             rv.setTextColor(R.id.wg_day_pct,     textPrimary);
@@ -173,7 +181,6 @@ public class PrayerWidget extends AppWidgetProvider {
                 rv.setTextColor(R.id.wg_isha_label,    cellLabelColor);
             }
 
-            // ── Content: cached times or clean placeholder ────────────────────
             if (hasCached) {
                 rv.setTextViewText(R.id.wg_prayer_name,    cachedNext);
                 rv.setTextViewText(R.id.wg_adhan_time,     "وقت الأذان " + cachedNextT);
@@ -190,7 +197,6 @@ public class PrayerWidget extends AppWidgetProvider {
                     rv.setTextViewText(R.id.wg_isha_time,    cachedIsha);
                 }
             } else {
-                // First-ever widget add — no cache yet; show clean state
                 rv.setTextViewText(R.id.wg_prayer_name, "نُور");
                 rv.setTextViewText(R.id.wg_adhan_time,  "");
                 rv.setTextViewText(R.id.wg_hours,   "--");
