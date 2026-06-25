@@ -140,13 +140,14 @@ public class PrayerWidget extends AppWidgetProvider {
             rv.setViewVisibility(R.id.wg_day_pct_label,     isLarge ? View.VISIBLE : View.GONE);
             rv.setViewVisibility(R.id.wg_hijri_label,       isLarge ? View.VISIBLE : View.GONE);
 
-            // Always hide vector icon ImageViews — they crash RemoteViews on EMUI
+            // Always hide prayer name/cell vector icons — they crash RemoteViews on EMUI
             rv.setViewVisibility(R.id.wg_prayer_name_icon, View.GONE);
             rv.setViewVisibility(R.id.wg_fajr_icon,        View.GONE);
             rv.setViewVisibility(R.id.wg_asr_icon,         View.GONE);
             rv.setViewVisibility(R.id.wg_dhuhr_icon,       View.GONE);
             rv.setViewVisibility(R.id.wg_maghrib_icon,     View.GONE);
             rv.setViewVisibility(R.id.wg_isha_icon,        View.GONE);
+            // wg_location_icon is a small vector used as header location pin — keep visible
 
             // Main card background
             if (isMediumOrLarge) {
@@ -197,7 +198,7 @@ public class PrayerWidget extends AppWidgetProvider {
             if (hasCached) {
                 rv.setTextViewText(R.id.wg_prayer_name,    cachedNext);
                 rv.setTextViewText(R.id.wg_adhan_time,     "وقت الأذان " + cachedNextT);
-                rv.setTextViewText(R.id.wg_current_prayer, " · " + cachedPrev);
+                rv.setTextViewText(R.id.wg_current_prayer, "الصلاة الحالية: " + cachedPrev);
                 rv.setTextViewText(R.id.wg_hours,   "--");
                 rv.setTextViewText(R.id.wg_minutes, "--");
                 rv.setTextViewText(R.id.wg_seconds, "--");

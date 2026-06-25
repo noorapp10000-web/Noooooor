@@ -286,7 +286,7 @@ public class PrayerWidgetService extends Service {
                     rv.setTextViewText(R.id.wg_minutes,     pad2(m));
                     rv.setTextViewText(R.id.wg_seconds,     pad2(s));
                     rv.setTextViewText(R.id.wg_adhan_time,  "وقت الأذان " + state.nextFormattedTime);
-                    rv.setTextViewText(R.id.wg_current_prayer, " · " + state.prevName);
+                    rv.setTextViewText(R.id.wg_current_prayer, "الصلاة الحالية: " + state.prevName);
 
                     if (tier == TIER_MEDIUM || tier == TIER_LARGE) {
                         rv.setTextViewText(R.id.wg_progress_pct,
