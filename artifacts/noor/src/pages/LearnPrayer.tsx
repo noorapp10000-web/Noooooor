@@ -130,7 +130,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Nawaytu an uṣallī',
     meaning: 'أنوي الصلاة بقلبك — ولا تُلفظ النية',
     note: 'النية محلها القلب فقط، ولا يشترط التلفظ بها',
-    img: '/images/prayer/step-01-niyyah.png', color: '#2d6a4f',
+    img: '/images/prayer/step-01-niyyah.webp', color: '#2d6a4f',
   },
   {
     id: 2, title: 'تكبيرة الإحرام', position: 'قيام — يرفع يديه',
@@ -138,7 +138,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Allāhu Akbar',
     meaning: 'الله أكبر',
     note: 'يرفع يديه حذو منكبيه أو شحمتي أذنيه عند التكبير',
-    img: '/images/prayer/step-02-takbir.png', color: '#1e4d7b',
+    img: '/images/prayer/step-02-takbir.webp', color: '#1e4d7b',
   },
   {
     id: 3, title: 'دعاء الاستفتاح', position: 'قيام — سنة',
@@ -146,7 +146,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Subḥānaka Allāhumma wa biḥamdik, wa tabāraka ismuk, wa taʿālā jadduk, wa lā ilāha ghayruk',
     meaning: 'سبحانك اللهم وبحمدك، وتبارك اسمك، وتعالى جدك، ولا إله غيرك',
     note: 'دعاء مستحب في أول كل صلاة — يُقرأ في السر',
-    img: '/images/prayer/step-03-istiftah.png', color: '#4a2a7a',
+    img: '/images/prayer/step-03-istiftah.webp', color: '#4a2a7a',
   },
   {
     id: 4, title: 'التعوذ والبسملة', position: 'قيام',
@@ -154,7 +154,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Aʿūdhu billāhi min ash-shayṭān ir-rajīm · Bismillāh ir-Raḥmān ir-Raḥīm',
     meaning: 'أعوذ بالله من الشيطان الرجيم — بسم الله الرحمن الرحيم',
     note: 'يُقرأ سراً في الصلاة الجهرية وسراً في السرية',
-    img: '/images/prayer/step-04-basmala.png', color: '#7a3a1e',
+    img: '/images/prayer/step-04-basmala.webp', color: '#7a3a1e',
   },
   {
     id: 5, title: 'قراءة الفاتحة', position: 'قيام — ركن',
@@ -162,7 +162,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Al-ḥamdu lillāhi rabb il-ʿālamīn...',
     meaning: 'سورة الفاتحة كاملة — ركن من أركان الصلاة',
     note: 'لا صلاة لمن لم يقرأ بفاتحة الكتاب — ثم يقول: آمين',
-    img: '/images/prayer/step-05-fatiha.png', color: '#2d6a4f',
+    img: '/images/prayer/step-05-fatiha.webp', color: '#2d6a4f',
   },
   {
     id: 6, title: 'قراءة سورة قصيرة', position: 'قيام — سنة',
@@ -170,7 +170,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Qul huwa Allāhu aḥad...',
     meaning: 'سورة الإخلاص — مثال على السورة القصيرة',
     note: 'في الركعة الأولى والثانية فقط — يمكن قراءة أي سورة',
-    img: '/images/prayer/step-06-surah.png', color: '#5c3a7a',
+    img: '/images/prayer/step-06-surah.webp', color: '#5c3a7a',
   },
   {
     id: 7, title: 'الركوع', position: 'ركوع — ركن',
@@ -179,7 +179,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي العظيم',
     note: 'يكبّر عند الانحناء، ويضع يديه على ركبتيه، وتستوي ظهره',
     repetitions: 3,
-    img: '/images/prayer/step-07-ruku.png', color: '#1a5c5c',
+    img: '/images/prayer/step-07-ruku.webp', color: '#1a5c5c',
   },
   {
     id: 8, title: 'الاعتدال من الركوع', position: 'قيام — ركن',
@@ -187,7 +187,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Samiʿa Allāhu liman ḥamidah · Rabbanā wa laka al-ḥamd',
     meaning: 'سمع الله لمن حمده — ربنا ولك الحمد',
     note: 'يرفع من الركوع قائلاً «سمع الله لمن حمده» ثم يكمل الدعاء',
-    img: '/images/prayer/step-08-itidal.png', color: '#6b3a0f',
+    img: '/images/prayer/step-08-itidal.webp', color: '#6b3a0f',
   },
   {
     id: 9, title: 'السجدة الأولى', position: 'سجود — ركن',
@@ -196,7 +196,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي الأعلى',
     note: 'يسجد على سبعة أعضاء: الجبهة+الأنف، الكفّان، الركبتان، أطراف القدمين',
     repetitions: 3,
-    img: '/images/prayer/step-09-sujood1.png', color: '#3a1a5c',
+    img: '/images/prayer/step-09-sujood1.webp', color: '#3a1a5c',
   },
   {
     id: 10, title: 'الجلوس بين السجدتين', position: 'جلوس',
@@ -204,7 +204,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Rabb ighfir lī, Rabb ighfir lī',
     meaning: 'ربِّ اغفر لي',
     note: 'يجلس مفترشاً بين السجدتين ثم يسجد مرة ثانية',
-    img: '/images/prayer/step-10-julus.png', color: '#7a3a1e',
+    img: '/images/prayer/step-10-julus.webp', color: '#7a3a1e',
   },
   {
     id: 11, title: 'السجدة الثانية', position: 'سجود — ركن',
@@ -213,7 +213,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي الأعلى',
     note: 'ثم يقوم للركعة التالية مكبِّراً، ويفعل مثل ذلك في كل ركعة',
     repetitions: 3,
-    img: '/images/prayer/step-11-sujood2.png', color: '#3a1a5c',
+    img: '/images/prayer/step-11-sujood2.webp', color: '#3a1a5c',
   },
   {
     id: 12, title: 'التشهد الأخير', position: 'جلوس — ركن',
@@ -221,7 +221,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'At-taḥiyyātu lillāh waṣ-ṣalawātu waṭ-ṭayyibāt...',
     meaning: 'التحيات لله — يُرفع السبّابة عند الشهادة',
     note: 'في آخر ركعة يجلس جلسةً للتشهد ثم يُكمل الصلاة الإبراهيمية',
-    img: '/images/prayer/step-12-tashahhud.png', color: '#1e4d2b',
+    img: '/images/prayer/step-12-tashahhud.webp', color: '#1e4d2b',
   },
   {
     id: 13, title: 'الصلاة الإبراهيمية', position: 'جلوس — بعد التشهد',
@@ -229,7 +229,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Allāhumma ṣalli ʿalā Muḥammad wa ʿalā āli Muḥammad...',
     meaning: 'اللهم صلِّ على محمد وعلى آل محمد',
     note: 'ثم يتعوذ ويدعو بما شاء قبل التسليم',
-    img: '/images/prayer/step-13-salawat.png', color: '#0f3d2e',
+    img: '/images/prayer/step-13-salawat.webp', color: '#0f3d2e',
   },
   {
     id: 14, title: 'التسليم', position: 'جلوس — ركن',
@@ -237,7 +237,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'As-salāmu ʿalaykum wa raḥmatullāh',
     meaning: 'السلام عليكم ورحمة الله',
     note: 'يلتفت يميناً ثم يساراً — وبهذا تنتهي الصلاة',
-    img: '/images/prayer/step-14-tasleem.png', color: '#4a1e2a',
+    img: '/images/prayer/step-14-tasleem.webp', color: '#4a1e2a',
   },
 ];
 

@@ -4,7 +4,7 @@ import { getProfileCache } from '@/lib/rtdb';
 import { ArrowLeft, MapPin, RotateCcw } from 'lucide-react';
 import { Link } from 'wouter';
 import { useEffect, useRef } from 'react';
-const kaabaImg = '/images/kaaba.png';
+const kaabaImg = '/images/kaaba.webp';
 
 
 /* ── Islamic Geometric Background ───────────────────────────── */

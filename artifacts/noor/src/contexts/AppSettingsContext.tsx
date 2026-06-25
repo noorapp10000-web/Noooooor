@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { getSettingCache, queueSettingSync, getCurrentUid, getOrCreateLocalUid } from '@/lib/rtdb';
 
-import bg1 from '@assets/IMG-20260401-WA0004_1775009490731.jpg';
-import bg2 from '@assets/the-most-important-religious-and-historical-monuments-in-medin_1775009490792.jpg';
-import bg3 from '@assets/206_1775009490804.jpg';
-import bg4 from '@assets/a578a280e7356a625fd94fc7da3b31dd_1775009490816.jpg';
-import bg5 from '@assets/masjid_haram_1775009490829.jpg';
-import bg6 from '@assets/558c82d32c077684789946b614f3d9e5_1775009490844.jpg';
+import bg1 from '@assets/IMG-20260401-WA0004_1775009490731.webp';
+import bg2 from '@assets/the-most-important-religious-and-historical-monuments-in-medin_1775009490792.webp';
+import bg3 from '@assets/206_1775009490804.webp';
+import bg4 from '@assets/a578a280e7356a625fd94fc7da3b31dd_1775009490816.webp';
+import bg5 from '@assets/masjid_haram_1775009490829.webp';
+import bg6 from '@assets/558c82d32c077684789946b614f3d9e5_1775009490844.webp';
 
 export const PRESET_BACKGROUNDS = [
   { id: 'bg1', src: bg1, label: 'قبة الصخرة' },

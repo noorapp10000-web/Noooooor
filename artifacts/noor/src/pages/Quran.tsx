@@ -33,7 +33,7 @@ async function getQuranIndex(): Promise<QuranEntry[]> {
   if (_quranCache) return _quranCache;
   // quran-search.json uses quran-simple edition (modern Arabic spelling, no tashkeel)
   // This makes searching with normal user-typed Arabic work correctly.
-  const tryUrls = ['/data/quran-search.json', '/data/quran-uthmani.json'];
+  const tryUrls = ['/data/quran-search.json'];
   for (const url of tryUrls) {
     try {
       const res = await fetch(url);

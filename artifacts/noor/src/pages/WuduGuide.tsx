@@ -30,7 +30,7 @@ const WUDU_STEPS: WuduStep[] = [
       'النية محلها القلب ولا تُلفظ',
       'قُل «بسم الله» قبل البدء',
     ],
-    img: '/images/wudu/step-01-niyyah.png',
+    img: '/images/wudu/step-01-niyyah.webp',
   },
   {
     id: 2,
@@ -42,7 +42,7 @@ const WUDU_STEPS: WuduStep[] = [
       'أدخِل الماء بين الأصابع',
       'ابدأ باليمنى ثم اليسرى',
     ],
-    img: '/images/wudu/step-02-hands.png',
+    img: '/images/wudu/step-02-hands.webp',
   },
   {
     id: 3,
@@ -54,7 +54,7 @@ const WUDU_STEPS: WuduStep[] = [
       'ثم أخرجه — ثلاث مرات',
       'يُستحب المبالغة في المضمضة في غير الصيام',
     ],
-    img: '/images/wudu/step-03-mouth.png',
+    img: '/images/wudu/step-03-mouth.webp',
   },
   {
     id: 4,
@@ -66,7 +66,7 @@ const WUDU_STEPS: WuduStep[] = [
       'الاستنثار: أخرج الماء من الأنف باليد اليسرى',
       'كرر ثلاث مرات',
     ],
-    img: '/images/wudu/step-04-nose.png',
+    img: '/images/wudu/step-04-nose.webp',
   },
   {
     id: 5,
@@ -78,7 +78,7 @@ const WUDU_STEPS: WuduStep[] = [
       'ومن الأذن اليمنى إلى الأذن اليسرى',
       'المسافة الطولية من قمة الجبهة للذقن، والعرضية بين الأذنين',
     ],
-    img: '/images/wudu/step-05-face.png',
+    img: '/images/wudu/step-05-face.webp',
   },
   {
     id: 6,
@@ -90,7 +90,7 @@ const WUDU_STEPS: WuduStep[] = [
       'يشمل الغسل المرفق نفسه',
       'أدخِل الماء بين الأصابع',
     ],
-    img: '/images/wudu/step-06-arms.png',
+    img: '/images/wudu/step-06-arms.webp',
   },
   {
     id: 7,
@@ -103,7 +103,7 @@ const WUDU_STEPS: WuduStep[] = [
       'ثم أعِد يديك إلى المقدمة مرةً واحدة',
       'يكفي مسح بعض الرأس عند الحنفية والشافعية',
     ],
-    img: '/images/wudu/step-07-head.png',
+    img: '/images/wudu/step-07-head.webp',
   },
   {
     id: 8,
@@ -115,7 +115,7 @@ const WUDU_STEPS: WuduStep[] = [
       'وامسح بالإبهامين ظاهر الأذنين',
       'بنفس ماء مسح الرأس',
     ],
-    img: '/images/wudu/step-08-ears.png',
+    img: '/images/wudu/step-08-ears.webp',
   },
   {
     id: 9,
@@ -127,7 +127,7 @@ const WUDU_STEPS: WuduStep[] = [
       'يشمل الغسل الكعبين',
       'أدخِل الماء بين أصابع القدم بخنصر اليد اليسرى',
     ],
-    img: '/images/wudu/step-09-feet.png',
+    img: '/images/wudu/step-09-feet.webp',
   },
   {
     id: 10,
@@ -142,7 +142,7 @@ const WUDU_STEPS: WuduStep[] = [
       '«اللهم اجعلني من التوابين واجعلني من المتطهرين»',
       'يُفضّل استقبال القبلة عند قراءة الدعاء',
     ],
-    img: '/images/wudu/step-10-dua.png',
+    img: '/images/wudu/step-10-dua.webp',
   },
 ];
 

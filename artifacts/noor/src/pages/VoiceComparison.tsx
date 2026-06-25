@@ -6,34 +6,34 @@ import { SURAH_NAMES } from '@/lib/constants';
 import { useAudio } from '@/contexts/AudioContext';
 
 /* ── All confirmed labeled photos ── */
-import imgAlafasy      from '@assets/myshary_elaphasy_1777223604376.jpg';     // مشاري العفاسي ✓
-import imgMaher        from '@assets/maher_elmeqly_1777223604347.jpg';        // ماهر المعيقلي ✓
-import imgShuraim      from '@assets/elshrem_1777223604399.jpg';              // الشريم ✓
-import imgDosari       from '@assets/yaser_eldosry_1777223604537.jpg';        // ياسر الدوسري ✓
-import imgTablawi      from '@assets/eltabalawy_1777223604322.jpg';           // الطبلاوي ✓
-import imgMustafa      from '@assets/mostafa_ismail_1777223604238.jpg';       // مصطفى إسماعيل ✓
-import imgJibreel      from '@assets/gebril_1777223604483.jpg';               // محمد جبريل ✓
-import imgShaatree     from '@assets/elshatry_1777223604202.jpg';             // أبو بكر الشاطري ✓
-import imgAkhdar       from '@assets/green_1777223604137.jpg';                // إبراهيم الأخضر ✓
-import imgQahtaani     from '@assets/khaled_elkahtany_1777223604453.jpg';     // خالد القحطاني ✓
-import imgQasim        from '@assets/elkasm_1777223604295.jpg';               // محسن القاسم ✓
-import imgBudair       from '@assets/salah_elbader_1777223604426.jpg';        // صلاح البدير ✓
-import imgSowaid       from '@assets/sewid_1777223604506.jpg';                // أيمن سويد ✓
-import imgFares        from '@assets/fares_abad_1777223604267.jpg';           // فارس عباد ✓
-import imgSudais       from '@assets/alsodis_1777223390350.jpg';              // السديس ✓
-import imgHusary       from '@assets/elhosary_1777223390375.jpg';             // الحصري ✓
-import imgHudhaify     from '@assets/elhozify_1777223390404.jpg';             // الحذيفي ✓
-import imgBasit        from '@assets/Abd_elbaset_Abd_ALsamad_1777224102477.jpg'; // عبد الباسط ✓
-import imgMinshawi     from '@assets/almanshawy_1777223390219.jpg';           // المنشاوي ✓
-import imgBanna        from '@assets/elbana_1777223390242.jpg';               // البنا ✓
-import imgGhamdi       from '@assets/alghamdy_1777223390187.jpg';             // الغامدي ✓
-import imgQatami       from '@assets/algatamy_1777223390489.jpg';             // القطامي ✓
-import imgAjamy        from '@assets/elagamy_1777223390098.jpg';              // العجمي ✓
-import imgBasfar       from '@assets/basfr_1777223390462.jpg';                // بصفر ✓
-import imgRifai        from '@assets/alrefa3y_1777223390265.jpg';             // الرفاعي ✓
-import imgAyyoub       from '@assets/ayop_1777223390300.jpg';                 // أيوب ✓
-import imgBukhatir     from '@assets/bokhatr_1777223390515.jpg';              // بوخاطر ✓
-import imgJaber        from '@assets/Ali_gaber_1777223390432.jpg';            // علي جابر ✓
+import imgAlafasy      from '@assets/myshary_elaphasy_1777223604376.webp';
+import imgMaher        from '@assets/maher_elmeqly_1777223604347.webp';
+import imgShuraim      from '@assets/elshrem_1777223604399.webp';
+import imgDosari       from '@assets/yaser_eldosry_1777223604537.webp';
+import imgTablawi      from '@assets/eltabalawy_1777223604322.webp';
+import imgMustafa      from '@assets/mostafa_ismail_1777223604238.webp';
+import imgJibreel      from '@assets/gebril_1777223604483.webp';
+import imgShaatree     from '@assets/elshatry_1777223604202.webp';
+import imgAkhdar       from '@assets/green_1777223604137.webp';
+import imgQahtaani     from '@assets/khaled_elkahtany_1777223604453.webp';
+import imgQasim        from '@assets/elkasm_1777223604295.webp';
+import imgBudair       from '@assets/salah_elbader_1777223604426.webp';
+import imgSowaid       from '@assets/sewid_1777223604506.webp';
+import imgFares        from '@assets/fares_abad_1777223604267.webp';
+import imgSudais       from '@assets/alsodis_1777223390350.webp';
+import imgHusary       from '@assets/elhosary_1777223390375.webp';
+import imgHudhaify     from '@assets/elhozify_1777223390404.webp';
+import imgBasit        from '@assets/Abd_elbaset_Abd_ALsamad_1777224102477.webp';
+import imgMinshawi     from '@assets/almanshawy_1777223390219.webp';
+import imgBanna        from '@assets/elbana_1777223390242.webp';
+import imgGhamdi       from '@assets/alghamdy_1777223390187.webp';
+import imgQatami       from '@assets/algatamy_1777223390489.webp';
+import imgAjamy        from '@assets/elagamy_1777223390098.webp';
+import imgBasfar       from '@assets/basfr_1777223390462.webp';
+import imgRifai        from '@assets/alrefa3y_1777223390265.webp';
+import imgAyyoub       from '@assets/ayop_1777223390300.webp';
+import imgBukhatir     from '@assets/bokhatr_1777223390515.webp';
+import imgJaber        from '@assets/Ali_gaber_1777223390432.webp';
 
 const RECITER_PHOTOS: Record<string, string> = {
   alafasy:        imgAlafasy,

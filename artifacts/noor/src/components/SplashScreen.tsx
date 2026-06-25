@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import domeImg from '@assets/qb_lskhr_1774983189616.jpg';
+import domeImg from '@assets/qb_lskhr_1774983189616.webp';
 
 interface SplashScreenProps {
   onDone: () => void;

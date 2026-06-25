@@ -80,7 +80,7 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     direction: rtl;
-    background-image: url('../public/images/islamic-pattern.png');
+    background-image: url('../public/images/islamic-pattern.webp');
     background-blend-mode: multiply;
     background-size: 300px;
     background-attachment: fixed;
