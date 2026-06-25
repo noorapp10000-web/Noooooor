@@ -717,17 +717,22 @@ export function MoreMenu() {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { Icon: QuranBookIcon,    text: 'القرآن الكريم',        grad: 'linear-gradient(145deg,#2d6a4f,#1b4332)' },
-                { Icon: HeadphonesIcon,   text: '+50 قارئاً',           grad: 'linear-gradient(145deg,#1a5c5c,#0d3b3b)' },
-                { Icon: TasbihIcon,       text: 'السبحة الإلكترونية',   grad: 'linear-gradient(145deg,#8B6340,#5c3e1e)' },
-                { Icon: SmartReaderIcon,  text: 'قارئ التدبر الذكي',   grad: 'linear-gradient(145deg,#7a3a1e,#4d2310)' },
-                { Icon: DuaHandsIcon,     text: 'الأذكار والأدعية',    grad: 'linear-gradient(145deg,#5c3a7a,#3a1f52)' },
-                { Icon: ScrollIcon,       text: 'تفسير الجلالين',       grad: 'linear-gradient(145deg,#7a5c1e,#4d3a10)' },
-                { Icon: IslamicStarIcon,  text: 'أسماء الله الحسنى',   grad: 'linear-gradient(145deg,#8B6340,#4d3210)' },
-                { Icon: RadioIcon,        text: 'الإذاعات الإسلامية',  grad: 'linear-gradient(145deg,#5c3a7a,#2e1a42)' },
-                { Icon: QiblaCompassIcon, text: 'تحديد القبلة',         grad: 'linear-gradient(145deg,#1e4d7b,#102840)' },
-                { Icon: HadithIcon,       text: 'الأحاديث الشريفة',    grad: 'linear-gradient(145deg,#2d6a4f,#163828)' },
-                { Icon: MoonIcon,         text: 'الوضع الليلي',         grad: 'linear-gradient(145deg,#2a2a5c,#181832)' },
+                { Icon: QuranBookIcon,    text: 'القرآن الكريم كاملاً',       grad: 'linear-gradient(145deg,#2d6a4f,#1b4332)' },
+                { Icon: HeadphonesIcon,   text: '+٣٠ قارئاً عالمياً',          grad: 'linear-gradient(145deg,#1a5c5c,#0d3b3b)' },
+                { Icon: DuaHandsIcon,     text: 'الأذكار والأدعية',            grad: 'linear-gradient(145deg,#5c3a7a,#3a1f52)' },
+                { Icon: TasbihIcon,       text: 'السبحة الإلكترونية',          grad: 'linear-gradient(145deg,#8B6340,#5c3e1e)' },
+                { Icon: HadithIcon,       text: 'الأحاديث — ٦ كتب',           grad: 'linear-gradient(145deg,#2d6a4f,#163828)' },
+                { Icon: ScrollIcon,       text: 'تفسير ميسر',                  grad: 'linear-gradient(145deg,#7a5c1e,#4d3a10)' },
+                { Icon: IslamicStarIcon,  text: 'أسماء الله الحسنى',           grad: 'linear-gradient(145deg,#8B6340,#4d3210)' },
+                { Icon: QiblaCompassIcon, text: 'بوصلة القبلة',                grad: 'linear-gradient(145deg,#1e4d7b,#102840)' },
+                { Icon: RadioIcon,        text: 'الراديو والتلفزيون',          grad: 'linear-gradient(145deg,#5c3a7a,#2e1a42)' },
+                { Icon: ScrollIcon,       text: 'التاريخ الإسلامي',            grad: 'linear-gradient(145deg,#6b3a1e,#3d1e0a)' },
+                { Icon: IslamicStarIcon,  text: 'قصص الأنبياء — ٢٥ نبياً',    grad: 'linear-gradient(145deg,#5c4a1e,#3a2e0a)' },
+                { Icon: SmartReaderIcon,  text: '+٥٨٢٠ سؤال إسلامي',           grad: 'linear-gradient(145deg,#7a3a1e,#4d2310)' },
+                { Icon: HifzIcon,         text: 'اختبار الحفظ',                grad: 'linear-gradient(145deg,#1e4d3a,#0a2820)' },
+                { Icon: PrayerStepsIcon,  text: 'تعلم الصلاة والوضوء',         grad: 'linear-gradient(145deg,#2d5a1e,#1a3810)' },
+                { Icon: SmartReaderIcon,  text: 'القراءة السريعة',             grad: 'linear-gradient(145deg,#4a1e5c,#2e1038)' },
+                { Icon: MoonIcon,         text: 'وضع ليلي + خلفيات',           grad: 'linear-gradient(145deg,#2a2a5c,#181832)' },
               ].map(({ Icon, text, grad }, i) => (
                 <div key={i} className="flex items-center gap-2 bg-secondary/30 rounded-xl px-2.5 py-2">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -738,21 +743,6 @@ export function MoreMenu() {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Data sources */}
-          <div className="rounded-2xl border border-border/30 p-3 space-y-1.5 bg-secondary/20">
-            <p className="text-[10px] font-bold text-primary/60 mb-1 uppercase tracking-widest"
-              style={{ fontFamily: '"Tajawal", sans-serif' }}>مصادر البيانات</p>
-            {[
-              { label: 'القرآن الكريم', val: 'alquran.cloud' },
-              { label: 'القراء والتلاوات', val: 'mp3quran.net' },
-            ].map((src, i) => (
-              <div key={i} className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{src.label}</span>
-                <span className="text-primary/70 font-medium text-[11px]" dir="ltr">{src.val}</span>
-              </div>
-            ))}
           </div>
 
           {/* Developer credit */}
