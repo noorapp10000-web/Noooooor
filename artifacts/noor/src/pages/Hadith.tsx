@@ -274,52 +274,51 @@ function SearchResults({
   useEffect(() => {
     if (!query.trim()) { setResults([]); setLoading(false); return; }
 
-    // Debounce: wait 350ms after user stops typing before searching
     setLoading(true);
+    const cancelRef = { cancelled: false };
+
     const debounceTimer = setTimeout(async () => {
       const norm = normalizeArabic(query);
       if (!norm) { setResults([]); setLoading(false); return; }
 
       setResults([]);
       const books = book ? [book] : BOOKS;
-      let cancelled = false;
       let total = 0;
-
-      const CHUNK_SIZE = 300; // process this many hadiths then yield to UI
+      const CHUNK_SIZE = 300;
 
       for (const b of books) {
-        if (total >= SEARCH_LIMIT) break;
+        if (total >= SEARCH_LIMIT || cancelRef.cancelled) break;
         try {
           const hadiths = await loadBook(b.slug);
           const found: Array<{ hadith: LocalHadith; book: Book }> = [];
 
           for (let i = 0; i < hadiths.length; i++) {
-            if (total >= SEARCH_LIMIT) break;
+            if (total >= SEARCH_LIMIT || cancelRef.cancelled) break;
             const h = hadiths[i];
             if (normalizeArabic(h.t).includes(norm)) {
               found.push({ hadith: h, book: b });
               total++;
             }
-            // Yield to the UI every CHUNK_SIZE hadiths to avoid blocking
             if (i % CHUNK_SIZE === CHUNK_SIZE - 1) {
               await new Promise<void>(resolve => setTimeout(resolve, 0));
-              if (cancelled) break;
+              if (cancelRef.cancelled) break;
             }
           }
 
-          if (found.length > 0 && !cancelled) {
+          if (found.length > 0 && !cancelRef.cancelled) {
             setResults(prev => [...prev, ...found]);
           }
         } catch {}
-        if (cancelled) break;
+        if (cancelRef.cancelled) break;
       }
 
-      if (!cancelled) setLoading(false);
-
-      return () => { cancelled = true; };
+      if (!cancelRef.cancelled) setLoading(false);
     }, 350);
 
-    return () => clearTimeout(debounceTimer);
+    return () => {
+      cancelRef.cancelled = true;
+      clearTimeout(debounceTimer);
+    };
   }, [query, book]);
 
   if (loading) return (
@@ -380,8 +379,9 @@ function HadithReader({
   const [page, setPage] = useState(1);
   const [highlightNum, setHighlightNum] = useState<number | undefined>(initialHadithNum);
   const [searchQuery, setSearchQuery] = useState('');
-  const [committedQuery, setCommittedQuery] = useState('');
   const [searchMode, setSearchMode] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     setLoading(true);
@@ -456,47 +456,43 @@ function HadithReader({
             >
               <Search className="w-4 h-4 flex-shrink-0 text-[#C19A6B]" />
               <input
+                ref={searchRef}
                 autoFocus
                 type="text"
                 placeholder="ابحث في الكتاب..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && searchQuery.trim()) setCommittedQuery(searchQuery); }}
+                defaultValue=""
+                onInput={() => {
+                  const val = searchRef.current?.value ?? '';
+                  clearTimeout(searchDebounceRef.current);
+                  searchDebounceRef.current = setTimeout(() => setSearchQuery(val), 0);
+                }}
                 className="flex-1 bg-transparent outline-none text-right"
                 style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#2C1E16' }}
               />
               {searchQuery && (
-                <button onClick={() => { setSearchQuery(''); setCommittedQuery(''); }}>
+                <button onClick={() => {
+                  if (searchRef.current) searchRef.current.value = '';
+                  clearTimeout(searchDebounceRef.current);
+                  setSearchQuery('');
+                }}>
                   <X className="w-4 h-4 text-[#C19A6B]" />
                 </button>
               )}
             </div>
-            <button
-              onClick={() => { if (searchQuery.trim()) setCommittedQuery(searchQuery); }}
-              disabled={!searchQuery.trim()}
-              className="w-full py-2.5 rounded-2xl text-sm font-bold transition-all disabled:opacity-40"
-              style={{
-                background: 'linear-gradient(135deg, #C19A6B, #a07840)',
-                color: '#fff',
-                fontFamily: '"Tajawal", sans-serif',
-                boxShadow: searchQuery.trim() ? '0 2px 10px rgba(193,154,107,0.35)' : 'none',
-              }}
-            >
-              بحث الآن
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Search results */}
-      {searchMode && committedQuery && (
+      {searchMode && searchQuery && (
         <SearchResults
-          query={committedQuery}
+          query={searchQuery}
           book={book}
           onOpenBook={(b, num) => {
             setSearchMode(false);
             setSearchQuery('');
-            setCommittedQuery('');
+            if (searchRef.current) searchRef.current.value = '';
+            clearTimeout(searchDebounceRef.current);
             const idx = hadiths.findIndex(h => h.n === num);
             if (idx !== -1) {
               const p = Math.floor(idx / PAGE_SIZE) + 1;
@@ -508,7 +504,7 @@ function HadithReader({
       )}
 
       {/* Regular content */}
-      {!(searchMode && committedQuery) && (
+      {!(searchMode && searchQuery) && (
         <>
           {loading && (
             <div className="space-y-3">
@@ -628,6 +624,8 @@ function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number)
   const isDark = useDarkMode();
   const [query, setQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const queryInputRef = useRef<HTMLInputElement>(null);
+  const queryDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   return (
     <div dir="rtl">
@@ -640,15 +638,24 @@ function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number)
       >
         <Search className="w-4 h-4 flex-shrink-0 text-[#C19A6B]" />
         <input
+          ref={queryInputRef}
           autoFocus
           type="text"
           placeholder="ابحث في كل الكتب..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
+          defaultValue=""
+          onInput={() => {
+            const val = queryInputRef.current?.value ?? '';
+            clearTimeout(queryDebounceRef.current);
+            queryDebounceRef.current = setTimeout(() => setQuery(val), 0);
+          }}
           className="flex-1 bg-transparent outline-none text-right"
           style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#2C1E16' }}
         />
-        {query && <button onClick={() => setQuery('')}><X className="w-4 h-4 text-[#C19A6B]" /></button>}
+        {query && <button onClick={() => {
+          if (queryInputRef.current) queryInputRef.current.value = '';
+          clearTimeout(queryDebounceRef.current);
+          setQuery('');
+        }}><X className="w-4 h-4 text-[#C19A6B]" /></button>}
       </div>
 
       {/* Book filter */}

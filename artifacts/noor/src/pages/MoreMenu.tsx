@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, type ReactNode, type ComponentType } from 
 import { Link } from 'wouter';
 import {
   ChevronLeft, Sun, Moon, Share2,
-  Star, Copy, X, Check, Mail, MessageSquare, Settings2, Pencil, Clock,
+  Star, Copy, X, Check, Mail, MessageSquare, Settings2, Pencil,
 } from 'lucide-react';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -309,17 +309,6 @@ function ShareChooserSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-const NAME_COOLDOWN_DAYS = 10;
-const NAME_LAST_CHANGED_KEY = 'name_last_changed';
-
-function daysUntilCanChange(lastChangedTs: number | null): number {
-  if (!lastChangedTs) return 0;
-  const msElapsed = Date.now() - lastChangedTs;
-  const daysElapsed = msElapsed / (1000 * 60 * 60 * 24);
-  const remaining = NAME_COOLDOWN_DAYS - daysElapsed;
-  return remaining > 0 ? Math.ceil(remaining) : 0;
-}
-
 function EditNameDialog({
   currentName,
   onSave,
@@ -329,17 +318,13 @@ function EditNameDialog({
   onSave: (newName: string) => void;
   onCancel: () => void;
 }) {
-  const cachedProfile = getProfileCache();
-  const lastChangedTs = cachedProfile?.nameLastChanged ?? null;
-  const daysLeft = daysUntilCanChange(lastChangedTs);
-  const canEdit = daysLeft === 0;
-
   const [value, setValue] = useState(currentName);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (canEdit) inputRef.current?.focus();
-  }, [canEdit]);
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
 
   const handleSave = () => {
     const trimmed = value.trim();
@@ -357,7 +342,6 @@ function EditNameDialog({
         transition={{ duration: 0.22, ease: 'easeOut' }}
         className="relative bg-card border border-border rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border/50">
           <button onClick={onCancel} className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary/60">
             <X className="w-4 h-4 text-muted-foreground" />
@@ -367,71 +351,31 @@ function EditNameDialog({
         </div>
 
         <div className="px-5 py-5">
-          {canEdit ? (
-            <>
-              <input
-                ref={inputRef}
-                type="text"
-                value={value}
-                onChange={e => setValue(e.target.value)}
-                maxLength={30}
-                className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-base font-bold text-center outline-none focus:ring-2 focus:ring-primary/40 mb-4"
-                style={{ fontFamily: '"Tajawal", sans-serif', direction: 'rtl' }}
-                placeholder="أدخل اسمك"
-                onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
-              />
-              <div
-                className="mb-4 flex items-start gap-2 rounded-xl px-3 py-2.5"
-                style={{ background: 'rgba(193,154,107,0.08)', border: '1px solid rgba(193,154,107,0.2)' }}
-              >
-                <Clock className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-                  بعد التعديل لن تتمكن من تغيير الاسم مجدداً لمدة <span className="font-bold text-primary">10 أيام</span>
-                </p>
-              </div>
-              <button
-                onClick={handleSave}
-                disabled={!value.trim() || value.trim() === currentName}
-                className="w-full py-3 rounded-xl font-bold text-sm transition-all"
-                style={{
-                  fontFamily: '"Tajawal", sans-serif',
-                  background: (!value.trim() || value.trim() === currentName)
-                    ? 'rgba(193,154,107,0.2)'
-                    : 'linear-gradient(135deg, #C19A6B, #8B5E3C)',
-                  color: (!value.trim() || value.trim() === currentName) ? 'rgba(139,94,60,0.5)' : '#fff',
-                }}
-              >
-                حفظ الاسم
-              </button>
-            </>
-          ) : (
-            <div className="text-center py-3">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ background: 'rgba(193,154,107,0.12)' }}
-              >
-                <Clock className="w-7 h-7 text-primary" />
-              </div>
-              <p className="font-bold text-base mb-2" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-                لا يمكن التعديل الآن
-              </p>
-              <p className="text-sm text-muted-foreground mb-5" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-                يمكنك تغيير اسمك بعد{' '}
-                <span className="font-bold text-primary">{daysLeft} {daysLeft === 1 ? 'يوم' : 'أيام'}</span>
-              </p>
-              <button
-                onClick={onCancel}
-                className="w-full py-3 rounded-xl font-bold text-sm"
-                style={{
-                  fontFamily: '"Tajawal", sans-serif',
-                  background: 'rgba(193,154,107,0.12)',
-                  color: '#8B5E3C',
-                }}
-              >
-                حسناً
-              </button>
-            </div>
-          )}
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            maxLength={30}
+            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-base font-bold text-center outline-none focus:ring-2 focus:ring-primary/40 mb-4"
+            style={{ fontFamily: '"Tajawal", sans-serif', direction: 'rtl' }}
+            placeholder="أدخل اسمك"
+            onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
+          />
+          <button
+            onClick={handleSave}
+            disabled={!value.trim() || value.trim() === currentName}
+            className="w-full py-3 rounded-xl font-bold text-sm transition-all"
+            style={{
+              fontFamily: '"Tajawal", sans-serif',
+              background: (!value.trim() || value.trim() === currentName)
+                ? 'rgba(193,154,107,0.2)'
+                : 'linear-gradient(135deg, #C19A6B, #8B5E3C)',
+              color: (!value.trim() || value.trim() === currentName) ? 'rgba(139,94,60,0.5)' : '#fff',
+            }}
+          >
+            حفظ الاسم
+          </button>
         </div>
       </motion.div>
     </div>
@@ -464,7 +408,7 @@ export function MoreMenu() {
   const handleSaveName = async (newName: string) => {
     const uid = getCurrentUid() || getOrCreateLocalUid();
     if (!uid) return;
-    updateProfileInRTDB(uid, { name: newName, nameLastChanged: Date.now() });
+    updateProfileInRTDB(uid, { name: newName });
     setProfileVersion(v => v + 1);
     setShowEditNameDialog(false);
   };

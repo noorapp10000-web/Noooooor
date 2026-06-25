@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, User, ChevronRight, MapPin, FolderOpen, RefreshCw, CheckCircle } from 'lucide-react';
-import { initUserSync, saveProfileToRTDB, getOrCreateLocalUid, importAllData, type UserProfile } from '@/lib/rtdb';
+import { saveProfileToRTDB, getOrCreateLocalUid, importAllData, type UserProfile } from '@/lib/rtdb';
 
 interface LoginProps { onComplete: () => void; }
 type Step = 'name' | 'city';
@@ -50,7 +50,6 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
 export function Login({ onComplete }: LoginProps) {
   const [step, setStep] = useState<Step>('name');
   const [gender, setGender] = useState<Gender>('male');
-  const [name, setName] = useState('');
   const [canNext, setCanNext] = useState(false);
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
@@ -64,8 +63,8 @@ export function Login({ onComplete }: LoginProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  function syncName(val: string) {
-    setName(val);
+  function handleNameInput() {
+    const val = nameInputRef.current?.value ?? '';
     setCanNext(val.trim().length > 0);
   }
 
@@ -87,8 +86,8 @@ export function Login({ onComplete }: LoginProps) {
   }
 
   function handleNameNext() {
-    if (!name.trim()) return;
-    setName(name.trim());
+    const val = nameInputRef.current?.value?.trim() ?? '';
+    if (!val) return;
     setStep('city');
   }
 
@@ -114,9 +113,10 @@ export function Login({ onComplete }: LoginProps) {
     if (!gov) return;
 
     const uid = getOrCreateLocalUid();
+    const userName = nameInputRef.current?.value?.trim() || 'ذاكر';
     const profile: UserProfile = {
       uid,
-      name: name.trim() || 'ذاكر',
+      name: userName,
       email: '',
       photo: '',
       gender,
@@ -127,9 +127,7 @@ export function Login({ onComplete }: LoginProps) {
       joinedAt: Date.now(),
     };
 
-    initUserSync(uid);
     saveProfileToRTDB(uid, profile);
-    document.documentElement.classList.remove('dark');
     onComplete();
   }
 
@@ -240,16 +238,15 @@ export function Login({ onComplete }: LoginProps) {
                   <input
                     ref={nameInputRef}
                     type="text"
-                    value={name}
+                    defaultValue=""
                     placeholder="اسمك..."
                     maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
                     style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    onChange={e => syncName(e.target.value)}
-                    onCompositionEnd={e => syncName((e.target as HTMLInputElement).value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && name.trim()) handleNameNext(); }}
+                    onInput={handleNameInput}
+                    onKeyDown={e => { if (e.key === 'Enter') handleNameNext(); }}
                   />
                 </div>
               </div>

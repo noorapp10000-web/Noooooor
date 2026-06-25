@@ -345,7 +345,8 @@ export function Quran() {
   // Quran text search
   const [searchView, setSearchView] = useState<'surahs' | 'search' | 'juz' | 'hizb'>('surahs');
   const [quranSearch, setQuranSearch] = useState('');
-  const [committedQuranSearch, setCommittedQuranSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchCount, setSearchCount] = useState(0);
@@ -391,12 +392,21 @@ export function Quran() {
   }, []);
 
   useEffect(() => {
-    if (searchView === 'search') searchQuran(committedQuranSearch);
-  }, [committedQuranSearch, searchView, searchQuran]);
+    if (searchView === 'search') searchQuran(quranSearch);
+  }, [quranSearch, searchView, searchQuran]);
 
-  function commitQuranSearch() {
-    if (!quranSearch.trim()) return;
-    setCommittedQuranSearch(quranSearch);
+  function handleSearchInput() {
+    const val = searchInputRef.current?.value ?? '';
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => setQuranSearch(val), 450);
+  }
+
+  function handleSearchClear() {
+    if (searchInputRef.current) searchInputRef.current.value = '';
+    clearTimeout(searchDebounceRef.current);
+    setQuranSearch('');
+    setSearchResults([]);
+    setSearchCount(0);
   }
 
   const increaseFontSize = () => setFontSize(prev => Math.min(prev + FONT_STEP, FONT_MAX));
@@ -738,17 +748,21 @@ export function Quran() {
         ) : (
           /* ── Quran text search ── */
           <>
-            <div className="relative mb-2">
+            <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#C19A6B', opacity: 0.6 }} />
-              {searchLoading && (
+              {searchLoading ? (
                 <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" style={{ color: '#C19A6B' }} />
-              )}
+              ) : quranSearch ? (
+                <button onClick={handleSearchClear} className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <X className="w-4 h-4" style={{ color: '#C19A6B' }} />
+                </button>
+              ) : null}
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="اكتب كلمة أو جزءاً من آية..."
-                value={quranSearch}
-                onChange={e => setQuranSearch(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') commitQuranSearch(); }}
+                defaultValue=""
+                onInput={handleSearchInput}
                 className="w-full py-3 pr-10 pl-10 rounded-2xl outline-none text-sm"
                 style={{
                   background: C.searchBg,
@@ -760,20 +774,6 @@ export function Quran() {
               />
             </div>
 
-            <button
-              onClick={commitQuranSearch}
-              disabled={!quranSearch.trim()}
-              className="w-full mb-3 py-2.5 rounded-2xl text-sm font-bold transition-all disabled:opacity-40"
-              style={{
-                background: 'linear-gradient(135deg, #C19A6B, #a07840)',
-                color: '#fff',
-                fontFamily: '"Tajawal", sans-serif',
-                boxShadow: quranSearch.trim() ? '0 2px 10px rgba(193,154,107,0.35)' : 'none',
-              }}
-            >
-              بحث الآن
-            </button>
-
             {searchCount > 0 && (
               <p className="text-xs mb-2 text-right" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
                 {searchCount} نتيجة
@@ -781,13 +781,13 @@ export function Quran() {
             )}
 
             <div className="flex-1 overflow-y-auto space-y-2 pb-24">
-              {!committedQuranSearch.trim() && (
+              {!quranSearch.trim() && (
                 <div className="text-center py-12" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
                   <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">ابحث في كلمات القرآن الكريم</p>
                 </div>
               )}
-              {committedQuranSearch.trim() && !searchLoading && searchResults.length === 0 && (
+              {quranSearch.trim() && !searchLoading && searchResults.length === 0 && (
                 <div className="text-center py-12" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
                   <p className="text-sm">لا توجد نتائج</p>
                 </div>
