@@ -16,21 +16,50 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:layout_marginBottom="3dp">
-        <TextView
-            android:id="@+id/wg_city"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text=""
-            android:textColor="#AAFFFFFF"
-            android:textSize="7.5sp" />
-        <TextView
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layoutDirection="rtl">
+            <ImageView
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:src="@drawable/ic_location_pin"
+                android:layout_marginEnd="2dp"
+                android:alpha="0.75" />
+            <TextView
+                android:id="@+id/wg_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#AAFFFFFF"
+                android:textSize="7.5sp" />
+        </LinearLayout>
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="نُور"
-            android:textColor="#CCFFFFFF"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView
+                android:id="@+id/wg_app_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="نُور"
+                android:textColor="#CCFFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/wg_theme_toggle"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_marginStart="5dp"
+                android:src="@drawable/ic_widget_theme_dark"
+                android:background="@drawable/widget_theme_btn_bg_dark"
+                android:padding="3dp"
+                android:scaleType="fitCenter" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Prayer icon + name -->
@@ -120,5 +149,10 @@
         android:layout_marginTop="3dp"
         android:gravity="center" />
 
-    <TextView android:id="@+id/wg_hijri_date" android:layout_width="1dp" android:layout_height="1dp" android:text="" android:textColor="#00000000" android:textSize="1sp" android:visibility="gone" />
+    <!-- Hidden placeholders -->
+    <TextView android:id="@+id/wg_hijri_date"     android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_username"        android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_day_pct"         android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_current_prayer"  android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
+    <TextView android:id="@+id/wg_remaining_text"  android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
 </LinearLayout>

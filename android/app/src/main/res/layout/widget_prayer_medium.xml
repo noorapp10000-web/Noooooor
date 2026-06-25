@@ -9,7 +9,7 @@
     android:padding="10dp"
     android:layoutDirection="rtl">
 
-    <!-- ── Header: نُور + username · city ── -->
+    <!-- ── Header ── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -29,6 +29,7 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
                 <TextView
+                    android:id="@+id/wg_app_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="نُور"
@@ -37,10 +38,12 @@
                     android:textStyle="bold" />
                 <ImageView
                     android:id="@+id/wg_theme_toggle"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_marginStart="6dp"
                     android:src="@drawable/ic_widget_theme_dark"
+                    android:background="@drawable/widget_theme_btn_bg_dark"
+                    android:padding="4dp"
                     android:scaleType="fitCenter" />
             </LinearLayout>
 
@@ -110,6 +113,7 @@
             android:layout_weight="1"
             android:orientation="vertical">
             <TextView
+                android:id="@+id/wg_next_prayer_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="الصلاة القادمة"
@@ -167,7 +171,7 @@
                     android:textSize="17sp"
                     android:textStyle="bold"
                     android:text="00" />
-                <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="ساعة" android:textColor="#70C19A6B" android:textSize="7sp" android:gravity="center" android:layout_marginTop="1dp" />
+                <TextView android:id="@+id/wg_hours_label" android:layout_width="36dp" android:layout_height="wrap_content" android:text="ساعة" android:textColor="#70C19A6B" android:textSize="7sp" android:gravity="center" android:layout_marginTop="1dp" />
             </LinearLayout>
 
             <TextView android:layout_width="10dp" android:layout_height="wrap_content" android:gravity="center" android:text=":" android:textColor="#C0C19A6B" android:textSize="16sp" android:textStyle="bold" android:paddingBottom="10dp" />
@@ -183,7 +187,7 @@
                     android:textSize="17sp"
                     android:textStyle="bold"
                     android:text="00" />
-                <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="دقيقة" android:textColor="#70C19A6B" android:textSize="7sp" android:gravity="center" android:layout_marginTop="1dp" />
+                <TextView android:id="@+id/wg_minutes_label" android:layout_width="36dp" android:layout_height="wrap_content" android:text="دقيقة" android:textColor="#70C19A6B" android:textSize="7sp" android:gravity="center" android:layout_marginTop="1dp" />
             </LinearLayout>
 
             <TextView android:layout_width="10dp" android:layout_height="wrap_content" android:gravity="center" android:text=":" android:textColor="#C0C19A6B" android:textSize="16sp" android:textStyle="bold" android:paddingBottom="10dp" />
@@ -199,13 +203,12 @@
                     android:textSize="17sp"
                     android:textStyle="bold"
                     android:text="00" />
-                <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="ثانية" android:textColor="#70C19A6B" android:textSize="7sp" android:gravity="center" android:layout_marginTop="1dp" />
+                <TextView android:id="@+id/wg_seconds_label" android:layout_width="36dp" android:layout_height="wrap_content" android:text="ثانية" android:textColor="#70C19A6B" android:textSize="7sp" android:gravity="center" android:layout_marginTop="1dp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
     <!-- ── Progress ── -->
-    <!-- Percentage label above the bar only — no prev/next prayer names on sides -->
     <TextView
         android:id="@+id/wg_progress_pct"
         android:layout_width="match_parent"
@@ -217,7 +220,6 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="2dp" />
 
-    <!-- Hidden placeholders -->
     <TextView android:id="@+id/wg_prev_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
     <TextView android:id="@+id/wg_next_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
 
@@ -232,12 +234,11 @@
         android:progress="50"
         android:layoutDirection="ltr" />
 
-    <!-- Hidden placeholders — prevent RemoteViews crash when service sets these IDs -->
     <TextView android:id="@+id/wg_day_pct"        android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
     <TextView android:id="@+id/wg_current_prayer" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
     <TextView android:id="@+id/wg_remaining_text" android:layout_width="0dp" android:layout_height="0dp" android:text="" android:visibility="gone" />
 
-    <!-- ── 5 Prayers compact row with icons ── -->
+    <!-- ── 5 Prayers compact row ── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -256,7 +257,7 @@
             android:layout_marginEnd="1dp"
             android:background="@drawable/widget_prayer_cell_bg">
             <ImageView android:id="@+id/wg_fajr_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_fajr" android:scaleType="fitCenter" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الفجر" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
+            <TextView android:id="@+id/wg_fajr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الفجر" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_fajr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7.5sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
 
@@ -273,7 +274,7 @@
             android:layout_marginEnd="1dp"
             android:background="@drawable/widget_prayer_cell_bg">
             <ImageView android:id="@+id/wg_asr_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_asr" android:scaleType="fitCenter" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
+            <TextView android:id="@+id/wg_asr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_asr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7.5sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
 
@@ -290,7 +291,7 @@
             android:layout_marginEnd="1dp"
             android:background="@drawable/widget_prayer_cell_bg">
             <ImageView android:id="@+id/wg_dhuhr_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_dhuhr" android:scaleType="fitCenter" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الظهر" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
+            <TextView android:id="@+id/wg_dhuhr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الظهر" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_dhuhr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7.5sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
 
@@ -307,7 +308,7 @@
             android:layout_marginEnd="1dp"
             android:background="@drawable/widget_prayer_cell_bg">
             <ImageView android:id="@+id/wg_maghrib_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_maghrib" android:scaleType="fitCenter" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المغرب" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
+            <TextView android:id="@+id/wg_maghrib_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المغرب" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_maghrib_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7.5sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
 
@@ -324,7 +325,7 @@
             android:layout_marginEnd="1dp"
             android:background="@drawable/widget_prayer_cell_bg">
             <ImageView android:id="@+id/wg_isha_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_isha" android:scaleType="fitCenter" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العشاء" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
+            <TextView android:id="@+id/wg_isha_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العشاء" android:textColor="#AAFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_isha_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7.5sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
     </LinearLayout>

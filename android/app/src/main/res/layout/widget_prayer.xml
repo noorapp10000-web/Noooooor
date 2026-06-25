@@ -31,6 +31,7 @@
                 android:gravity="center_vertical">
 
                 <TextView
+                    android:id="@+id/wg_app_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="نُور"
@@ -40,10 +41,12 @@
 
                 <ImageView
                     android:id="@+id/wg_theme_toggle"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_marginStart="6dp"
                     android:src="@drawable/ic_widget_theme_dark"
+                    android:background="@drawable/widget_theme_btn_bg_dark"
+                    android:padding="4dp"
                     android:scaleType="fitCenter" />
             </LinearLayout>
 
@@ -113,6 +116,7 @@
         android:gravity="center_horizontal">
 
         <TextView
+            android:id="@+id/wg_next_prayer_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="الصلاة القادمة"
@@ -148,6 +152,7 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/wg_remaining_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="متبقي على الأذان"
@@ -180,6 +185,7 @@
                     android:textStyle="bold"
                     android:text="00" />
                 <TextView
+                    android:id="@+id/wg_hours_label"
                     android:layout_width="44dp"
                     android:layout_height="wrap_content"
                     android:text="ساعة"
@@ -215,6 +221,7 @@
                     android:textStyle="bold"
                     android:text="00" />
                 <TextView
+                    android:id="@+id/wg_minutes_label"
                     android:layout_width="44dp"
                     android:layout_height="wrap_content"
                     android:text="دقيقة"
@@ -250,6 +257,7 @@
                     android:textStyle="bold"
                     android:text="00" />
                 <TextView
+                    android:id="@+id/wg_seconds_label"
                     android:layout_width="44dp"
                     android:layout_height="wrap_content"
                     android:text="ثانية"
@@ -305,14 +313,13 @@
             android:layout_marginTop="3dp" />
     </LinearLayout>
 
-    <!-- ══ 5 PRAYERS ROW (RTL: فجر right → عشاء left) ══ -->
+    <!-- ══ 5 PRAYERS ROW ══ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="5dp">
 
-        <!-- الفجر (rightmost in RTL) -->
         <LinearLayout
             android:id="@+id/wg_fajr_box"
             android:layout_width="0dp"
@@ -332,6 +339,7 @@
                 android:src="@drawable/ic_prayer_fajr"
                 android:scaleType="fitCenter" />
             <TextView
+                android:id="@+id/wg_fajr_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="الفجر"
@@ -350,7 +358,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- العصر -->
         <LinearLayout
             android:id="@+id/wg_asr_box"
             android:layout_width="0dp"
@@ -370,6 +377,7 @@
                 android:src="@drawable/ic_prayer_asr"
                 android:scaleType="fitCenter" />
             <TextView
+                android:id="@+id/wg_asr_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="العصر"
@@ -388,7 +396,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- الظهر (center) -->
         <LinearLayout
             android:id="@+id/wg_dhuhr_box"
             android:layout_width="0dp"
@@ -408,6 +415,7 @@
                 android:src="@drawable/ic_prayer_dhuhr"
                 android:scaleType="fitCenter" />
             <TextView
+                android:id="@+id/wg_dhuhr_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="الظهر"
@@ -426,7 +434,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- المغرب -->
         <LinearLayout
             android:id="@+id/wg_maghrib_box"
             android:layout_width="0dp"
@@ -446,6 +453,7 @@
                 android:src="@drawable/ic_prayer_maghrib"
                 android:scaleType="fitCenter" />
             <TextView
+                android:id="@+id/wg_maghrib_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="المغرب"
@@ -464,7 +472,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- العشاء (leftmost in RTL) -->
         <LinearLayout
             android:id="@+id/wg_isha_box"
             android:layout_width="0dp"
@@ -484,6 +491,7 @@
                 android:src="@drawable/ic_prayer_isha"
                 android:scaleType="fitCenter" />
             <TextView
+                android:id="@+id/wg_isha_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="العشاء"
@@ -525,6 +533,7 @@
                 android:textSize="8.5sp"
                 android:textStyle="bold" />
             <TextView
+                android:id="@+id/wg_hijri_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="التاريخ الهجري"
@@ -533,6 +542,7 @@
         </LinearLayout>
 
         <View
+            android:id="@+id/wg_separator"
             android:layout_width="1dp"
             android:layout_height="22dp"
             android:background="#25FFFFFF"
@@ -554,6 +564,7 @@
                 android:textStyle="bold"
                 android:gravity="end" />
             <TextView
+                android:id="@+id/wg_day_pct_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="نسبة اليوم المنقضي"

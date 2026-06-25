@@ -65,10 +65,6 @@ public class PrayerWidgetService extends Service {
         "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
     };
 
-    private static final String[] HIJRI_DAYS = {
-        "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"
-    };
-
     private final Handler  handler    = new Handler(Looper.getMainLooper());
     private boolean        isScreenOn = true;
     private boolean        isRunning  = false;
@@ -109,7 +105,6 @@ public class PrayerWidgetService extends Service {
             startForeground(NOTIF_ID, buildNotification("نُور", "عداد الصلاة يعمل في الخلفية"));
             handler.post(tickRunnable);
         } else {
-            // Called again (e.g. theme toggle) — refresh immediately
             performUpdate();
         }
         return START_STICKY;
@@ -138,8 +133,6 @@ public class PrayerWidgetService extends Service {
         String username   = prefs.getString(KEY_USERNAME, "");
         boolean isDark    = !"light".equals(prefs.getString(KEY_WIDGET_THEME, "dark"));
 
-        // Use hijri date sent from JS (respects user's hijri adjustment).
-        // Falls back to native calculation only if JS hasn't sent one yet.
         String storedHijri = prefs.getString(KEY_HIJRI_DATE, "");
         String hijri = !storedHijri.isEmpty() ? storedHijri : getHijriDate();
         int dayPct   = getDayPercent();
@@ -163,9 +156,9 @@ public class PrayerWidgetService extends Service {
             int minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160);
 
             int layoutId;
-            if (minW < 180 || minH < 130) {
+            if (minW < 180 || minH < 110) {
                 layoutId = R.layout.widget_prayer_small;
-            } else if (minH < 155) {
+            } else if (minH < 150) {
                 layoutId = R.layout.widget_prayer_medium;
             } else {
                 layoutId = R.layout.widget_prayer;
@@ -173,46 +166,84 @@ public class PrayerWidgetService extends Service {
 
             RemoteViews rv = new RemoteViews(getPackageName(), layoutId);
 
-            // ── Theme-aware backgrounds ────────────────────────────────────
+            // ── Theme colors ────────────────────────────────────────────────
+            // Main colors
+            int textPrimary    = isDark ? 0xFFFFFFFF : 0xFF1A1A1A;   // أبيض / داكن جداً
+            int textSecondary  = isDark ? 0xCCFFFFFF : 0xFF3D2B0F;   // أبيض شفاف / بني
+            int textMuted      = isDark ? 0xAAFFFFFF : 0xFF5A4A30;   // شفاف أكثر / بني فاتح
+            int textSubtle     = isDark ? 0x55FFFFFF : 0xFF8A7060;   // شفاف جداً / رمادي بني
+
+            // ── Root background ─────────────────────────────────────────────
             rv.setInt(R.id.wg_root, "setBackgroundResource",
                 isDark ? R.drawable.widget_bg : R.drawable.widget_bg_light);
 
-            if (layoutId != R.layout.widget_prayer_small) {
-                rv.setInt(R.id.wg_main_card, "setBackgroundResource",
-                    isDark ? R.drawable.widget_card_bg : R.drawable.widget_card_bg_light);
-            }
-
-            // Number boxes
-            int numBg = isDark ? R.drawable.widget_number_bg : R.drawable.widget_number_bg_light;
-            rv.setInt(R.id.wg_hours,   "setBackgroundResource", numBg);
-            rv.setInt(R.id.wg_minutes, "setBackgroundResource", numBg);
-            rv.setInt(R.id.wg_seconds, "setBackgroundResource", numBg);
-
-            // Theme toggle icon
+            // ── Theme toggle button ─────────────────────────────────────────
             rv.setImageViewResource(R.id.wg_theme_toggle,
                 isDark ? R.drawable.ic_widget_theme_dark : R.drawable.ic_widget_theme_light);
+            rv.setInt(R.id.wg_theme_toggle, "setBackgroundResource",
+                isDark ? R.drawable.widget_theme_btn_bg_dark : R.drawable.widget_theme_btn_bg_light);
             rv.setOnClickPendingIntent(R.id.wg_theme_toggle, togglePi);
 
-            // Text colors based on theme
-            int textPrimary = isDark ? 0xFFFFFFFF : 0xFF1A1A1A;
-            int textMuted   = isDark ? 0xAAFFFFFF : 0xFF5A4A30;
-            rv.setTextColor(R.id.wg_prayer_name, textPrimary);
-            rv.setTextColor(R.id.wg_hours,       textPrimary);
-            rv.setTextColor(R.id.wg_minutes,     textPrimary);
-            rv.setTextColor(R.id.wg_seconds,     textPrimary);
-            rv.setTextColor(R.id.wg_adhan_time,  isDark ? 0xCCFFFFFF : 0xFF3D2B0F);
+            // ── App title "نُور" ────────────────────────────────────────────
+            rv.setTextColor(R.id.wg_app_title, textPrimary);
 
-            // ── Username & city ────────────────────────────────────────────
+            // ── City text ───────────────────────────────────────────────────
             String cityText = (city != null && !city.isEmpty()) ? city : "";
             rv.setTextViewText(R.id.wg_city, cityText);
+            rv.setTextColor(R.id.wg_city, textSecondary);
+
+            // ── Username ────────────────────────────────────────────────────
             if (!username.isEmpty()) {
                 rv.setTextViewText(R.id.wg_username, username);
             }
 
-            // ── Hijri date & day % ─────────────────────────────────────────
+            // ── Countdown numbers ───────────────────────────────────────────
+            int numBg = isDark ? R.drawable.widget_number_bg : R.drawable.widget_number_bg_light;
+            rv.setInt(R.id.wg_hours,   "setBackgroundResource", numBg);
+            rv.setInt(R.id.wg_minutes, "setBackgroundResource", numBg);
+            rv.setInt(R.id.wg_seconds, "setBackgroundResource", numBg);
+            rv.setTextColor(R.id.wg_hours,   textPrimary);
+            rv.setTextColor(R.id.wg_minutes, textPrimary);
+            rv.setTextColor(R.id.wg_seconds, textPrimary);
+
+            // ── Prayer name ─────────────────────────────────────────────────
+            rv.setTextColor(R.id.wg_prayer_name, textPrimary);
+
+            // ── Adhan time ──────────────────────────────────────────────────
+            rv.setTextColor(R.id.wg_adhan_time, textSecondary);
+
+            // ── Hijri date ──────────────────────────────────────────────────
             rv.setTextViewText(R.id.wg_hijri_date, hijri);
             rv.setTextViewText(R.id.wg_day_pct, dayPct + "%");
+            rv.setTextColor(R.id.wg_day_pct, textPrimary);
 
+            // ── Layout-specific overrides ───────────────────────────────────
+            if (layoutId == R.layout.widget_prayer || layoutId == R.layout.widget_prayer_medium) {
+                // Card background
+                rv.setInt(R.id.wg_main_card, "setBackgroundResource",
+                    isDark ? R.drawable.widget_card_bg : R.drawable.widget_card_bg_light);
+
+                // Time unit labels (ساعة/دقيقة/ثانية)
+                rv.setTextColor(R.id.wg_hours_label,   0xFFC19A6B);
+                rv.setTextColor(R.id.wg_minutes_label, 0xFFC19A6B);
+                rv.setTextColor(R.id.wg_seconds_label, 0xFFC19A6B);
+
+                // Prayer cell label colors
+                int cellLabelColor = isDark ? 0xBBFFFFFF : 0xFF4A3828;
+                rv.setTextColor(R.id.wg_fajr_label,    cellLabelColor);
+                rv.setTextColor(R.id.wg_asr_label,     cellLabelColor);
+                rv.setTextColor(R.id.wg_dhuhr_label,   cellLabelColor);
+                rv.setTextColor(R.id.wg_maghrib_label, cellLabelColor);
+                rv.setTextColor(R.id.wg_isha_label,    cellLabelColor);
+            }
+
+            if (layoutId == R.layout.widget_prayer) {
+                // Bottom bar labels
+                rv.setTextColor(R.id.wg_hijri_label,   textSubtle);
+                rv.setTextColor(R.id.wg_day_pct_label, textSubtle);
+            }
+
+            // ── Prayer data ─────────────────────────────────────────────────
             if (state != null) {
                 long remaining = state.nextTimeMs - System.currentTimeMillis();
                 if (remaining < 0) remaining = 0;
@@ -221,50 +252,40 @@ public class PrayerWidgetService extends Service {
                 int m = (int)((remaining % 3_600_000L) / 60_000L);
                 int s = (int)((remaining % 60_000L) / 1_000L);
 
-                // Prayer name (no emoji — use icon separately)
                 rv.setTextViewText(R.id.wg_prayer_name, state.nextName);
                 rv.setTextViewText(R.id.wg_hours,   pad2(h));
                 rv.setTextViewText(R.id.wg_minutes, pad2(m));
                 rv.setTextViewText(R.id.wg_seconds, pad2(s));
                 rv.setTextViewText(R.id.wg_adhan_time, "وقت الأذان " + state.nextFormattedTime);
 
-                // Next prayer icon in main card
                 if (state.nextIdx >= 0 && state.nextIdx < PRAYER_ICONS.length) {
                     rv.setImageViewResource(R.id.wg_prayer_name_icon, PRAYER_ICONS[state.nextIdx]);
                 }
 
-                // Current prayer in header (the prev = current active prayer)
                 rv.setTextViewText(R.id.wg_current_prayer, "الصلاة الحالية: " + state.prevName);
-
-                // Progress
                 rv.setProgressBar(R.id.wg_progress, 100, state.progress, false);
 
-                // Remaining time text
                 String remainText = "متبقي " + h + " ساعة و " + m + " دقيقة";
                 rv.setTextViewText(R.id.wg_remaining_text, remainText);
 
-                // Large + medium: extra labels and prayer row
                 if (layoutId == R.layout.widget_prayer || layoutId == R.layout.widget_prayer_medium) {
                     rv.setTextViewText(R.id.wg_prev_prayer, state.prevName);
                     rv.setTextViewText(R.id.wg_next_prayer, state.nextName);
                     rv.setTextViewText(R.id.wg_progress_pct,
                         state.progress + "% من الوقت بين " + state.prevName + " و" + state.nextName);
 
-                    // Prayer times
                     rv.setTextViewText(R.id.wg_fajr_time,    state.allTimes[0]);
                     rv.setTextViewText(R.id.wg_dhuhr_time,   state.allTimes[1]);
                     rv.setTextViewText(R.id.wg_asr_time,     state.allTimes[2]);
                     rv.setTextViewText(R.id.wg_maghrib_time, state.allTimes[3]);
                     rv.setTextViewText(R.id.wg_isha_time,    state.allTimes[4]);
 
-                    // Prayer icons (vector drawables)
                     rv.setImageViewResource(R.id.wg_fajr_icon,    R.drawable.ic_prayer_fajr);
                     rv.setImageViewResource(R.id.wg_dhuhr_icon,   R.drawable.ic_prayer_dhuhr);
                     rv.setImageViewResource(R.id.wg_asr_icon,     R.drawable.ic_prayer_asr);
                     rv.setImageViewResource(R.id.wg_maghrib_icon, R.drawable.ic_prayer_maghrib);
                     rv.setImageViewResource(R.id.wg_isha_icon,    R.drawable.ic_prayer_isha);
 
-                    // Reset all prayer box backgrounds
                     int normalCell = isDark
                         ? R.drawable.widget_prayer_cell_bg
                         : R.drawable.widget_prayer_cell_bg_light;
@@ -272,7 +293,6 @@ public class PrayerWidgetService extends Service {
                         ? R.drawable.widget_prayer_cell_active_bg
                         : R.drawable.widget_prayer_cell_active_bg_light;
 
-                    // boxIds maps prayer index (0=fajr,1=dhuhr,2=asr,3=maghrib,4=isha) → box view ID
                     int[] boxIds = {
                         R.id.wg_fajr_box, R.id.wg_dhuhr_box, R.id.wg_asr_box,
                         R.id.wg_maghrib_box, R.id.wg_isha_box
@@ -285,7 +305,6 @@ public class PrayerWidgetService extends Service {
                     }
                 }
 
-                // Notification
                 String cd = pad2(h) + ":" + pad2(m) + ":" + pad2(s);
                 getSystemService(NotificationManager.class)
                     .notify(NOTIF_ID, buildNotification(state.nextName, cd));
@@ -379,7 +398,7 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Hijri date (short format: DD Month YYYY هـ) ───────────────────────────
+    // ── Hijri date ────────────────────────────────────────────────────────────
     private String getHijriDate() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "";
         try {
@@ -395,7 +414,7 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    // ── Day progress (% of 24 hours elapsed since midnight) ──────────────────
+    // ── Day progress ──────────────────────────────────────────────────────────
     private int getDayPercent() {
         Calendar cal = Calendar.getInstance();
         int h = cal.get(Calendar.HOUR_OF_DAY);
