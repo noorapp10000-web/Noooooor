@@ -84,7 +84,11 @@ jobs:
       - name: Sync Capacitor to Android
         run: pnpm exec cap sync android
 
-      # ── 9. Verify structure ───────────────────────────────────────────────
+      # ── 9. Copy updated widget resource files ────────────────────────────
+      - name: Copy widget resources (layout + drawable + xml)
+        run: bash scripts/copy-widget-files.sh
+
+      # ── 10. Verify structure ──────────────────────────────────────────────
       - name: Verify Android project structure
         run: |
           echo "=== Web assets in Android ==="
