@@ -1,0 +1,106 @@
+Let me analyze what the user wants based on the two images:
+
+Current state (second image - actual widget): Shows the widget I just built - dark glassmorphism with countdown, prayer names, progress bar, 5 prayers row with emoji icons.
+
+Desired state (first image - target mockup): Shows a more refined widget with:
+
+Header row (right to left):
+
+Right side: "نور" (bold) + settings gear icon (⚙️)
+Left side: 📍 القاهرة (location)
+Below header right: username (under نور)
+Below header left: "الصلاة الحالية: الفجر ☀️" (current prayer)
+Main glass card:
+
+"الصلاة القادمة" label with the next prayer name "الظهر ☀️" displayed prominently
+"متبقي على الأذان" secondary label above the countdown timer showing 04 : 29 : 47 with time unit labels (ساعة، دقيقة، ثانية)
+Prayer time display "🕐 وقت الأذان 12:54 م" and a progress indicator showing "49% من الوقت بين الفجر والظهر" with a progress bar labeled with both prayer times and remaining time below it
+5 Prayers row:
+
+Custom prayer icons styled to match the app aesthetic instead of emoji, with each cell showing the icon, prayer name, and time in Arabic format with ص/م indicators
+The active prayer (الظهر) gets highlighted with a golden border
+Bottom info bar:
+
+Left side displays the Hijri date "📅 25 ذو الحجة 1447 هـ"
+Right side shows the day progress percentage "🌙 42% / نسبة اليوم المنقضي"
+Theme toggle button for switching between dark and light modes integrated into the widget, with both variants fully supported
+
+Layout details:
+
+"نور" appears on the right with the username below it
+City name on the left with the current prayer name below it
+The Hijri date pulls from stored data on the main page
+Everything matches the mockup layout exactly
+Now I'm thinking through the implementation challenges, particularly around the prayer icons since RemoteViews in Android widgets has limitations with programmatic vector drawables.
+
+Looking at the mockup more carefully, the prayer icons appear to be custom-designed versions of the standard prayer symbols — sunrise for Fajr, sun for Dhuhr, partly cloudy for Asr, sunset for Maghrib, and moon for Isha. The user specifically wants these same icons from the app rather than emoji versions, so I'll need to create vector drawable XML files for each prayer type to use in the widget.
+
+For the theme toggle functionality, I'll add a button or image view that switches between dark and light mode. The widget will save the preference to SharedPreferences and trigger an update when clicked. The username comes from SharedPreferences (set by the app), and I can calculate the Hijri date using the same logic already in the widget service or pull it from SharedPreferences if the main app stores it there. In light mode, the widget background shifts to a light gradient. The layout needs restructuring with the app name on the right, a settings gear button, location info on the left, and the current prayer displayed below the location.
+
+Now I'm planning the implementation strategy. I need to modify the layout XML files for different widget sizes, create or update the background drawable for both dark and light themes, and implement the theme toggle functionality. The files to update include the main widget layout, medium and small variants, and the background resources.
+
+I'm realizing this is getting quite complex, so I need to think through what's actually feasible versus what might be over-engineering the solution. The theme toggle will require adding a broadcast receiver to handle theme changes and updating the widget service to manage the state properly.
+
+For the prayer icons, I'll create simple vector drawables that can be tinted dynamically based on the theme—golden for dark mode and dark for light mode. The Hijri date calculation is already handled in Java, so that's covered. I'll add a new SharedPreferences key for storing the username that the app can set.
+
+Now I'm sketching out the complete widget layout based on the target mockup. Displaying the prayer times in a visual timeline with all five daily prayers listed with their times, along with the Islamic date and completion percentage for the day.
+
+Now I'm thinking about the prayer icons—I need to match what's already in the app rather than creating new ones. Let me look for the existing prayer icon assets to see what's available.
+
+Since I'm not sure exactly which icons the app uses internally, I'll create proper Android Vector Drawable XML files that match the target image style. For the widget layout, I'll use ImageView elements with drawable references and apply tinting from the Java code to match the app's color scheme.
+
+Now I need to plan out all the drawable resources I'll create: vector drawables for each of the five prayer times (Fajr with a sunrise design, Dhuhr with a sun, Asr with a clouded sun, Maghrib with a sunset, and Isha with a crescent moon), plus background drawables for the light mode theme including the main widget background, card backgrounds, number boxes, and individual prayer cells.
+
+I also need to update the Java files to handle theme switching via broadcast and apply the new styling, redesign the widget layouts to match the target mockup, and update the copy script to include all the new drawable assets. This is quite a bit of work, so I'm going to focus on getting the implementation right rather than rushing through it.
+
+For the prayer icons, I'm thinking about creating simple vector drawables that match what I see in the target image—a sunrise for فجر, a full sun for ظهر, sun with clouds for عصر, a sunset for المغرب, and a crescent moon with a star for عشاء.
+
+Now I need to plan out the implementation: create the five prayer icon vectors, set up light theme versions, update the widget layouts across different sizes, modify the widget code to handle theme switching, and update the service to pull the username from storage, display the current prayer, show remaining time in Arabic format, and calculate the day percentage. I should also check where the username is stored in the Noor app—it's likely in localStorage on the main page.
+
+For the username, I'll add a SharedPreferences key that the bridge plugin can set, defaulting to "أهلاً" if not provided. For light mode, I'm thinking a warm cream background (#FAFAFA), white cards with subtle shadows, dark text (#1A1A1A), keeping the same golden accent (#C19A6B), and light gray for the number boxes. The theme toggle could be a small icon button showing either a sun or moon symbol.
+
+Looking at the mockup more carefully, I see the settings gear is already in the header on the right side, so I'll add a dedicated theme toggle button nearby rather than repurposing that icon. Now let me focus on what the user actually asked for versus what would be nice to have—the core requests are dark and light mode variants with a toggle, replacing emoji prayer icons with proper app-style icons, and pulling the Hijri date from the main page.
+
+Building out the large widget layout with the header showing city and current prayer on the left, نور and username on the right, then the main card displaying the next prayer name, time remaining in a countdown format, and the actual prayer time below. The bottom bar needs two equal-width sections: one showing the Islamic date with a calendar icon and subtitle, the other displaying the day percentage with a moon icon and subtitle. I'm calculating the percentage of the day elapsed using the time difference from midnight divided by 24 hours, and I'll add the theme toggle as a button in the header area.
+
+For the prayer icons, I'm creating simple vector drawables that match the target image style. The theme system will support dark mode (navy background) and light mode (cream background with dark text), with a broadcast receiver in the widget to handle theme toggling and update all instances.
+
+Now I'm working through the RTL layout carefully—in Arabic, the header needs "نور" and settings on the right side, with the city and current prayer info on the left. I'll structure the LinearLayout to respect RTL directionality so elements appear in the correct visual order. Refining the RTL layout structure... I'm realizing the gravity directions flip in RTL, so I need to be careful with start/end positioning. Let me switch to a simpler approach using a horizontal LinearLayout with explicit RTL direction, then build out the columns with the name and theme button on the right side, and the location with current prayer on the left. In RTL layouts, the XML order is reversed visually—the first child appears on the right and the last on the left. So I need to put the نور section first to position it on the right side. For text alignment within those columns, I should use absolute gravity values like gravity="right" and gravity="left" rather than start/end to avoid confusion with the RTL direction.
+
+Now I'm designing prayer time icons as vector drawables—each one representing a different prayer with a simple visual: a sunrise for Fajr, a full sun for Dhuhr, an afternoon sun with clouds for Asr, a low sunset for Maghrib, and a crescent moon for Isha.
+
+Creating vector drawable icons...
+
+Actually, I'm realizing I should keep these simple since they'll be displayed at small sizes in the widget. Rather than getting too detailed with the SVG paths, I'll use ImageViews in the prayer row to reference drawable resources, and I should just start building the actual widget layout now instead of overthinking the icon design.
+
+My approach: build the widget with a header showing the app name and theme toggle, the user's location and current prayer time, then the five daily prayers in a row with their icons. I can use setColorFilter on ImageView to handle the theme tinting dynamically in RemoteViews. Now I'm planning out the implementation: creating the prayer icon vector drawables, adding light theme backgrounds, updating the widget layouts and Java code, and modifying the copy script to include all the new resources. Creating vector drawables for the prayer icons... Writing vector drawables... Writing SVG icon elements... Writing SVG paths...
+
+Now I'm shifting focus to the Java implementation—I need to handle theme broadcasts, apply them to widget backgrounds, display the username and current prayer name, show the countdown timer as text, calculate the day's progress percentage, and swap out the emoji TextViews for proper ImageView icons instead.
+
+For the layout structure, each prayer row will contain an ImageView for the icon alongside TextViews for the prayer name and time. In the Java code, I'll use RemoteViews methods to set the drawable resources and apply color filters for theming. I also need to add a theme toggle button to the widget and create the corresponding broadcast action handler in the main widget class. Writing the widget layout... Displaying the prayer times with their corresponding icons and the Islamic date along with the moon phase percentage for today. So the prayer times need to be ordered right-to-left in the XML to match the visual layout, with الفجر appearing on the far right and العشاء on the far left in the RTL LinearLayout. are actually in the same order—I need to look more carefully at which direction the prayers are arranged in both images to understand if there's a real difference or if I'm misreading the layout. In RTL mode, the first child in XML appears on the right side of the screen and the last child appears on the left, so I need to order them as الفجر first through العشاء last to get the correct positioning. I'm also setting up the corresponding Java array of box IDs to match this order for highlighting the active prayer.
+
+For the header layout, I'm placing the نُور section with the theme toggle as the first child (right side in RTL) and the city location as the second child (left side). Now I need to create all the drawable resources for the prayer icons and backgrounds, update the layout files for the different widget sizes, and write the widget provider code.
+
+I'm also thinking about where the username comes from—the WidgetBridgePlugin can write it to SharedPreferences from the app's localStorage, and I'll add a default greeting if it's not set. For the day percentage calculation, I need to determine the time elapsed since midnight.
+
+Writing widget provider code... Creating vector drawable icons for each prayer time... Writing SVG paths... Writing SVG icon paths... Simplifying the SVG paths instead. I'm using the Material Design crescent moon shape for the isha prayer time, and now working on the sun icon for dhuhr. Writing SVG sun icon... Writing SVG paths... For the theme toggle button, I'll use a simple circular button with the moon or sun icon since RemoteViews has limitations with more complex button types. I'm setting up a PendingIntent that broadcasts the toggle action back to the widget receiver, which will then handle updating the theme preference and refreshing the display.
+
+Now I need to write out all the implementation code and think through how to handle the username. I'll add a separate preference key for storing the username that the widget service can read, so if it's not set yet, it'll display a default greeting instead.
+
+For the large widget layout, I'm structuring it as a vertical LinearLayout with RTL support and dynamic theming. The header section will have two columns: the right side shows the app name with a theme toggle and the username below it, while the left side displays the location and current prayer information. Then there's a main card section below that.
+
+Building the main card layout... Writing the formatting logic...
+
+Now I have a clear plan: I'll create the vector drawable icons first, then the light theme drawables, update the layouts, modify the Java code, and refresh the copy script before pushing everything to GitHub. Writing vector icons... Writing SVG paths... Continuing with the SVG path data... Writing SVG paths... I'm switching to a simpler approach using basic geometric shapes for each prayer time icon instead of complex paths. I'll create distinct visuals: a rising semicircle for Fajr, a full circle for Dhuhr, a circle with an overlapping rectangle for Asr, a setting semicircle for Maghrib, and a crescent for Isha.
+
+Writing SVG code... Writing SVG crescent path... I'll apply a color filter from Java to tint the white icons dynamically—golden for dark theme, darker for light theme. This keeps the drawable definitions simple and lets me handle theming in code rather than maintaining multiple icon sets.
+
+Now I'm setting up the Java side: I need to update PrayerWidget.java to handle theme toggle broadcasts, and significantly expand PrayerWidgetService.java to read the theme preference, apply the right backgrounds, display the username and current prayer name, show remaining time as text, render the day percentage, set the prayer icons with color filters, and wire up the theme toggle button. I'll also add new SharedPreferences keys for isWidgetDark and userName, plus new view IDs in the layouts for the username display, current prayer display, theme toggle button, and remaining time text. Writing component code... Now I'm listing out all the drawable files I need to create for the light theme backgrounds and the toggle button, plus the layout files for the different widget sizes, and then updating the Java classes and the copy script. For the theme toggle button, I'll keep it simple by using a text button with a Unicode character rather than creating a separate drawable.
+
+For the prayer time icons, I'm going to use Material Design Icon paths — a crescent moon for Isha, a sun with rays for Dhuhr, sunrise and sunset variations for Fajr and Maghrib, and a sun-with-cloud combo for Asr.
+
+Writing drawable XML files... Writing SVG path data... Writing SVG paths... Writing SVG sun icon... Finishing the diagonal rays... I'm verifying that multiple disconnected paths can work within a single pathData using MoveTo commands, which they can in SVG and Vector Drawables. Now I'm ready to write out the actual icon files with clean, recognizable designs.
+
+I've settled on five vector icons representing each prayer time—a crescent for Isha, a sunset for Maghrib, a sun with cloud for Asr, a full sun for Dhuhr, and a sunrise for Fajr. I'll use white as the base color so they can be tinted from Java code.
+
+Writing the SVG icons...

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Small widget: 2×2 — prayer icon+name + hh:mm only -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/wg_root"
@@ -7,71 +6,119 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_bg"
-    android:padding="12dp"
-    android:gravity="center"
+    android:padding="10dp"
+    android:gravity="center_horizontal"
     android:layoutDirection="rtl">
 
-    <!-- نُور label -->
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="نُور"
-        android:textColor="#C0FFFFFF"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="4dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="3dp">
+        <TextView
+            android:id="@+id/wg_city"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#AAFFFFFF"
+            android:textSize="7.5sp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="نُور"
+            android:textColor="#CCFFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <!-- Prayer icon + name -->
-    <TextView
-        android:id="@+id/wg_prayer_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="..."
-        android:textColor="#FFFFFF"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="6dp" />
-
-    <!-- Countdown: hh : mm only -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layoutDirection="ltr">
+        android:layout_marginBottom="5dp">
+        <ImageView
+            android:id="@+id/wg_prayer_name_icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_prayer_dhuhr"
+            android:scaleType="fitCenter"
+            android:layout_marginEnd="4dp" />
+        <TextView
+            android:id="@+id/wg_prayer_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="..."
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+    </LinearLayout>
 
+    <!-- Countdown: hh : mm : ss -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layoutDirection="ltr"
+        android:layout_marginBottom="4dp">
         <TextView
             android:id="@+id/wg_hours"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:gravity="center"
             android:background="@drawable/widget_number_bg"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:text="00" />
-
-        <TextView
-            android:layout_width="12dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text=":"
-            android:textColor="#C0C19A6B"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:paddingBottom="4dp" />
-
+        <TextView android:layout_width="10dp" android:layout_height="wrap_content" android:gravity="center" android:text=":" android:textColor="#C0C19A6B" android:textSize="15sp" android:textStyle="bold" android:paddingBottom="2dp" />
         <TextView
             android:id="@+id/wg_minutes"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:gravity="center"
             android:background="@drawable/widget_number_bg"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:text="00" />
+        <TextView android:layout_width="10dp" android:layout_height="wrap_content" android:gravity="center" android:text=":" android:textColor="#C0C19A6B" android:textSize="15sp" android:textStyle="bold" android:paddingBottom="2dp" />
+        <TextView
+            android:id="@+id/wg_seconds"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:background="@drawable/widget_number_bg"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:text="00" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/wg_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:progressDrawable="@drawable/widget_progress"
+        android:max="100"
+        android:progress="50"
+        android:layoutDirection="ltr" />
+
+    <TextView
+        android:id="@+id/wg_adhan_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#99C19A6B"
+        android:textSize="7.5sp"
+        android:layout_marginTop="3dp"
+        android:gravity="center" />
+
+    <TextView android:id="@+id/wg_hijri_date" android:layout_width="1dp" android:layout_height="1dp" android:text="" android:textColor="#00000000" android:textSize="1sp" android:visibility="gone" />
 </LinearLayout>

@@ -12,19 +12,6 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.noor.app.widget.PrayerWidget;
 import com.noor.app.widget.PrayerWidgetService;
 
-/**
- * Capacitor bridge — receives lat/lng + city name from the JS layer and stores
- * them in SharedPreferences so the widget foreground service can:
- *   • Calculate prayer times via adhan (no internet needed)
- *   • Display the city name (📍 القاهرة)
- *
- * Call from JavaScript:
- *   const { NoorWidget } = Plugins;
- *   await NoorWidget.setPrayerTimes({ lat: 30.0, lng: 31.2, city: "القاهرة" });
- *
- * The setTheme() method is kept for backward compatibility but has no visual
- * effect — the widget now uses a fixed glassmorphism style.
- */
 @CapacitorPlugin(name = "NoorWidget")
 public class WidgetBridgePlugin extends Plugin {
 
@@ -55,9 +42,21 @@ public class WidgetBridgePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void setUsername(PluginCall call) {
+        String username = call.getString("username", "");
+        SharedPreferences prefs = getContext().getSharedPreferences(
+            PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE
+        );
+        prefs.edit()
+            .putString(PrayerWidgetService.KEY_USERNAME, username != null ? username : "")
+            .apply();
+        triggerWidgetUpdate();
+        call.resolve();
+    }
+
+    @PluginMethod
     public void setTheme(PluginCall call) {
-        // Kept for backward compatibility — glassmorphism style is fixed.
-        String theme = call.getString("theme", "light");
+        String theme = call.getString("theme", "dark");
         SharedPreferences prefs = getContext().getSharedPreferences(
             PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE
         );

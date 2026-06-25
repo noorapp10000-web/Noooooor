@@ -10,21 +10,20 @@
     android:gravity="center_horizontal"
     android:layoutDirection="rtl">
 
-    <!-- Header: city · نُور -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="2dp">
+        android:layout_marginBottom="3dp">
         <TextView
             android:id="@+id/wg_city"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="📍"
-            android:textColor="#CCF5C878"
-            android:textSize="8sp" />
+            android:text=""
+            android:textColor="#AAFFFFFF"
+            android:textSize="7.5sp" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -34,17 +33,30 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Prayer name -->
-    <TextView
-        android:id="@+id/wg_prayer_name"
+    <!-- Prayer icon + name -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="..."
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="6dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="5dp">
+        <ImageView
+            android:id="@+id/wg_prayer_name_icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_prayer_dhuhr"
+            android:scaleType="fitCenter"
+            android:layout_marginEnd="4dp" />
+        <TextView
+            android:id="@+id/wg_prayer_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="..."
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+    </LinearLayout>
 
     <!-- Countdown: hh : mm : ss -->
     <LinearLayout
@@ -53,8 +65,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:layoutDirection="ltr"
-        android:layout_marginBottom="5dp">
-
+        android:layout_marginBottom="4dp">
         <TextView
             android:id="@+id/wg_hours"
             android:layout_width="34dp"
@@ -87,10 +98,8 @@
             android:textSize="15sp"
             android:textStyle="bold"
             android:text="00" />
-
     </LinearLayout>
 
-    <!-- Progress bar -->
     <ProgressBar
         android:id="@+id/wg_progress"
         style="?android:attr/progressBarStyleHorizontal"
@@ -101,24 +110,15 @@
         android:progress="50"
         android:layoutDirection="ltr" />
 
-    <!-- Adhan time -->
     <TextView
         android:id="@+id/wg_adhan_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text=""
-        android:textColor="#99F5C878"
-        android:textSize="8sp"
+        android:textColor="#99C19A6B"
+        android:textSize="7.5sp"
         android:layout_marginTop="3dp"
         android:gravity="center" />
 
-    <!-- Hijri date (hidden on small, but ID needed for Java) -->
-    <TextView
-        android:id="@+id/wg_hijri_date"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#00000000"
-        android:textSize="1sp" />
-
+    <TextView android:id="@+id/wg_hijri_date" android:layout_width="1dp" android:layout_height="1dp" android:text="" android:textColor="#00000000" android:textSize="1sp" android:visibility="gone" />
 </LinearLayout>
