@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/widget_bg"
+    android:background="#00000000"
     android:padding="10dp"
     android:layoutDirection="rtl">
 
@@ -41,8 +41,8 @@
                     android:layout_width="26dp"
                     android:layout_height="26dp"
                     android:layout_marginStart="5dp"
-                    android:src="@drawable/ic_widget_theme_dark"
-                    android:background="@drawable/widget_theme_btn_bg_dark"
+                   
+                    android:background="#30FFFFFF"
                     android:padding="4dp"
                     android:scaleType="fitCenter" />
             </LinearLayout>
@@ -72,7 +72,7 @@
                 <ImageView
                     android:layout_width="8dp"
                     android:layout_height="8dp"
-                    android:src="@drawable/ic_location_pin"
+                   
                     android:layout_marginEnd="2dp"
                     android:alpha="0.85" />
                 <TextView
@@ -142,7 +142,7 @@
                 android:id="@+id/wg_prayer_name_icon"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_prayer_dhuhr"
+               
                 android:scaleType="fitCenter"
                 android:layout_marginEnd="5dp" />
             <TextView
@@ -184,7 +184,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:gravity="center"
-                    android:background="@drawable/widget_number_bg"
+                    android:background="#20FFFFFF"
                     android:textColor="#FFFFFF"
                     android:textSize="20sp"
                     android:textStyle="bold"
@@ -221,7 +221,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:gravity="center"
-                    android:background="@drawable/widget_number_bg"
+                    android:background="#20FFFFFF"
                     android:textColor="#FFFFFF"
                     android:textSize="20sp"
                     android:textStyle="bold"
@@ -258,7 +258,7 @@
                     android:layout_width="42dp"
                     android:layout_height="42dp"
                     android:gravity="center"
-                    android:background="@drawable/widget_number_bg"
+                    android:background="#20FFFFFF"
                     android:textColor="#FFFFFF"
                     android:textSize="20sp"
                     android:textStyle="bold"
@@ -343,12 +343,12 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:background="@drawable/widget_prayer_cell_bg"
+            android:background="#20FFFFFF"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_fajr_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_fajr" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_fajr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
             <TextView android:id="@+id/wg_fajr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الفجر" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_fajr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -360,12 +360,12 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:background="@drawable/widget_prayer_cell_bg"
+            android:background="#20FFFFFF"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_asr_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_asr" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_asr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
             <TextView android:id="@+id/wg_asr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_asr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -377,12 +377,12 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:background="@drawable/widget_prayer_cell_bg"
+            android:background="#20FFFFFF"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_dhuhr_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_dhuhr" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_dhuhr_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
             <TextView android:id="@+id/wg_dhuhr_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الظهر" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_dhuhr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -394,12 +394,12 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:background="@drawable/widget_prayer_cell_bg"
+            android:background="#20FFFFFF"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_maghrib_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_maghrib" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_maghrib_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
             <TextView android:id="@+id/wg_maghrib_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المغرب" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_maghrib_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
@@ -411,12 +411,12 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:background="@drawable/widget_prayer_cell_bg"
+            android:background="#20FFFFFF"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:layout_marginStart="1dp"
             android:layout_marginEnd="1dp">
-            <ImageView android:id="@+id/wg_isha_icon" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/ic_prayer_isha" android:scaleType="fitCenter" />
+            <ImageView android:id="@+id/wg_isha_icon" android:layout_width="16dp" android:layout_height="16dp" android:scaleType="fitCenter" />
             <TextView android:id="@+id/wg_isha_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العشاء" android:textColor="#BBFFFFFF" android:textSize="6.5sp" android:gravity="center" android:layout_marginTop="1dp" />
             <TextView android:id="@+id/wg_isha_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#C19A6B" android:textSize="7sp" android:textStyle="bold" android:gravity="center" />
         </LinearLayout>
