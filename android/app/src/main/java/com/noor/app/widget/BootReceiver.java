@@ -32,15 +32,18 @@ public class BootReceiver extends BroadcastReceiver {
             }
 
             AppWidgetManager awm = AppWidgetManager.getInstance(storageContext);
-            int[] ids = awm.getAppWidgetIds(
-                new ComponentName(storageContext, PrayerWidget.class));
+            ComponentName widgetComponent = new ComponentName(storageContext, PrayerWidget.class);
+            int[] ids = awm.getAppWidgetIds(widgetComponent);
 
             if (ids != null && ids.length > 0) {
-                // 1. شغّل الـ alarm المستقل — يجدّد نفسه بمفرده حتى لو مات الـ Service
-                WidgetRefreshReceiver.schedule(context);
-                // 2. حاول تشغيل الـ Service للتحديث كل ثانية
-                try { PrayerWidgetService.start(context); } catch (Exception ignored) {}
+                // Try the foreground service first
+                try {
+                    PrayerWidgetService.start(context);
+                } catch (Exception ignored) {}
+                // Always schedule AlarmManager as backup for EMUI/Huawei
+                PrayerWidgetService.scheduleAlarmFallback(context);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 }
