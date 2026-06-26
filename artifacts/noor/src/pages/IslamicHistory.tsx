@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { useUserSetting } from '@/hooks/use-user-setting';
 
 type Era = 'seerah' | 'rashidun' | 'umayyad' | 'abbasid' | 'ayyubid' | 'mamluk' | 'ottoman';
+type ItemType = 'all' | 'persons' | 'battles' | 'politics' | 'science';
 
 type HistoryItem = {
   id: number;
@@ -12,6 +13,28 @@ type HistoryItem = {
   text: string;
   era: Era;
 };
+
+const TYPE_FILTERS: { id: ItemType; label: string; emoji: string }[] = [
+  { id: 'all',     label: 'الكل',      emoji: '📜' },
+  { id: 'persons', label: 'شخصيات',   emoji: '👤' },
+  { id: 'battles', label: 'معارك',     emoji: '⚔️' },
+  { id: 'politics',label: 'سياسة',    emoji: '🏛️' },
+  { id: 'science', label: 'علوم',      emoji: '📖' },
+];
+
+const BATTLE_KW   = ['غزوة','معركة','سرية','فتح','حصار','موقعة','جيش','انتصار','هزيمة','غزو','جهاد','مقاومة','نصر','ثغر','حرب','قتال'];
+const PERSON_KW   = ['ولادة','وُلد','وفاة','تُوفي','استشهاد','مقتل','اغتيال','نسب','حياة','سيرة','أسرة','رضي الله عنه','رحمه الله'];
+const POLITICS_KW = ['خلافة','دولة','ثورة','بيعة','عهد','تأسيس','سقوط','حكم','سلطان','أمير','استيلاء','وزير','ولاية','ديوان','معاهدة','اتفاق','الملك','السلطان'];
+const SCIENCE_KW  = ['علم','كتاب','تأليف','مدرسة','جامع','مسجد','بناء','عمارة','ترجمة','فلسفة','طب','رياضيات','فقه','حديث','تفسير','قرآن','المكتبة'];
+
+function classifyItem(item: HistoryItem): ItemType {
+  const t = item.title + ' ' + item.text.substring(0, 150);
+  if (BATTLE_KW.some(k => t.includes(k)))   return 'battles';
+  if (PERSON_KW.some(k => t.includes(k)))   return 'persons';
+  if (POLITICS_KW.some(k => t.includes(k))) return 'politics';
+  if (SCIENCE_KW.some(k => t.includes(k)))  return 'science';
+  return 'politics';
+}
 
 const ERA_CONFIG: Record<Era, { chunks: number; total: number }> = {
   seerah:   { chunks: 1, total: 142  },
@@ -156,6 +179,7 @@ export function IslamicHistory() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedEra, setSelectedEra] = useState<Era>('seerah');
+  const [typeFilter, setTypeFilter] = useState<ItemType>('all');
   const [search, setSearch] = useState('');
   const [activeItem, setActiveItem] = useState<HistoryItem | null>(null);
   const [page, setPage] = useState(1);
@@ -195,10 +219,14 @@ export function IslamicHistory() {
   }, [currentChunk, cfg.chunks, selectedEra]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return items;
-    const q = search.trim();
-    return items.filter(i => i.title.includes(q) || i.text.includes(q));
-  }, [items, search]);
+    let result = items;
+    if (typeFilter !== 'all') result = result.filter(i => classifyItem(i) === typeFilter);
+    if (search.trim()) {
+      const q = search.trim();
+      result = result.filter(i => i.title.includes(q) || i.text.includes(q));
+    }
+    return result;
+  }, [items, search, typeFilter]);
 
   const visible = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
 
@@ -222,6 +250,7 @@ export function IslamicHistory() {
     loadedEraRef.current = null;
     setSelectedEra(era);
     setSearch('');
+    setTypeFilter('all');
     setPage(1);
   };
 
@@ -279,6 +308,7 @@ export function IslamicHistory() {
 
       <div className="max-w-lg mx-auto px-4">
 
+        {/* Era tabs */}
         <div className="flex gap-2 overflow-x-auto py-3 no-scrollbar">
           {ERAS.map(era => (
             <button
@@ -297,13 +327,44 @@ export function IslamicHistory() {
           ))}
         </div>
 
+        {/* Type filter pills */}
+        <div className="flex gap-1.5 overflow-x-auto pb-2 no-scrollbar">
+          {TYPE_FILTERS.map(tf => {
+            const active = typeFilter === tf.id;
+            return (
+              <button
+                key={tf.id}
+                onClick={() => { setTypeFilter(tf.id); setPage(1); }}
+                className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                style={{
+                  fontFamily: '"Tajawal", sans-serif',
+                  background: active
+                    ? (dark ? 'rgba(193,154,107,0.28)' : 'rgba(193,154,107,0.22)')
+                    : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'),
+                  color: active ? '#C19A6B' : (dark ? 'rgba(193,154,107,0.5)' : '#A08060'),
+                  border: `1px solid ${active ? '#C19A6B55' : border}`,
+                  boxShadow: active ? '0 0 0 1px #C19A6B33' : 'none',
+                }}
+              >
+                <span>{tf.emoji}</span>
+                <span>{tf.label}</span>
+                {active && typeFilter !== 'all' && !loading && (
+                  <span className="opacity-60">({filtered.length})</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
         {!loading && (
           <div className="mb-3 px-1 flex items-center justify-between">
             <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
               {ERAS.find(e => e.id === selectedEra)?.sub}
             </p>
             <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
-              الإجمالي: {cfg.total.toLocaleString()} حدث
+              {typeFilter === 'all'
+                ? `الإجمالي: ${cfg.total.toLocaleString()} حدث`
+                : `${filtered.length} نتيجة`}
             </p>
           </div>
         )}
