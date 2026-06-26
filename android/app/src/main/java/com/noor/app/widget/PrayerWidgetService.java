@@ -1,6 +1,5 @@
 package com.noor.app.widget;
 
-import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -76,9 +75,16 @@ public class PrayerWidgetService extends Service {
     private boolean        isScreenOn = true;
     private boolean        isRunning  = false;
 
+    private int tickCount = 0;
+
     private final Runnable tickRunnable = new Runnable() {
         @Override public void run() {
             if (isScreenOn) performUpdate();
+            tickCount++;
+            // كل 20 ثانية نجدد الـ alarm الاحتياطي — يضمن وجود alarm حتى لو اتقتلنا
+            if (tickCount % 20 == 0) {
+                WidgetRefreshReceiver.schedule(PrayerWidgetService.this);
+            }
             handler.postDelayed(this, 1000L);
         }
     };
@@ -524,26 +530,9 @@ public class PrayerWidgetService extends Service {
         }
     }
 
+    /** @deprecated استخدم WidgetRefreshReceiver.schedule() مباشرةً */
     public static void scheduleAlarmFallback(Context context) {
-        try {
-            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            if (am == null) return;
-
-            Intent intent = new Intent(context, PrayerWidget.class);
-            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-            PendingIntent pi = PendingIntent.getBroadcast(
-                context, 7777, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-            long interval = 30_000L;
-            long trigger  = System.currentTimeMillis() + interval;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi);
-            } else {
-                am.setRepeating(AlarmManager.RTC_WAKEUP, trigger, interval, pi);
-            }
-        } catch (Exception ignored) {}
+        WidgetRefreshReceiver.schedule(context);
     }
 
     static class PrayerState {
