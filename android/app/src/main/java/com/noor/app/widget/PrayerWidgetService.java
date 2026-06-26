@@ -183,23 +183,25 @@ public class PrayerWidgetService extends Service {
 
                 RemoteViews rv = new RemoteViews(getPackageName(), R.layout.widget_unified);
 
-                /* ── سماء حية: رسم Bitmap بالوقت الحالي الحقيقي ── */
-                if (state != null) {
+                /* ── سماء حية: حسابات فلكية حقيقية بناءً على GPS ── */
+                {
                     int bmpW = Math.min((int)(minW * density), 600);
                     int bmpH = Math.min((int)(minH * density), 400);
                     try {
+                        long fajrMs    = state != null ? state.allTimesMs[0] : 0;
+                        long sunriseMs = state != null ? state.allTimesMs[1] : 0;
+                        long dhuhrMs   = state != null ? state.allTimesMs[2] : 0;
+                        long asrMs     = state != null ? state.allTimesMs[3] : 0;
+                        long maghribMs = state != null ? state.allTimesMs[4] : 0;
+                        long ishaMs    = state != null ? state.allTimesMs[5] : 0;
                         Bitmap sky = SkyBitmapRenderer.render(
                             bmpW, bmpH,
-                            state.allTimesMs[0],  /* fajr    */
-                            state.allTimesMs[1],  /* sunrise */
-                            state.allTimesMs[2],  /* dhuhr   */
-                            state.allTimesMs[3],  /* asr     */
-                            state.allTimesMs[4],  /* maghrib */
-                            state.allTimesMs[5]   /* isha    */
+                            lat != Float.MIN_VALUE ? lat : 0.0,
+                            lng != Float.MIN_VALUE ? lng : 0.0,
+                            fajrMs, sunriseMs, dhuhrMs,
+                            asrMs,  maghribMs, ishaMs
                         );
-                        if (sky != null) {
-                            rv.setImageViewBitmap(R.id.wg_sky_bg, sky);
-                        }
+                        if (sky != null) rv.setImageViewBitmap(R.id.wg_sky_bg, sky);
                     } catch (Exception ignored) {}
                 }
 
