@@ -8,7 +8,7 @@ on:
       version:
         description: 'رقم الإصدار (مثال: 2.3)'
         required: false
-        default: '2.2'
+        default: '2.3'
       build_type:
         description: 'نوع البناء'
         required: false

@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Semi-transparent white fill -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#22FFFFFF" />
-            <corners android:radius="10dp" />
+            <solid android:color="#33000000" />
+            <corners android:radius="12dp" />
         </shape>
     </item>
-    <!-- Subtle border -->
+    <item android:top="0dp" android:left="0dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#18FFFFFF" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#00000000" />
-            <corners android:radius="10dp" />
-            <stroke android:width="1dp" android:color="#30FFFFFF" />
+            <corners android:radius="12dp" />
+            <stroke android:width="1dp" android:color="#45FFFFFF" />
         </shape>
     </item>
 </layer-list>
