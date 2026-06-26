@@ -159,8 +159,8 @@ public final class SkyBitmapRenderer {
         // 6. شهاب عشوائي (ليلاً فقط)
         drawShootingStar(c, w, h, p, cSunAlt, now);
 
-        // 7. القمر بطوره الحقيقي
-        if (cMoonAlt > -5) drawMoon(c, p, moonX, moonY, h, cMoonPhase, cSunAlt);
+        // 7. القمر بطوره الحقيقي (فوق الأفق فقط)
+        if (cMoonAlt > 0) drawMoon(c, p, moonX, moonY, h, cMoonPhase, cSunAlt);
 
         // 8. الشمس مع هالتها
         if (cSunAlt > -2) drawSun(c, p, sunX, sunY, h, cSunAlt);
@@ -391,8 +391,9 @@ public final class SkyBitmapRenderer {
     // ─────────────────────────────────────────────────────────────────────────
     private static void drawMoon(Canvas c, Paint p, float x, float y,
                                  int h, double phase, double sunAlt) {
-        float yy = Math.min(y, h - 15);
         float r  = h * 0.072f;
+        // اربط Y بين r+4 (لا يخرج من الأعلى) وh-r-4 (لا يخرج من الأسفل)
+        float yy = Math.max(r + 4, Math.min(y, h - r - 4));
 
         // هالة عند وجود إضاءة كافية
         double ill = moonIllumination(phase);
@@ -454,7 +455,8 @@ public final class SkyBitmapRenderer {
     // ─────────────────────────────────────────────────────────────────────────
     private static void drawSun(Canvas c, Paint p, float x, float y, int h, double sunAlt) {
         float r = h * 0.068f;
-        float yy = Math.max(y, r + 4);
+        // اربط Y: لا يخرج من الأعلى (r+4) ولا يزيد عن الأفق (h) — الشمس لا ترسم أسفل الأفق
+        float yy = Math.max(r + 4, Math.min(y, (float) h));
 
         // حدة اللون تبعاً للارتفاع (أحمر/برتقالي قرب الأفق)
         boolean lowSun = sunAlt < 8;
@@ -671,10 +673,13 @@ public final class SkyBitmapRenderer {
         return new double[]{ Math.toDegrees(alt), normDeg(Math.toDegrees(az) + 180) };
     }
 
-    /** وقت رصد غرينتش النجمي بالساعات */
+    /** وقت رصد غرينتش النجمي بالساعات — USNO IAU 1982 */
     static double greenwichSiderealTime(double jd) {
         double T    = (jd - 2451545.0) / 36525.0;
-        double gmst = 6.697374558 + 2400.0513369 * T + 0.0000258622 * T * T + (jd % 1) * 24.0;
+        // ساعات UT منذ منتصف الليل: (jd + 0.5) mod 1.0 يعطي كسر اليوم من منتصف الليل
+        // (jd % 1) كان خاطئاً — يحسب من ظهر JD أي خطأ بـ 12 ساعة
+        double ut   = ((jd + 0.5) % 1.0) * 24.0;
+        double gmst = 6.697374558 + 2400.0513369 * T + 0.0000258622 * T * T + ut * 1.00273791;
         return normH(gmst);
     }
 
@@ -700,6 +705,10 @@ public final class SkyBitmapRenderer {
     // ─────────────────────────────────────────────────────────────────────────
     private static double fallbackSunAlt(long now, long fajrMs, long sunriseMs,
                                          long dhuhrMs, long asrMs, long maghribMs, long ishaMs) {
+        // لو أي وقتين متساويان أو أوقات الصلاة غير متاحة — نعود لليل
+        if (fajrMs <= 0 || sunriseMs <= fajrMs || dhuhrMs <= sunriseMs
+                || asrMs <= dhuhrMs || maghribMs <= asrMs || ishaMs <= maghribMs)
+            return -18;
         long n = now;
         if (n < fajrMs)    return -20;
         if (n < sunriseMs) return -8  + 8  * (n - fajrMs)    / (double)(sunriseMs - fajrMs);
