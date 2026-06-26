@@ -60,14 +60,6 @@ public class WidgetBridgePlugin extends Plugin {
 
     @PluginMethod
     public void setTheme(PluginCall call) {
-        String theme = call.getString("theme", "dark");
-        SharedPreferences prefs = getContext().getSharedPreferences(
-            PrayerWidgetService.PREFS_NAME, Context.MODE_PRIVATE
-        );
-        prefs.edit()
-            .putString(PrayerWidgetService.KEY_THEME, theme)
-            .apply();
-        triggerWidgetUpdate();
         call.resolve();
     }
 
