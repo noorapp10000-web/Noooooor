@@ -32,6 +32,7 @@ public class PrayerWidget extends AppWidgetProvider {
 
     @Override
     public void onDisabled(Context context) {
+        WidgetRefreshReceiver.cancel(context);
         try {
             context.stopService(new Intent(context, PrayerWidgetService.class));
         } catch (Exception ignored) {}

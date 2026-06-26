@@ -55,6 +55,15 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
+        <!-- Alarm receiver مستقل — يجدّد نفسه كل 30 ث حتى بعد موت الـ Service -->
+        <receiver
+            android:name=".widget.WidgetRefreshReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.noor.app.WIDGET_REFRESH" />
+            </intent-filter>
+        </receiver>
+
         <receiver
             android:name=".widget.BootReceiver"
             android:exported="false"
