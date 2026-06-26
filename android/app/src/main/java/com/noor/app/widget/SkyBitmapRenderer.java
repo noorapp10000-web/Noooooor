@@ -83,11 +83,10 @@ public final class SkyBitmapRenderer {
     public static Bitmap render(int w, int h,
                                 double lat, double lng,
                                 long fajrMs, long sunriseMs, long dhuhrMs,
-                                long asrMs,  long maghribMs, long ishaMs,
-                                long nowMs) {
+                                long asrMs,  long maghribMs, long ishaMs) {
         if (w <= 0 || h <= 0) return null;
 
-        long now    = nowMs;
+        long now    = System.currentTimeMillis();
         long nowMin = now / 60_000L;
 
         // أعِد الحسابات الفلكية كل دقيقة فقط (مُكلفة)
