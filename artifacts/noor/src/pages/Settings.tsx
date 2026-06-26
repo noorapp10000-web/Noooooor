@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, ShieldCheck, FastForward, Square } from 'lucide-react';
+import NoorWidget from '@/lib/widget-bridge';
 import NoorGuard from '@/lib/guard-bridge';
 
 import { motion } from 'framer-motion';
@@ -573,6 +574,96 @@ function PrayerGuardSection({
   );
 }
 
+function WidgetSimSection({
+  sectionBg, borderColor, textColor, subText,
+}: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
+  const [running, setRunning] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const DURATION = 180;
+
+  useEffect(() => {
+    if (!running) { setElapsed(0); return; }
+    const id = setInterval(() => {
+      setElapsed(e => {
+        if (e >= DURATION) { setRunning(false); NoorWidget.stopSimulation(); return DURATION; }
+        return e + 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  async function handleStart() {
+    setRunning(true);
+    setElapsed(0);
+    await NoorWidget.startSimulation({ speed: 480, startHour: 0 });
+  }
+
+  async function handleStop() {
+    setRunning(false);
+    await NoorWidget.stopSimulation();
+  }
+
+  const pct = Math.round((elapsed / DURATION) * 100);
+  const simHour = Math.floor((elapsed / DURATION) * 24);
+  const simMin  = Math.floor(((elapsed / DURATION) * 24 * 60) % 60);
+  const timeStr = `${String(simHour).padStart(2,'0')}:${String(simMin).padStart(2,'0')}`;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+      className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'linear-gradient(145deg, #1a5c3a, #0d3d26)' }}>
+          <FastForward className="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
+            محاكاة يوم الويدجت
+          </p>
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            3 دقايق حقيقية = 24 ساعة افتراضية (للتجربة فقط)
+          </p>
+        </div>
+      </div>
+
+      {running && (
+        <div className="mb-3">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>
+              الوقت الافتراضي: {timeStr}
+            </span>
+            <span className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+              {pct}%
+            </span>
+          </div>
+          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'rgba(193,154,107,0.15)' }}>
+            <div className="h-full rounded-full transition-all duration-1000"
+              style={{ width: `${pct}%`, background: 'linear-gradient(to left, #22c55e, #15803d)' }} />
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        {!running ? (
+          <button onClick={handleStart}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold"
+            style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg, #1a5c3a, #0d3d26)', color: '#fff' }}>
+            <FastForward className="w-4 h-4" />
+            ابدأ المحاكاة
+          </button>
+        ) : (
+          <button onClick={handleStop}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold"
+            style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg, #7f1d1d, #991b1b)', color: '#fff' }}>
+            <Square className="w-4 h-4" />
+            إيقاف المحاكاة
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 export function Settings() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
@@ -768,6 +859,9 @@ export function Settings() {
 
         {/* Backup Section */}
         <BackupSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
+
+        {/* Widget Simulation — Android only, temporary debug */}
+        {Capacitor.isNativePlatform() && <WidgetSimSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />}
 
         {/* Note */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}

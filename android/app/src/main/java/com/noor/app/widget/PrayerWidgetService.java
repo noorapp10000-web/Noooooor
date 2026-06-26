@@ -45,6 +45,10 @@ public class PrayerWidgetService extends Service {
     public static final String KEY_USERNAME     = "username";
     public static final String KEY_HIJRI_DATE   = "hijriDate";
 
+    public static final String KEY_SIM_START_REAL    = "sim_start_real";
+    public static final String KEY_SIM_START_VIRTUAL = "sim_start_virtual";
+    public static final String KEY_SIM_SPEED         = "sim_speed";
+
     public static final String KEY_CACHE_FAJR    = "c_fajr";
     public static final String KEY_CACHE_DHUHR   = "c_dhuhr";
     public static final String KEY_CACHE_ASR     = "c_asr";
@@ -144,11 +148,13 @@ public class PrayerWidgetService extends Service {
         String city     = prefs.getString(KEY_CITY, "");
         String username = prefs.getString(KEY_USERNAME, "");
 
+        long simNow = getSimNow(prefs);
+
         String storedHijri = prefs.getString(KEY_HIJRI_DATE, "");
         String hijri = !storedHijri.isEmpty() ? storedHijri : getHijriDate();
-        int dayPct   = getDayPercent();
+        int dayPct   = getDayPercent(simNow);
 
-        PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng) : null;
+        PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng, simNow) : null;
 
         if (state != null) {
             String prevCached = prefs.getString(KEY_CACHE_NEXT, "");
@@ -199,7 +205,8 @@ public class PrayerWidgetService extends Service {
                             lat != Float.MIN_VALUE ? lat : 0.0,
                             lng != Float.MIN_VALUE ? lng : 0.0,
                             fajrMs, sunriseMs, dhuhrMs,
-                            asrMs,  maghribMs, ishaMs
+                            asrMs,  maghribMs, ishaMs,
+                            simNow
                         );
                         if (sky != null) rv.setImageViewBitmap(R.id.wg_sky_bg, sky);
                     } catch (Exception ignored) {}
@@ -271,7 +278,7 @@ public class PrayerWidgetService extends Service {
                 rv.setViewVisibility(R.id.wg_isha_icon,        View.GONE);
 
                 if (state != null) {
-                    long remaining = state.nextTimeMs - System.currentTimeMillis();
+                    long remaining = state.nextTimeMs - simNow;
                     if (remaining < 0) remaining = 0;
 
                     int h = (int)(remaining / 3_600_000L);
@@ -369,13 +376,12 @@ public class PrayerWidgetService extends Service {
         rv.setViewVisibility(R.id.wg_hijri_label,        isLarge ? View.VISIBLE : View.GONE);
     }
 
-    private PrayerState getPrayerState(float lat, float lng) {
+    private PrayerState getPrayerState(float lat, float lng, long now) {
         try {
             Coordinates coords = new Coordinates(lat, lng);
             CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
-            long now = System.currentTimeMillis();
 
-            DateComponents dc = DateComponents.from(new Date());
+            DateComponents dc = DateComponents.from(new Date(now));
             PrayerTimes pt = new PrayerTimes(coords, dc, params);
 
             /* أوقات الصلاة الخمس + الشروق */
@@ -465,8 +471,9 @@ public class PrayerWidgetService extends Service {
         }
     }
 
-    private int getDayPercent() {
+    private int getDayPercent(long nowMs) {
         Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(nowMs);
         int h = cal.get(Calendar.HOUR_OF_DAY);
         int m = cal.get(Calendar.MINUTE);
         int s = cal.get(Calendar.SECOND);
@@ -517,6 +524,15 @@ public class PrayerWidgetService extends Service {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build();
+    }
+
+    public static long getSimNow(SharedPreferences prefs) {
+        long startReal    = prefs.getLong(KEY_SIM_START_REAL, 0);
+        long startVirtual = prefs.getLong(KEY_SIM_START_VIRTUAL, 0);
+        float speed       = prefs.getFloat(KEY_SIM_SPEED, 0f);
+        if (startReal <= 0 || speed <= 0f) return System.currentTimeMillis();
+        long realNow = System.currentTimeMillis();
+        return startVirtual + (long)((realNow - startReal) * (double) speed);
     }
 
     public static void start(Context context) {
