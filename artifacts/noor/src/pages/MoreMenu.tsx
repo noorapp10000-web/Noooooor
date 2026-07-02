@@ -429,7 +429,6 @@ export function MoreMenu() {
     { Icon: MoonIcon,          label: 'القنوات الإسلامية',  path: '/tv',           desc: 'بث مباشر لقناة القرآن والسنة وغيرها',            grad: 'linear-gradient(145deg, #0f3d2e, #072218)' },
     { Icon: IslamicStarIcon,   label: 'أسماء الله الحسنى',  path: '/asma',         desc: '99 اسماً مع معانيها وشرحها',                     grad: 'linear-gradient(145deg, #8B6340, #5c3e1e)' },
     { Icon: HeadphonesIcon,    label: 'القراء والاستماع',   path: '/reciters',     desc: '50+ قارئ للقرآن الكريم',                         grad: 'linear-gradient(145deg, #1a5c5c, #0d3b3b)' },
-    { Icon: HeadphonesIcon,    label: 'مقارنة الأصوات',     path: '/voice-comparison', desc: 'قارن بين 2 ل 6 قراء في آيات محددة',          grad: 'linear-gradient(145deg, #4a2a7a, #25154a)' },
     { Icon: SmartReaderIcon,   label: 'قارئ التدبر الذكي',  path: '/speed-reader', desc: 'تدبر القرآن كلمةً بكلمة',                        grad: 'linear-gradient(145deg, #7a3a1e, #4d2310)' },
   ];
 

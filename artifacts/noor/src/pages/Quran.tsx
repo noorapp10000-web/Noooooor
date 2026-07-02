@@ -5,7 +5,7 @@ import { useUserSetting } from '@/hooks/use-user-setting';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { getOrCreateLocalUid, getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
-import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2 } from 'lucide-react';
+import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2, Play, Square } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Capacitor } from '@capacitor/core';
 import { padZero, cn } from '@/lib/utils';
@@ -297,6 +297,20 @@ function AyahMarker({ num, bookmarked, dark }: { num: number; bookmarked?: boole
   );
 }
 
+const READING_RECITERS = [
+  { id: 'Alafasy_128kbps',               name: 'مشاري راشد العفاسي' },
+  { id: 'Husary_128kbps',                name: 'محمود خليل الحصري' },
+  { id: 'Minshawi_Murattal_128kbps',     name: 'محمد صديق المنشاوي' },
+  { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
+  { id: 'MaherAlMuaiqly128kbps',         name: 'ماهر المعيقلي' },
+  { id: 'Abdul_Basit_Murattal_192kbps',  name: 'عبد الباسط عبد الصمد' },
+];
+
+function ayahAudioUrl(reciterId: string, surah: number, ayah: number): string {
+  const base = `https://everyayah.com/data/${reciterId}/${String(surah).padStart(3, '0')}${String(ayah).padStart(3, '0')}.mp3`;
+  return `/api/audio-proxy?url=${encodeURIComponent(base)}`;
+}
+
 export function Quran() {
   const [, navigate] = useLocation();
   const { data: surahs, isLoading: loadingList } = useQuranSurahs();
@@ -326,7 +340,12 @@ export function Quran() {
   const [playingWord, setPlayingWord] = useState<string | null>(null);
 
   const wordAudioRef = useRef<HTMLAudioElement | null>(null);
+  const readingAudioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [readingReciter, setReadingReciter] = useState<{ id: string; name: string } | null>(null);
+  const [readingAyah, setReadingAyah] = useState<number | null>(null);
+  const [showReciterPicker, setShowReciterPicker] = useState(false);
   const { data: tafsirData } = useTafsir(selectedSurah ?? 0, activeAyah ?? 0);
 
   const [bookmark, setBookmark] = useUserSetting<{ surah: number; ayah: number } | null>('quran_bookmark', null);
@@ -456,6 +475,36 @@ export function Quran() {
     return () => clearTimeout(timer);
   }, [scrollToAyah, surahData, loadingSurah]);
 
+  const stopReading = useCallback(() => {
+    const audio = readingAudioRef.current;
+    if (audio) {
+      audio.onended = null;
+      audio.onerror = null;
+      audio.pause();
+    }
+    setReadingAyah(null);
+    setReadingReciter(null);
+  }, []);
+
+  const playReadingAyah = useCallback((ayahNum: number, reciterId: string) => {
+    if (!selectedSurah || !surahData?.ayahs) return;
+    if (ayahNum > surahData.ayahs.length) {
+      setReadingAyah(null);
+      setReadingReciter(null);
+      return;
+    }
+    setReadingAyah(ayahNum);
+    if (!readingAudioRef.current) readingAudioRef.current = new Audio();
+    const audio = readingAudioRef.current;
+    audio.onended = null;
+    audio.onerror = null;
+    audio.pause();
+    audio.src = ayahAudioUrl(reciterId, selectedSurah, ayahNum);
+    audio.onended = () => playReadingAyah(ayahNum + 1, reciterId);
+    audio.onerror = () => playReadingAyah(ayahNum + 1, reciterId);
+    audio.play().catch(() => {});
+  }, [selectedSurah, surahData]);
+
   const playWord = (surah: number, ayah: number, wordPos: number) => {
     const wordKey = `${surah}:${ayah}:${wordPos}`;
     if (!wordAudioRef.current) return;
@@ -500,7 +549,17 @@ export function Quran() {
     setCurrentJuz(null);
     setCurrentHizb(null);
     setSelectedAyah(null);
+    const audio = readingAudioRef.current;
+    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); }
+    setReadingAyah(null);
+    setReadingReciter(null);
   }, [selectedSurah]);
+
+  useEffect(() => {
+    if (!readingAyah) return;
+    const el = scrollRef.current?.querySelector<HTMLElement>(`[data-ayah="${readingAyah}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [readingAyah]);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current || !surahData) return;
@@ -856,7 +915,7 @@ export function Quran() {
         {/* Row 2: Close button + action buttons */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => { setSelectedSurah(null); setMode('normal'); setSelectedAyah(null); setActiveAyah(null); wordAudioRef.current?.pause(); }}
+            onClick={() => { setSelectedSurah(null); setMode('normal'); setSelectedAyah(null); setActiveAyah(null); wordAudioRef.current?.pause(); stopReading(); }}
             className="p-2 rounded-full"
             style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}` }}
           >
@@ -905,6 +964,27 @@ export function Quran() {
               </button>
             )}
             <button
+              onClick={() => {
+                if (readingAyah !== null) {
+                  stopReading();
+                } else {
+                  wordAudioRef.current?.pause();
+                  setShowReciterPicker(true);
+                }
+              }}
+              className="p-2 rounded-full transition-all"
+              title={readingAyah !== null ? 'إيقاف التلاوة' : 'تشغيل التلاوة'}
+              style={{
+                background: readingAyah !== null ? '#C19A6B' : C.btnBg,
+                border: `1px solid ${C.btnBorder}`,
+              }}
+            >
+              {readingAyah !== null
+                ? <Square className="w-4 h-4" style={{ color: '#0f0c07', fill: '#0f0c07' }} />
+                : <Play className="w-4 h-4" style={{ color: '#C19A6B' }} />
+              }
+            </button>
+            <button
               onClick={() => { setMode(mode === 'listen' ? 'normal' : 'listen'); setSelectedAyah(null); }}
               className="p-2 rounded-full transition-all"
               title="الاستماع كلمة بكلمة"
@@ -941,9 +1021,28 @@ export function Quran() {
           <p className="text-xs font-bold" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>اضغط على أي آية لعرض تفسيرها</p>
         </div>
       )}
-      {mode === 'normal' && (
+      {mode === 'normal' && !readingAyah && (
         <div className="px-4 py-1.5 text-center flex-shrink-0" style={{ background: C.hinBg, borderBottom: `1px solid ${C.hintBorder}` }}>
           <p className="text-xs" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>اضغط على آية لتعيين علامة الحفظ</p>
+        </div>
+      )}
+      {readingAyah !== null && readingReciter && (
+        <div className="px-4 py-1.5 flex items-center justify-between flex-shrink-0" style={{ background: 'rgba(193,154,107,0.14)', borderBottom: `1px solid rgba(193,154,107,0.3)` }}>
+          <button
+            onClick={stopReading}
+            className="flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 26, height: 26, background: 'rgba(193,154,107,0.2)', border: '1px solid rgba(193,154,107,0.4)' }}
+          >
+            <Square className="w-3 h-3" style={{ color: '#C19A6B', fill: '#C19A6B' }} />
+          </button>
+          <p className="text-xs font-bold text-center flex-1 mx-2" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
+            {readingReciter.name} — الآية {readingAyah}
+          </p>
+          <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center gap-0.5">
+            {[1,2,3].map(i => (
+              <div key={i} className="w-0.5 rounded-full animate-pulse" style={{ height: 8 + i * 3, background: '#C19A6B', animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
         </div>
       )}
 
@@ -1032,12 +1131,16 @@ export function Quran() {
             >
               {surahData?.ayahs?.map((ayah: any) => {
                 let text: string = ayah.text;
-                if (selectedSurah !== 1 && ayah.numberInSurah === 1) {
-                  text = text.replace('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ', '');
+                if (selectedSurah !== 1 && selectedSurah !== 9 && ayah.numberInSurah === 1) {
+                  if (normalizeArabic(text.slice(0, 70)).startsWith(normalizeArabic('بسم الله الرحمن الرحيم'))) {
+                    const m = text.match(/^.+?(?:ٱلرَّحِیمِ|ٱلرَّحِيمِ|الرَّحِيمِ)\s*/u);
+                    if (m) text = text.slice(m[0].length);
+                  }
                 }
                 const isBookmarked = bookmark?.surah === selectedSurah && bookmark?.ayah === ayah.numberInSurah;
                 const isSelected = selectedAyah === ayah.numberInSurah;
                 const isActive = activeAyah === ayah.numberInSurah;
+                const isReading = readingAyah === ayah.numberInSurah;
 
                 // Listen mode: clickable words
                 if (mode === 'listen') {
@@ -1081,14 +1184,18 @@ export function Quran() {
                     onClick={() => handleAyahClick(ayah.numberInSurah)}
                     className="inline cursor-pointer transition-all duration-200 rounded-sm"
                     style={{
-                      background: isSelected
+                      background: isReading
+                        ? 'rgba(193,154,107,0.28)'
+                        : isSelected
                         ? 'rgba(193,154,107,0.18)'
                         : isActive
                         ? 'rgba(193,154,107,0.22)'
                         : isBookmarked
                         ? 'rgba(193,154,107,0.1)'
                         : 'transparent',
-                      borderBottom: isSelected
+                      borderBottom: isReading
+                        ? '2px solid #C19A6B'
+                        : isSelected
                         ? '2px solid rgba(193,154,107,0.7)'
                         : isActive
                         ? '2px solid #C19A6B'
@@ -1150,6 +1257,62 @@ export function Quran() {
           </div>
         )}
       </div>
+
+      {/* ── Reciter picker sheet ── */}
+      <AnimatePresence>
+        {showReciterPicker && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowReciterPicker(false)}
+              className="fixed inset-0 bg-black/50 z-40"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl p-5 pb-8"
+              style={{ background: C.modalBg, border: `1px solid ${C.modalBorder}`, borderBottom: 'none' }}
+            >
+              <div className="w-12 h-1.5 rounded-full mx-auto mb-4" style={{ background: 'rgba(193,154,107,0.4)' }} />
+              <h3 className="text-base font-bold mb-1 text-center" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>اختر القارئ</h3>
+              <p className="text-xs text-center mb-4" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>سيُشغَّل القرآن آية بآية من البداية</p>
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {READING_RECITERS.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setShowReciterPicker(false);
+                      setReadingReciter(r);
+                      playReadingAyah(1, r.id);
+                    }}
+                    className="w-full p-3.5 rounded-2xl flex items-center gap-3 transition-all active:scale-98"
+                    style={{ background: C.itemBg, border: `1px solid ${C.itemBorder}` }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.3)' }}
+                    >
+                      <Play className="w-3.5 h-3.5" style={{ color: '#C19A6B' }} />
+                    </div>
+                    <span className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: C.itemText }}>{r.name}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowReciterPicker(false)}
+                className="w-full py-3 rounded-2xl font-bold mt-3"
+                style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}`, color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}
+              >
+                إلغاء
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Tafsir modal ── */}
       <Dialog.Root
