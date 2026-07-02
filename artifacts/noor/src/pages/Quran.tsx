@@ -5,7 +5,7 @@ import { useUserSetting } from '@/hooks/use-user-setting';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { getOrCreateLocalUid, getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
-import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2, Play, Square } from 'lucide-react';
+import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2, Play, Square, Hash, Check } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Capacitor } from '@capacitor/core';
 import { padZero, cn } from '@/lib/utils';
@@ -308,6 +308,7 @@ const READING_RECITERS = [
 
 function ayahAudioUrl(reciterId: string, surah: number, ayah: number): string {
   const base = `https://everyayah.com/data/${reciterId}/${String(surah).padStart(3, '0')}${String(ayah).padStart(3, '0')}.mp3`;
+  if (Capacitor.isNativePlatform()) return base;
   return `/api/audio-proxy?url=${encodeURIComponent(base)}`;
 }
 
@@ -322,6 +323,9 @@ export function Quran() {
   const _initSurah = (() => { const p = new URLSearchParams(window.location.search).get('surah'); const n = p ? parseInt(p, 10) : NaN; return (n >= 1 && n <= 114) ? n : null; })();
   const [selectedSurah, setSelectedSurah] = useState<number | null>(_initSurah);
   const [scrollToAyah, setScrollToAyah] = useState<number | null>(null);
+  const [showJumpInput, setShowJumpInput] = useState(false);
+  const [jumpInput, setJumpInput] = useState('');
+  const jumpInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -495,15 +499,19 @@ export function Quran() {
       return;
     }
     setReadingAyah(ayahNum);
-    if (!readingAudioRef.current) readingAudioRef.current = new Audio();
+    if (!readingAudioRef.current) readingAudioRef.current = document.createElement('audio');
     const audio = readingAudioRef.current;
     audio.onended = null;
     audio.onerror = null;
     audio.pause();
     audio.src = ayahAudioUrl(reciterId, selectedSurah, ayahNum);
-    audio.onended = () => playReadingAyah(ayahNum + 1, reciterId);
-    audio.onerror = () => playReadingAyah(ayahNum + 1, reciterId);
+    audio.load();
+    const onEnd = () => { audio.onended = null; audio.onerror = null; playReadingAyah(ayahNum + 1, reciterId); };
+    const onErr = () => { audio.onended = null; audio.onerror = null; playReadingAyah(ayahNum + 1, reciterId); };
+    audio.onended = onEnd;
+    audio.onerror = onErr;
     audio.play().catch(() => {});
+    setScrollToAyah(ayahNum);
   }, [selectedSurah, surahData]);
 
   const playWord = (surah: number, ayah: number, wordPos: number) => {
@@ -533,6 +541,16 @@ export function Quran() {
   const saveBookmark = (ayahNum: number) => {
     if (selectedSurah) setBookmark({ surah: selectedSurah, ayah: ayahNum });
     setSelectedAyah(null);
+  };
+
+  const handleJumpToAyah = () => {
+    const n = parseInt(jumpInput, 10);
+    const total = surahData?.ayahs?.length ?? 0;
+    if (n >= 1 && n <= total) {
+      setScrollToAyah(n);
+      setShowJumpInput(false);
+      setJumpInput('');
+    }
   };
 
   const goToBookmark = () => {
@@ -937,6 +955,19 @@ export function Quran() {
 
           <div className="flex gap-1.5 items-center">
             <button
+              onClick={() => { setShowJumpInput(v => !v); setJumpInput(''); setTimeout(() => jumpInputRef.current?.focus(), 80); }}
+              className="flex items-center justify-center rounded-full transition-all"
+              style={{
+                width: 32, height: 32,
+                background: showJumpInput ? '#C19A6B' : C.btnBg,
+                border: `1px solid ${C.btnBorder}`,
+                flexShrink: 0,
+              }}
+              title="انتقل لآية"
+            >
+              <Hash className="w-4 h-4" style={{ color: showJumpInput ? '#0f0c07' : '#C19A6B' }} />
+            </button>
+            <button
               onClick={decreaseFontSize}
               disabled={fontSize <= FONT_MIN}
               className="flex items-center justify-center rounded-full transition-all"
@@ -1022,6 +1053,48 @@ export function Quran() {
           </div>
         </div>
       </div>
+
+      {/* Jump to ayah input row */}
+      {showJumpInput && (
+        <div className="px-4 py-2 flex items-center gap-2 flex-shrink-0" style={{ background: C.hinBg, borderBottom: `1px solid ${C.hintBorder}` }}>
+          <span className="text-xs flex-shrink-0" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>
+            انتقل للآية (1–{surahData?.ayahs?.length ?? '…'})
+          </span>
+          <input
+            ref={jumpInputRef}
+            type="number"
+            min={1}
+            max={surahData?.ayahs?.length ?? 999}
+            value={jumpInput}
+            onChange={e => setJumpInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleJumpToAyah(); if (e.key === 'Escape') { setShowJumpInput(false); setJumpInput(''); } }}
+            className="flex-1 text-center rounded-lg px-2 py-1 text-sm outline-none"
+            style={{
+              background: C.btnBg,
+              border: `1px solid ${C.btnBorder}`,
+              color: C.ayahText,
+              fontFamily: '"Tajawal", sans-serif',
+              direction: 'ltr',
+              maxWidth: 100,
+            }}
+            placeholder="رقم الآية"
+          />
+          <button
+            onClick={handleJumpToAyah}
+            className="flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 30, height: 30, background: '#C19A6B' }}
+          >
+            <Check className="w-4 h-4" style={{ color: '#0f0c07' }} />
+          </button>
+          <button
+            onClick={() => { setShowJumpInput(false); setJumpInput(''); }}
+            className="flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 30, height: 30, background: C.btnBg, border: `1px solid ${C.btnBorder}` }}
+          >
+            <X className="w-3.5 h-3.5" style={{ color: '#C19A6B' }} />
+          </button>
+        </div>
+      )}
 
       {/* Mode hint */}
       {mode === 'listen' && (
