@@ -319,7 +319,8 @@ export function Quran() {
 
   const { showTutorial } = useTutorial();
 
-  const [selectedSurah, setSelectedSurah] = useState<number | null>(null);
+  const _initSurah = (() => { const p = new URLSearchParams(window.location.search).get('surah'); const n = p ? parseInt(p, 10) : NaN; return (n >= 1 && n <= 114) ? n : null; })();
+  const [selectedSurah, setSelectedSurah] = useState<number | null>(_initSurah);
   const [scrollToAyah, setScrollToAyah] = useState<number | null>(null);
   const [search, setSearch] = useState('');
 
@@ -740,14 +741,24 @@ export function Quran() {
                 onChange={e => setSearch(e.target.value)}
                 onInput={e => setSearch((e.target as HTMLInputElement).value)}
                 onCompositionEnd={e => setSearch((e.target as HTMLInputElement).value)}
-                className="w-full py-3 pr-10 pl-4 rounded-2xl outline-none text-sm"
+                className="w-full py-3 pr-10 rounded-2xl outline-none text-sm"
                 style={{
                   background: C.searchBg,
                   border: `1px solid ${C.searchBorder}`,
                   color: C.searchText,
                   fontFamily: '"Tajawal", sans-serif',
+                  paddingLeft: search ? '2.5rem' : '1rem',
                 }}
               />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full transition-all active:scale-90"
+                  style={{ background: 'rgba(193,154,107,0.25)', border: '1px solid rgba(193,154,107,0.4)' }}
+                >
+                  <X className="w-3 h-3" style={{ color: '#C19A6B' }} />
+                </button>
+              )}
             </div>
 
             {bookmark && (
@@ -1144,9 +1155,26 @@ export function Quran() {
               {surahData?.ayahs?.map((ayah: any) => {
                 let text: string = ayah.text;
                 if (selectedSurah !== 1 && selectedSurah !== 9 && ayah.numberInSurah === 1) {
-                  if (normalizeArabic(text.slice(0, 70)).startsWith(normalizeArabic('بسم الله الرحمن الرحيم'))) {
-                    const m = text.match(/^.+?(?:ٱلرَّحِیمِ|ٱلرَّحِيمِ|الرَّحِيمِ)\s*/u);
-                    if (m) text = text.slice(m[0].length);
+                  const normText = normalizeArabic(text);
+                  const normTarget = 'بسم الله الرحمن الرحيم';
+                  if (normText.startsWith(normTarget)) {
+                    const diacriticRe = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7-\u06E8\u06EA-\u06ED\uFEFF]/u;
+                    const normChar = (c: string) => c.replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+                    let ti = 0;
+                    let i = 0;
+                    while (i < text.length && ti < normTarget.length) {
+                      const c = text[i];
+                      if (!diacriticRe.test(c)) {
+                        const nc = normChar(c);
+                        if (nc === normTarget[ti]) ti++;
+                        else if (nc.trim()) break;
+                      }
+                      i++;
+                    }
+                    if (ti >= normTarget.length) {
+                      while (i < text.length && /\s/.test(text[i])) i++;
+                      text = text.slice(i);
+                    }
                   }
                 }
                 const isBookmarked = bookmark?.surah === selectedSurah && bookmark?.ayah === ayah.numberInSurah;
