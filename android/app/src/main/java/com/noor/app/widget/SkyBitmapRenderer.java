@@ -453,22 +453,25 @@ public final class SkyBitmapRenderer {
         // 30. سحاب Cumulus (saveLayer + قاع مستوي + puffs أكثر + إضاءة اتجاهية)
         drawClouds(c, w, h, p, cSunAlt, sunX, sunY, now);
 
-        // 31. آثار الطائرات (Contrails)
+        // 31. سحاب Cumulonimbus + مطر + برق
+        drawCumulonimbus(c, w, h, p, cSunAlt, now);
+
+        // 32. آثار الطائرات (Contrails)
         drawContrails(c, w, h, p, cSunAlt, now);
 
-        // 32. تلوث ضوئي للمدن
+        // 33. تلوث ضوئي للمدن
         drawLightPollution(c, w, h, p, cSunAlt);
 
-        // 33. خط الأفق
+        // 34. خط الأفق
         drawHorizonLine(c, w, h, p, cSunAlt);
 
-        // 34. ضباب الأرض عند الفجر/الغروب
+        // 35. ضباب الأرض عند الفجر/الغروب
         drawGroundFog(c, w, h, p, cSunAlt, now);
 
-        // 35. سيلويت المدينة والمآذن
-        drawCitySilhouette(c, w, h, p, cSunAlt);
+        // 36. سكاي لاين — أبراج المدينة الواقعية
+        drawCitySilhouette(c, w, h, p, cSunAlt, now);
 
-        // 36. حواف دائرية
+        // 37. حواف دائرية
         applyRoundedCorners(bmp, w, h);
 
         return bmp;
@@ -958,6 +961,12 @@ public final class SkyBitmapRenderer {
     private static long  satLastPass = 0, satNextPass = 0;
     private static float satX1, satY1, satX2, satY2;
     private static boolean satFlare = false;
+
+    // Cumulonimbus storm state
+    private static long  cbStormStart = 0, cbStormDur = 0, cbStormNext = 180_000L;
+    private static float cbCloudX = 0.62f, cbCloudW = 0;
+    private static long  cbBoltTime = 0;
+    private static float cbBoltX1, cbBoltY1;
 
     // ═══════════════════════════════════════════════════════════════════════
     // 09. خطوط الكوكبات — ست كوكبات عربية خافتة الخطوط
@@ -2284,101 +2293,521 @@ public final class SkyBitmapRenderer {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // سيلويت المدينة والمآذن
+    // سكاي لاين واقعية — أبراج + ناطحات سحاب بتفاصيل دقيقة
     // ═══════════════════════════════════════════════════════════════════════
-    private static void drawCitySilhouette(Canvas c, int w, int h, Paint p, double sunAlt) {
+    private static void drawCitySilhouette(Canvas c, int w, int h, Paint p,
+                                           double sunAlt, long now) {
         float baseY = h;
-        float buildingMaxH = h * 0.12f;
+        boolean isDay   = sunAlt > 2;
+        boolean isDusk  = sunAlt <= 2 && sunAlt > -5;
+        boolean isNight = sunAlt <= -5;
 
+        // لون السيلويت — يتغير حسب الوقت
         int silR, silG, silB, silA;
-        if (sunAlt > 5) {
-            silR = 38;  silG = 44;  silB = 58;  silA = 110;
-        } else if (sunAlt > -3) {
-            float t = (float)((sunAlt + 3) / 8.0);
-            silR = (int)(10 + t * 28); silG = (int)(10 + t * 24);
-            silB = (int)(16 + t * 38); silA = (int)(185 - t * 55);
+        if (isDay) {
+            silR = 30; silG = 36; silB = 52; silA = 130;
+        } else if (isDusk) {
+            float t = (float)((sunAlt + 5) / 7.0);
+            silR = (int)(5  + t * 25); silG = (int)(5  + t * 31);
+            silB = (int)(10 + t * 42); silA = (int)(200 - t * 70);
         } else {
-            silR = 7;  silG = 7;  silB = 14;  silA = 200;
+            silR = 4; silG = 5; silB = 12; silA = 220;
         }
 
+        // ══════════════════════════════════════════════════════════
+        // خلفية بنايات صغيرة (عمق) — طبقة ثانية خلف الأبراج
+        // ══════════════════════════════════════════════════════════
+        Random rndBg = new Random(77321L);
+        Path bgPath = new Path();
+        float xb = -w * 0.01f;
+        while (xb < w * 1.02f) {
+            float bw = w * (0.018f + rndBg.nextFloat() * 0.038f);
+            float bh = h * (0.028f + rndBg.nextFloat() * 0.065f);
+            bgPath.addRect(xb, baseY - bh, xb + bw - w * 0.001f, baseY, Path.Direction.CW);
+            xb += bw + w * (0.002f + rndBg.nextFloat() * 0.008f);
+        }
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.argb(silA * 7 / 10, silR, silG, silB));
+        c.drawPath(bgPath, p);
+
+        // ══════════════════════════════════════════════════════════
+        // الطبقة الأمامية — أبراج وناطحات سحاب محددة
+        // Format: { xFrac, widthFrac, heightFrac, type }
+        // type: 0=flat, 1=setback, 2=tapered, 3=wedge, 4=stepped, 5=antenna
+        // ══════════════════════════════════════════════════════════
+        float[][] towers = {
+            // xFrac  wFrac   hFrac   type
+            { 0.01f, 0.055f, 0.072f, 0 },   // مبنى منخفض على اليسار
+            { 0.06f, 0.038f, 0.095f, 1 },   // برج مرحلي
+            { 0.10f, 0.028f, 0.062f, 0 },
+            { 0.13f, 0.048f, 0.108f, 4 },   // برج متدرج متوسط
+            { 0.18f, 0.022f, 0.055f, 0 },
+            { 0.20f, 0.062f, 0.145f, 2 },   // برج مدبب كبير
+            { 0.26f, 0.018f, 0.068f, 0 },
+            { 0.28f, 0.072f, 0.185f, 5 },   // ★ ناطحة مع هوائي — الأعلى على اليسار
+            { 0.35f, 0.024f, 0.075f, 0 },
+            { 0.38f, 0.055f, 0.128f, 3 },   // برج إسفيني
+            { 0.43f, 0.030f, 0.092f, 1 },
+            { 0.46f, 0.085f, 0.230f, 5 },   // ★★ أعلى برج في المنتصف (BurjKhalifa-esque)
+            { 0.55f, 0.025f, 0.080f, 0 },
+            { 0.57f, 0.048f, 0.158f, 2 },   // برج مدبب جانب الأعلى
+            { 0.62f, 0.020f, 0.065f, 0 },
+            { 0.64f, 0.068f, 0.172f, 4 },   // برج متدرج كبير
+            { 0.71f, 0.032f, 0.090f, 0 },
+            { 0.73f, 0.052f, 0.138f, 1 },
+            { 0.78f, 0.018f, 0.058f, 0 },
+            { 0.80f, 0.060f, 0.118f, 3 },
+            { 0.86f, 0.025f, 0.072f, 0 },
+            { 0.88f, 0.045f, 0.095f, 5 },   // برج مع هوائي على اليمين
+            { 0.93f, 0.035f, 0.062f, 0 },
+            { 0.96f, 0.048f, 0.085f, 1 },
+        };
+
+        Path fgPath = new Path();
         p.setStyle(Paint.Style.FILL);
         p.setColor(Color.argb(silA, silR, silG, silB));
 
-        // الأرض
-        c.drawRect(0, baseY - 2, w, h + 4, p);
-
-        // مباني عشوائية
-        Random rnd = new Random(31415L);
-        Path bldPath = new Path();
-        float x = 0;
-        while (x < w) {
-            float bw = w * (0.022f + rnd.nextFloat() * 0.048f);
-            float bh = h * (0.030f + rnd.nextFloat() * 0.090f);
-            float by = baseY - bh;
-            bldPath.addRect(x, by, x + bw - w * 0.002f, baseY, Path.Direction.CW);
-            x += bw + w * (0.004f + rnd.nextFloat() * 0.012f);
+        for (float[] t : towers) {
+            float tx  = t[0] * w;
+            float tw  = t[1] * w;
+            float th  = t[2] * h;
+            int   typ = (int) t[3];
+            addSkylineBuilding(fgPath, tx, baseY, tw, th, typ, w, h);
         }
 
-        // مئذنة رئيسية (ثلثا الطريق من اليسار)
-        addMinaret(bldPath, w * 0.33f, baseY, h * 0.21f, w);
-        // مئذنة ثانوية
-        addMinaret(bldPath, w * 0.71f, baseY, h * 0.155f, w);
+        // الأرض الكاملة
+        fgPath.addRect(0, baseY - 1, w, h + 4, Path.Direction.CW);
+        c.drawPath(fgPath, p);
 
-        // قبة مسجد بجانب المئذنة الرئيسية
-        float dX = w * 0.33f + w * 0.055f;
-        float dBase = baseY - h * 0.055f;
-        float dR = h * 0.048f;
-        bldPath.addOval(new RectF(dX - dR, dBase - dR * 0.88f, dX + dR, dBase), Path.Direction.CW);
+        // ══════════════════════════════════════════════════════════
+        // حافة زجاجية — خط ضوئي رفيع على قمم الأبراج النهارية
+        // ══════════════════════════════════════════════════════════
+        if (sunAlt > -2) {
+            float glassA = (float) Math.min(1.0, (sunAlt + 2) / 8.0);
+            Paint gp = new Paint(Paint.ANTI_ALIAS_FLAG);
+            gp.setStyle(Paint.Style.STROKE);
+            gp.setStrokeWidth(1.2f);
+            gp.setColor(Color.argb((int)(55 * glassA), 200, 220, 255));
+            c.drawPath(fgPath, gp);
+        }
 
-        c.drawPath(bldPath, p);
+        // ══════════════════════════════════════════════════════════
+        // نوافذ مضيئة ليلاً
+        // ══════════════════════════════════════════════════════════
+        if (sunAlt < 0) {
+            float nightT = (float) Math.min(1.0, -sunAlt / 10.0);
+            drawWindowGrid(c, w, h, baseY, towers, nightT, now);
+        }
 
-        // أضواء المدينة ليلاً
-        if (sunAlt < -2) drawCityLights(c, w, h, p, baseY, sunAlt);
+        // ══════════════════════════════════════════════════════════
+        // أضواء الطيران الحمراء على قمم الأبراج الشاهقة
+        // ══════════════════════════════════════════════════════════
+        if (sunAlt < -2) {
+            float dark = (float) Math.min(1.0, (-sunAlt - 2) / 12.0);
+            long blinkMs = now % 1200L;
+            int bA = (int)(dark * (blinkMs < 600 ? 180 : 80));
+            p.setColor(Color.argb(bA, 255, 60, 60));
+            // قمم الأبراج الأعلى من 15% ارتفاع
+            for (float[] t : towers) {
+                if (t[2] > 0.14f) {
+                    float tx = t[0] * w + t[1] * w * 0.5f;
+                    float ty = baseY - t[2] * h;
+                    float lightR = w * 0.007f;
+                    p.setShader(new RadialGradient(tx, ty, lightR * 3.5f,
+                        new int[]{ Color.argb(bA / 2, 255, 60, 60), Color.argb(0, 255, 60, 60) },
+                        null, Shader.TileMode.CLAMP));
+                    c.drawCircle(tx, ty, lightR * 3.5f, p);
+                    p.setShader(null);
+                    p.setColor(Color.argb(bA, 255, 80, 80));
+                    c.drawCircle(tx, ty, lightR, p);
+                }
+            }
+        }
+
+        // أضواء الشوارع والسيارات ليلاً
+        if (isNight) drawCityLights(c, w, h, p, baseY, sunAlt, now);
     }
 
-    private static void addMinaret(Path path, float baseX, float baseY,
-                                   float totalH, int w) {
-        float mW  = w * 0.010f;
-        float shH = totalH * 0.74f;
-        float blH = totalH * 0.09f;
-        float tpH = totalH * 0.17f;
-        float shTop = baseY - shH;
+    /** يضيف مبنى ناطح واحد للـ Path حسب النوع */
+    private static void addSkylineBuilding(Path path, float x, float base,
+                                           float bw, float bh, int type,
+                                           int w, int h) {
+        float top = base - bh;
+        switch (type) {
+            case 0: // مستطيل بسيط
+                path.addRect(x, top, x + bw, base, Path.Direction.CW);
+                break;
 
-        // جسم المئذنة
-        path.addRect(baseX - mW, shTop, baseX + mW, baseY, Path.Direction.CW);
-        // الشرفة
-        path.addRect(baseX - mW * 1.85f, shTop - blH, baseX + mW * 1.85f, shTop, Path.Direction.CW);
-        // المخروط
-        Path cone = new Path();
-        cone.moveTo(baseX - mW * 1.6f, shTop - blH);
-        cone.lineTo(baseX, shTop - blH - tpH);
-        cone.lineTo(baseX + mW * 1.6f, shTop - blH);
-        cone.close();
-        path.addPath(cone);
+            case 1: { // setback — كتفان أعلى وأضيق
+                path.addRect(x, top, x + bw, base, Path.Direction.CW);
+                float sw = bw * 0.60f, sx = x + bw * 0.20f;
+                path.addRect(sx, top - bh * 0.28f, sx + sw, top, Path.Direction.CW);
+                float sw2 = bw * 0.35f, sx2 = x + bw * 0.325f;
+                path.addRect(sx2, top - bh * 0.52f, sx2 + sw2, top - bh * 0.28f, Path.Direction.CW);
+                break;
+            }
+
+            case 2: { // مدبب — يتناقص للأعلى
+                path.addRect(x, top + bh * 0.18f, x + bw, base, Path.Direction.CW);
+                Path tri = new Path();
+                float mx = x + bw / 2f;
+                tri.moveTo(x, top + bh * 0.18f);
+                tri.lineTo(mx, top);
+                tri.lineTo(x + bw, top + bh * 0.18f);
+                tri.close();
+                path.addPath(tri);
+                break;
+            }
+
+            case 3: { // wedge — أفضل من الجانب الأيمن
+                path.addRect(x, top + bh * 0.12f, x + bw, base, Path.Direction.CW);
+                Path wed = new Path();
+                wed.moveTo(x, top + bh * 0.12f);
+                wed.lineTo(x + bw, top);
+                wed.lineTo(x + bw, top + bh * 0.12f);
+                wed.close();
+                path.addPath(wed);
+                break;
+            }
+
+            case 4: { // متدرج — 4 طوابق من الأكبر للأصغر
+                float[] ws = { bw, bw * 0.78f, bw * 0.56f, bw * 0.34f };
+                float[] hs = { bh * 0.38f, bh * 0.28f, bh * 0.20f, bh * 0.14f };
+                float curY = base;
+                for (int i = 0; i < 4; i++) {
+                    float offX = (bw - ws[i]) / 2f;
+                    path.addRect(x + offX, curY - hs[i], x + offX + ws[i], curY, Path.Direction.CW);
+                    curY -= hs[i];
+                }
+                break;
+            }
+
+            case 5: { // هوائي + مبنى متدرج
+                // جسم المبنى (setback بسيط)
+                path.addRect(x, top + bh * 0.18f, x + bw, base, Path.Direction.CW);
+                float sw = bw * 0.55f, sx = x + bw * 0.225f;
+                path.addRect(sx, top + bh * 0.08f, sx + sw, top + bh * 0.18f, Path.Direction.CW);
+                float mx = x + bw / 2f;
+                path.addRect(sx, top, sx + sw, top + bh * 0.08f, Path.Direction.CW);
+                // عمود الهوائي — رفيع جداً
+                float antW = w * 0.004f;
+                path.addRect(mx - antW, top - bh * 0.32f, mx + antW, top, Path.Direction.CW);
+                // قرص الهوائي
+                path.addRect(mx - antW * 3.5f, top - bh * 0.24f, mx + antW * 3.5f, top - bh * 0.20f, Path.Direction.CW);
+                break;
+            }
+        }
     }
 
+    /** شبكة نوافذ مضيئة على واجهات الأبراج */
+    private static void drawWindowGrid(Canvas c, int w, int h, float baseY,
+                                       float[][] towers, float nightT, long now) {
+        Random rnd = new Random(54321L);
+        // وميض عشوائي بطيء للنوافذ
+        long flickerSeed = now / 8000L;
+        Random flickerRnd = new Random(flickerSeed);
+
+        Paint wp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        for (float[] t : towers) {
+            float tx = t[0] * w;
+            float tw = t[1] * w;
+            float th = t[2] * h;
+            float top = baseY - th;
+
+            // شبكة نوافذ — عرض وارتفاع كل نافذة
+            float wW = Math.max(2.5f, tw * 0.14f);
+            float wH = Math.max(2.0f, h * 0.020f);
+            float gapX = tw * 0.08f;
+            float gapY = h * 0.012f;
+            int cols = Math.max(1, (int)(tw / (wW + gapX)));
+            int rows = Math.max(1, (int)(th * 0.75f / (wH + gapY)));
+
+            float startX = tx + (tw - cols * (wW + gapX) + gapX) / 2f;
+            float startY = baseY - h * 0.035f;
+
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    // بعض النوافذ مضاءة وبعضها مطفية
+                    boolean lit = flickerRnd.nextFloat() < (0.35f + rnd.nextFloat() * 0.35f);
+                    if (!lit) { rnd.nextFloat(); continue; }
+
+                    float wx = startX + col * (wW + gapX);
+                    float wy = startY - row * (wH + gapY);
+                    if (wy < top + th * 0.10f) break;
+
+                    // لون النافذة — أبيض/أصفر/أزرق بارد
+                    int wtype = flickerRnd.nextInt(4);
+                    int wr, wg, wb;
+                    if (wtype == 0) { wr = 255; wg = 235; wb = 160; }      // أصفر دافئ
+                    else if (wtype == 1) { wr = 210; wg = 230; wb = 255; } // أزرق بارد (LED)
+                    else if (wtype == 2) { wr = 255; wg = 255; wb = 220; } // أبيض
+                    else { wr = 255; wg = 180; wb = 100; }                  // برتقالي (مكتب)
+
+                    int wa = (int)(nightT * (100 + rnd.nextFloat() * 85));
+                    wp.setColor(Color.argb(wa, wr, wg, wb));
+                    c.drawRect(wx, wy - wH, wx + wW, wy, wp);
+                }
+            }
+        }
+    }
+
+    /** أضواء الشوارع والسيارات */
     private static void drawCityLights(Canvas c, int w, int h, Paint p,
-                                       float horizonY, double sunAlt) {
-        float dark = (float) Math.min(1.0, (-sunAlt - 2) / 14.0);
-        if (dark < 0.08f) return;
+                                       float baseY, double sunAlt, long now) {
+        float dark = (float) Math.min(1.0, (-sunAlt - 5) / 15.0);
+        if (dark < 0.05f) return;
+
         Random rnd = new Random(99887L);
-        for (int i = 0; i < 28; i++) {
+
+        // هالات ضوء الشوارع (sodium/LED)
+        for (int i = 0; i < 22; i++) {
             float lx = rnd.nextFloat() * w;
-            float ly = horizonY + (h - horizonY) * rnd.nextFloat() * 0.65f;
-            float lr = 1.4f + rnd.nextFloat() * 1.8f;
+            float ly = baseY - h * 0.008f;
             int type = rnd.nextInt(3);
             int cr, cg, cb;
-            if (type == 0) { cr = 255; cg = 198; cb = 75; }
-            else if (type == 1) { cr = 215; cg = 238; cb = 255; }
-            else { cr = 255; cg = 228; cb = 125; }
-            int la = (int)(dark * (55 + rnd.nextFloat() * 85));
-            p.setShader(new RadialGradient(lx, ly, lr * 5.5f,
-                new int[]{ Color.argb(la / 3, cr, cg, cb), Color.argb(0, cr, cg, cb) },
+            if (type == 0) { cr = 255; cg = 190; cb = 60; }  // sodium برتقالي
+            else if (type == 1) { cr = 210; cg = 238; cb = 255; } // LED أبيض/أزرق
+            else { cr = 255; cg = 215; cb = 110; }
+            int la = (int)(dark * (40 + rnd.nextFloat() * 50));
+            p.setShader(new RadialGradient(lx, ly, w * 0.045f,
+                new int[]{ Color.argb(la, cr, cg, cb), Color.argb(0, cr, cg, cb) },
                 null, Shader.TileMode.CLAMP));
-            c.drawCircle(lx, ly, lr * 5.5f, p);
+            c.drawCircle(lx, ly, w * 0.045f, p);
             p.setShader(null);
-            p.setColor(Color.argb(la, cr, cg, cb));
-            c.drawCircle(lx, ly, lr, p);
+        }
+
+        // ضوء سيارات متحركة (نقاط صغيرة تتحرك)
+        long carSeed = now / 300L;
+        Random carRnd = new Random(carSeed);
+        for (int i = 0; i < 6; i++) {
+            float cx2 = (carRnd.nextFloat() * w * 1.3f) % w;
+            float cy2 = baseY - h * (0.004f + carRnd.nextFloat() * 0.006f);
+            int ca = (int)(dark * (100 + carRnd.nextFloat() * 80));
+            // أضواء أمامية (بيضاء)
+            p.setColor(Color.argb(ca, 255, 250, 230));
+            c.drawCircle(cx2, cy2, 1.5f, p);
+            c.drawCircle(cx2 + w * 0.015f, cy2, 1.5f, p);
+            // أضواء خلفية حمراء إذا هناك سيارات في الاتجاه المقابل
+            if (carRnd.nextBoolean()) {
+                float cx3 = (carRnd.nextFloat() * w * 1.4f) % w;
+                p.setColor(Color.argb(ca / 2, 255, 50, 50));
+                c.drawCircle(cx3, cy2, 1.2f, p);
+                c.drawCircle(cx3 - w * 0.010f, cy2, 1.2f, p);
+            }
+        }
+
+        // انعكاس ضوء المدينة في الهواء (Orange haze dome)
+        p.setShader(new RadialGradient(w * 0.5f, baseY, w * 0.65f,
+            new int[]{ Color.argb((int)(dark * 40), 255, 130, 30),
+                       Color.argb((int)(dark * 15), 255, 100, 20),
+                       Color.argb(0, 200, 80, 10) },
+            null, Shader.TileMode.CLAMP));
+        c.drawRect(0, baseY - h * 0.22f, w, baseY, p);
+        p.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // سحاب Cumulonimbus — عاصفة رعدية مع مطر وبرق
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawCumulonimbus(Canvas c, int w, int h, Paint p,
+                                         double sunAlt, long now) {
+        if (sunAlt < -20) return;
+
+        // ═══ State machine — العاصفة تظهر كل فترة ═══
+        boolean stormActive = false;
+        if (cbStormStart == 0) {
+            cbStormStart = now;
+            cbStormNext  = 240_000L + (long)((new Random(now / 300_000L)).nextFloat() * 360_000L);
+            cbCloudX     = 0.32f + (new Random(now / 120_000L)).nextFloat() * 0.45f;
+            cbCloudW     = 0.35f + (new Random(now / 120_000L + 1)).nextFloat() * 0.28f;
+            cbStormDur   = 90_000L  + (long)((new Random(now / 300_000L + 2)).nextFloat() * 120_000L);
+        }
+        long elapsed = now - cbStormStart;
+        if (elapsed > cbStormNext + cbStormDur) {
+            cbStormStart = now;
+            Random sr = new Random(now / 60_000L);
+            cbStormNext = 180_000L + (long)(sr.nextFloat() * 300_000L);
+            cbCloudX    = 0.20f + sr.nextFloat() * 0.52f;
+            cbCloudW    = 0.30f + sr.nextFloat() * 0.32f;
+            cbStormDur  = 80_000L + (long)(sr.nextFloat() * 140_000L);
+            elapsed = 0;
+        }
+        stormActive = elapsed >= cbStormNext && elapsed < cbStormNext + cbStormDur;
+        if (!stormActive) return;
+
+        long stormT = elapsed - cbStormNext;
+        float stormAge = (float)(stormT / (double) cbStormDur);
+        float fade = stormAge < 0.12f ? stormAge / 0.12f : (stormAge > 0.88f ? 1f - (stormAge - 0.88f) / 0.12f : 1f);
+        fade = Math.max(0, Math.min(1, fade));
+
+        float cloudCX  = cbCloudX * w;
+        float cloudHW  = cbCloudW * w * 0.5f;
+        float cloudTopY = h * 0.05f;
+        float anvilTopY = h * 0.02f;
+        float cloudBaseY = h * (0.40f + (float)Math.max(0, sunAlt / 90.0) * 0.08f);
+        float anvilHW   = cloudHW * 1.55f;
+
+        // ═══ 1. وميض البرق — تضيء السحابة كلها ═══
+        long timeSinceBolt = now - cbBoltTime;
+        boolean boltFlash = timeSinceBolt < 180L;
+        float flashAlpha = boltFlash ? (float) Math.max(0, 1.0 - timeSinceBolt / 180.0) : 0;
+        // تزامن البروق التالية
+        if (now - cbBoltTime > 5_000L + (long)(new Random(cbBoltTime).nextFloat() * 12_000L)) {
+            cbBoltTime = now;
+            cbBoltX1 = cloudCX + (new Random(now).nextFloat() - 0.5f) * cloudHW * 0.8f;
+            cbBoltY1 = cloudBaseY - h * 0.06f;
+        }
+
+        // ═══ 2. جسم السحابة الداكن (أعمدة convection) ═══
+        int baseA = (int)(fade * 210);
+        if (baseA < 10) return;
+
+        // هالة وميض داخل السحابة
+        if (boltFlash) {
+            p.setShader(new RadialGradient(cloudCX, cloudBaseY - (cloudBaseY - cloudTopY) * 0.5f,
+                cloudHW * 1.4f,
+                new int[]{ Color.argb((int)(flashAlpha * 180), 220, 235, 255),
+                           Color.argb((int)(flashAlpha * 80),  180, 200, 255),
+                           Color.argb(0, 140, 160, 220) },
+                null, Shader.TileMode.CLAMP));
+            c.drawRect(cloudCX - anvilHW, anvilTopY, cloudCX + anvilHW, cloudBaseY, p);
+            p.setShader(null);
+        }
+
+        // الجسم الرئيسي للسحابة
+        p.setShader(new LinearGradient(0, cloudTopY, 0, cloudBaseY,
+            new int[]{ Color.argb(baseA * 5 / 8, 30, 32, 45),
+                       Color.argb(baseA,           22, 24, 38),
+                       Color.argb(baseA,           18, 20, 32),
+                       Color.argb(baseA * 3 / 4,  38, 42, 58) },
+            new float[]{ 0f, 0.3f, 0.75f, 1f }, Shader.TileMode.CLAMP));
+        Path cbPath = new Path();
+        // القاعدة المستوية
+        cbPath.moveTo(cloudCX - cloudHW, cloudBaseY);
+        cbPath.lineTo(cloudCX + cloudHW, cloudBaseY);
+        // حواف جوانب
+        cbPath.lineTo(cloudCX + cloudHW, cloudTopY + h * 0.10f);
+        // القمة — منحنى عريض (anvil)
+        cbPath.quadTo(cloudCX + anvilHW, cloudTopY + h * 0.04f, cloudCX + anvilHW, anvilTopY + h * 0.04f);
+        cbPath.quadTo(cloudCX, anvilTopY, cloudCX - anvilHW, anvilTopY + h * 0.04f);
+        cbPath.quadTo(cloudCX - anvilHW, cloudTopY + h * 0.04f, cloudCX - cloudHW, cloudTopY + h * 0.10f);
+        cbPath.close();
+        c.drawPath(cbPath, p);
+        p.setShader(null);
+
+        // ═══ أعمدة convection داكنة داخل السحابة ═══
+        Random cnvRnd = new Random(33344L);
+        Paint cnvP = new Paint(Paint.ANTI_ALIAS_FLAG);
+        for (int i = 0; i < 6; i++) {
+            float cx2 = cloudCX + (cnvRnd.nextFloat() - 0.5f) * cloudHW * 1.5f;
+            float colW = cloudHW * (0.08f + cnvRnd.nextFloat() * 0.10f);
+            float colH = (cloudBaseY - cloudTopY) * (0.45f + cnvRnd.nextFloat() * 0.35f);
+            float colTop = cloudBaseY - colH;
+            cnvP.setShader(new RadialGradient(cx2, colTop + colH * 0.5f, colW * 1.4f,
+                new int[]{ Color.argb(baseA * 2 / 5, 10, 10, 20),
+                           Color.argb(0, 15, 15, 28) },
+                null, Shader.TileMode.CLAMP));
+            c.drawOval(new RectF(cx2 - colW, colTop, cx2 + colW, colTop + colH), cnvP);
+        }
+        cnvP.setShader(null);
+
+        // ═══ حواف فيروزية/رصاصية (mammatus hints) على القاعدة ═══
+        int mamA = (int)(fade * 90);
+        p.setShader(new LinearGradient(0, cloudBaseY - h * 0.05f, 0, cloudBaseY,
+            new int[]{ Color.argb(0, 50, 58, 80),
+                       Color.argb(mamA, 42, 50, 72),
+                       Color.argb(mamA, 35, 42, 65) },
+            null, Shader.TileMode.CLAMP));
+        c.drawRect(cloudCX - cloudHW, cloudBaseY - h * 0.05f, cloudCX + cloudHW, cloudBaseY, p);
+        p.setShader(null);
+
+        // ═══ 3. مطر — خطوط مائلة تحت السحابة ═══
+        float rainA = fade * 0.82f;
+        if (rainA > 0.05f) {
+            Paint rainPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            rainPaint.setStyle(Paint.Style.STROKE);
+            rainPaint.setStrokeCap(Paint.Cap.ROUND);
+            Random rainRnd = new Random(55566L);
+            long rainFrame = now / 60L;
+            Random animRnd = new Random(rainFrame);
+
+            for (int i = 0; i < 55; i++) {
+                float rx = cloudCX - cloudHW * 0.9f + rainRnd.nextFloat() * cloudHW * 1.8f;
+                // حركة المطر باستمرار
+                float offset = (animRnd.nextFloat() * h * 0.25f + rainFrame * 6f) % (h * 0.38f);
+                float ry0 = cloudBaseY + offset;
+                float ry1 = ry0 + h * (0.025f + rainRnd.nextFloat() * 0.035f);
+                if (ry0 > h) continue;
+                float rw = 0.6f + rainRnd.nextFloat() * 0.8f;
+                int rA = (int)(rainA * (55 + rainRnd.nextFloat() * 65));
+                // انحراف بسيط للرياح
+                float windSlant = h * 0.018f;
+                rainPaint.setStrokeWidth(rw);
+                rainPaint.setColor(Color.argb(rA, 160, 185, 220));
+                c.drawLine(rx, ry0, rx + windSlant, ry1, rainPaint);
+            }
+        }
+
+        // ═══ 4. شريط المطر الغليظ (virga) ═══
+        int virgaA = (int)(fade * 55);
+        p.setShader(new LinearGradient(0, cloudBaseY, 0, Math.min(h * 0.88f, cloudBaseY + h * 0.28f),
+            new int[]{ Color.argb(virgaA, 100, 130, 180),
+                       Color.argb(virgaA / 3, 80, 110, 160),
+                       Color.argb(0, 60, 90, 140) },
+            null, Shader.TileMode.CLAMP));
+        c.drawRect(cloudCX - cloudHW * 0.72f, cloudBaseY,
+            cloudCX + cloudHW * 0.72f, Math.min(h * 0.88f, cloudBaseY + h * 0.28f), p);
+        p.setShader(null);
+
+        // ═══ 5. صاعقة — خط متعرج من قاعدة السحابة للأرض ═══
+        if (boltFlash && cbBoltX1 > 0) {
+            Paint boltP = new Paint(Paint.ANTI_ALIAS_FLAG);
+            boltP.setStyle(Paint.Style.STROKE);
+            boltP.setStrokeCap(Paint.Cap.ROUND);
+
+            Path boltPath = new Path();
+            float bx = cbBoltX1, by = cbBoltY1;
+            float endY = Math.min(h * 0.88f, cloudBaseY + h * 0.32f);
+            boltPath.moveTo(bx, by);
+            Random bRnd = new Random(cbBoltTime);
+            while (by < endY) {
+                float stepY = h * (0.035f + bRnd.nextFloat() * 0.045f);
+                float stepX = (bRnd.nextFloat() - 0.5f) * cloudHW * 0.55f;
+                // فروع البرق
+                if (bRnd.nextFloat() < 0.3f) {
+                    Path branch = new Path();
+                    branch.moveTo(bx, by);
+                    float bfx = bx + (bRnd.nextFloat() - 0.5f) * cloudHW * 0.5f;
+                    float bfy = by + h * 0.06f;
+                    branch.lineTo(bfx, bfy);
+                    float branchFa = flashAlpha * 0.5f;
+                    boltP.setStrokeWidth(1.0f);
+                    boltP.setColor(Color.argb((int)(branchFa * 160), 190, 210, 255));
+                    c.drawPath(branch, boltP);
+                }
+                bx += stepX;
+                by += stepY;
+                boltPath.lineTo(bx, by);
+            }
+            // خط الصاعقة الرئيسي — متعدد الطبقات
+            boltP.setStrokeWidth(4.0f * flashAlpha);
+            boltP.setColor(Color.argb((int)(flashAlpha * 120), 160, 190, 255));
+            c.drawPath(boltPath, boltP);
+            boltP.setStrokeWidth(2.0f * flashAlpha);
+            boltP.setColor(Color.argb((int)(flashAlpha * 200), 210, 225, 255));
+            c.drawPath(boltPath, boltP);
+            boltP.setStrokeWidth(0.8f * flashAlpha);
+            boltP.setColor(Color.argb((int)(flashAlpha * 255), 245, 250, 255));
+            c.drawPath(boltPath, boltP);
+
+            // هالة ضوء على الأرض تحت نقطة الوصول
+            float gndR = cloudHW * 0.28f;
+            p.setShader(new RadialGradient(bx, h, gndR * 2.2f,
+                new int[]{ Color.argb((int)(flashAlpha * 90), 200, 220, 255),
+                           Color.argb(0, 160, 180, 220) },
+                null, Shader.TileMode.CLAMP));
+            c.drawCircle(bx, h, gndR * 2.2f, p);
+            p.setShader(null);
         }
     }
 }
