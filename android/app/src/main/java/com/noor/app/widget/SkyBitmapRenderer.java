@@ -241,6 +241,9 @@ public final class SkyBitmapRenderer {
     private static float   cLighthouseX   = 0f;
     private static long    cLighthouseCheck = -1L;
 
+    // أوقات الصلاة للأذان المرئي
+    private static long cFajrMs, cDhuhrMs, cAsrMs, cMaghribMs, cIshaMs;
+
     // ═══════════════════════════════════════════════════════════════════════
     // نقطة الدخول الرئيسية
     // ═══════════════════════════════════════════════════════════════════════
@@ -345,9 +348,14 @@ public final class SkyBitmapRenderer {
         float moonX = azToX(cMoonAz, w);
         float moonY = altToY(cMoonAlt, h);
 
-        // 00. جودة الأداء التكيفية + تحديث الطقس
+        // 00. جودة الأداء التكيفية + تحديث الطقس + حفظ أوقات الصلاة
         checkAdaptiveQuality();
         updateWeatherState(now, cLat);
+        cFajrMs    = fajrMs;
+        cDhuhrMs   = dhuhrMs;
+        cAsrMs     = asrMs;
+        cMaghribMs = maghribMs;
+        cIshaMs    = ishaMs;
 
         // 01. تدرج السماء (Rayleigh Scattering — 6 stops)
         drawSkyGradient(c, w, h, p, cSunAlt);
@@ -467,6 +475,9 @@ public final class SkyBitmapRenderer {
 
         // 36. سكاي لاين — أبراج مدنية + مساجد
         drawCitySilhouette(c, w, h, p, cSunAlt, now);
+
+        // 36.3. أذان مرئي — حلقات ذهبية + موجات + جسيمات
+        drawAdhan(c, w, h, p, now);
 
         // 36.5. منارة بحرية دوارة
         drawLighthouse(c, w, h, p, cSunAlt, now);
@@ -3910,6 +3921,209 @@ public final class SkyBitmapRenderer {
                 int redA = (int)(flicker * 120);
                 p.setColor(Color.argb(redA, 220, 50, 30));
                 c.drawCircle(bx - bw * 0.75f, by - bh2 * 0.3f, 2.0f, p);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // الأذان المرئي — تأثير بصري جذّاب عند أوقات الصلاة
+    // يظهر 15 دقيقة بعد كل أذان ثم يتلاشى بهدوء
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawAdhan(Canvas c, int w, int h, Paint p, long now) {
+        // ══ فحص: هل نحن في نافذة الأذان؟ ══
+        long[] times = { cFajrMs, cDhuhrMs, cAsrMs, cMaghribMs, cIshaMs };
+        long elapsedMs = Long.MAX_VALUE;
+        for (long pt : times) {
+            if (pt <= 0) continue;
+            long diff = now - pt;
+            if (diff >= 0 && diff < 15L * 60_000L) {
+                elapsedMs = diff;
+                break;
+            }
+        }
+        if (elapsedMs == Long.MAX_VALUE) return;
+
+        // ══ شدة التأثير ══
+        // 0-2 دقيقة: بناء تدريجي | 2-11 دقيقة: ذروة | 11-15 دقيقة: تلاشٍ هادئ
+        float progress = elapsedMs / (15f * 60_000f);
+        float intensity;
+        if (progress < 0.133f) {
+            intensity = progress / 0.133f;                            // build-up
+        } else if (progress < 0.733f) {
+            intensity = 1.0f;                                         // peak
+        } else {
+            intensity = 1f - (progress - 0.733f) / 0.267f;           // fade
+        }
+        if (intensity < 0.02f) return;
+
+        float baseY = h;
+        float sec   = now / 1000f;
+
+        // ══ مواضع المآذن (type 9) في السكاي لاين ══
+        // minaret 1: index 17 → x=0.76*w, w=0.014*w, h=0.162*h → top at baseY - 0.162*h
+        // minaret 2: index 21 → x=0.93*w, w=0.012*w, h=0.145*h → top at baseY - 0.145*h
+        float[][] minarets = {
+            { 0.76f * w + 0.007f * w, baseY - 0.162f * h },
+            { 0.93f * w + 0.006f * w, baseY - 0.145f * h },
+        };
+
+        for (float[] mt : minarets) {
+            float mx = mt[0], my = mt[1];
+
+            // ══════════════════════════════════════════════
+            // 1. هالة ذهبية ثابتة حول قمة المئذنة
+            // ══════════════════════════════════════════════
+            float glowPulse = 0.75f + 0.25f * (float) Math.sin(sec * 2.2);
+            int glowA = (int)(intensity * glowPulse * 90);
+            p.setShader(new RadialGradient(mx, my, w * 0.07f,
+                new int[]{ Color.argb(glowA,     255, 215, 80),
+                           Color.argb(glowA / 2, 220, 160, 40),
+                           Color.argb(0,         180, 120, 20) },
+                null, Shader.TileMode.CLAMP));
+            c.drawCircle(mx, my, w * 0.07f, p);
+            p.setShader(null);
+
+            // ══════════════════════════════════════════════
+            // 2. حلقات sonar ذهبية تتمدد من رأس المئذنة
+            // ══════════════════════════════════════════════
+            Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            ringPaint.setStyle(Paint.Style.STROKE);
+
+            int ringCount = (cQuality == 0) ? 3 : 5;
+            float ringSpeed = 0.20f; // دورة كاملة كل 5 ثوانٍ
+            for (int ring = 0; ring < ringCount; ring++) {
+                // كل حلقة تبدأ بتأخير مختلف
+                float ringPhase = ((sec * ringSpeed + ring * (1f / ringCount)) % 1.0f);
+                float ringR = w * (0.025f + ringPhase * 0.40f);
+
+                // الحلقة تبدأ لامعة وتتلاشى وهي تتوسع
+                float lifeFade = 1f - ringPhase;
+                float ringAlpha = lifeFade * lifeFade * intensity * 200;
+                if (ringAlpha < 4) continue;
+
+                float strokeW = (3.5f - ringPhase * 2.5f) * intensity;
+                ringPaint.setStrokeWidth(Math.max(0.5f, strokeW));
+
+                // لون يتدرج من أبيض ذهبي → ذهبي عميق
+                int rr = 255, rg = (int)(215 - ringPhase * 80), rb = (int)(60 - ringPhase * 40);
+                ringPaint.setColor(Color.argb((int) ringAlpha, rr, rg, Math.max(0, rb)));
+
+                // رسم القوس العلوي فقط (180° + هامش) لتجنب الرسم داخل الأرض
+                RectF oval = new RectF(mx - ringR, my - ringR, mx + ringR, my + ringR);
+                c.drawArc(oval, 180f, 180f, false, ringPaint); // نصف دائرة علوي
+            }
+
+            // ══════════════════════════════════════════════
+            // 3. موجات صوتية جيبية تمتد يساراً ويميناً
+            // ══════════════════════════════════════════════
+            Paint wavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            wavePaint.setStyle(Paint.Style.STROKE);
+            wavePaint.setStrokeCap(Paint.Cap.ROUND);
+
+            int waveCount = (cQuality == 0) ? 2 : 3;
+            float waveSpeed = 0.28f;
+            for (int wave = 0; wave < waveCount; wave++) {
+                float wPhase = ((sec * waveSpeed + wave * (1f / waveCount)) % 1.0f);
+                float wLen   = w * (0.06f + wPhase * 0.32f);
+                float wFade  = (1f - wPhase) * (1f - wPhase); // تلاشٍ تربيعي
+                float wAlpha = wFade * intensity * 160;
+                if (wAlpha < 5) continue;
+
+                // سُمك يتناقص مع المسافة
+                wavePaint.setStrokeWidth(Math.max(0.8f, (2.0f - wPhase * 1.5f)));
+                int wa = (int) wAlpha;
+                wavePaint.setColor(Color.argb(wa, 255, 205, 70));
+
+                // سعة الموجة تتناقص مع الانتشار
+                float amp  = h * 0.014f * (1f - wPhase * 0.6f);
+                float freq = (float)(Math.PI * 3.0);
+
+                // موجة يسار
+                Path leftPath = new Path();
+                boolean leftMoved = false;
+                for (int xi = 0; xi <= (int) wLen; xi += 3) {
+                    float wx = mx - xi;
+                    float wy = my + (float)(Math.sin(freq * xi / wLen + sec * 4.5) * amp);
+                    if (!leftMoved) { leftPath.moveTo(wx, wy); leftMoved = true; }
+                    else             leftPath.lineTo(wx, wy);
+                }
+                c.drawPath(leftPath, wavePaint);
+
+                // موجة يمين
+                Path rightPath = new Path();
+                boolean rightMoved = false;
+                for (int xi = 0; xi <= (int) wLen; xi += 3) {
+                    float wx = mx + xi;
+                    float wy = my + (float)(Math.sin(freq * xi / wLen + sec * 4.5) * amp);
+                    if (!rightMoved) { rightPath.moveTo(wx, wy); rightMoved = true; }
+                    else              rightPath.lineTo(wx, wy);
+                }
+                c.drawPath(rightPath, wavePaint);
+            }
+
+            // ══════════════════════════════════════════════
+            // 4. جسيمات ضوء ذهبية تتصاعد من المئذنة
+            // ══════════════════════════════════════════════
+            if (cQuality > 0) {
+                // seed يتغير كل 0.5 ثانية لإعطاء جسيمات جديدة
+                long partSeed = (long)(sec * 2) * 997L + (long)(mx);
+                Random pRnd   = new Random(partSeed);
+                Paint partP   = new Paint(Paint.ANTI_ALIAS_FLAG);
+                partP.setStyle(Paint.Style.FILL);
+
+                int partCount = (cQuality == 2) ? 8 : 5;
+                for (int pt = 0; pt < partCount; pt++) {
+                    // كل جسيم يعيش 1.5–2.5 ثانية
+                    float lifeLen  = 1.5f + pRnd.nextFloat();
+                    float partSec  = (sec % lifeLen) / lifeLen;
+                    float spreadX  = (pRnd.nextFloat() - 0.5f) * w * 0.12f;
+
+                    float pX = mx + spreadX * partSec;
+                    float pY = my - partSec * h * 0.22f;
+
+                    float pFade = (1f - partSec) * (partSec < 0.2f ? partSec / 0.2f : 1f);
+                    int pA = (int)(pFade * intensity * 200);
+                    float pR = 3.5f * (1f - partSec * 0.6f);
+                    if (pA < 8 || pR < 0.5f) continue;
+
+                    // توهج صغير حول الجسيم
+                    partP.setShader(new RadialGradient(pX, pY, pR * 2.2f,
+                        new int[]{ Color.argb(pA,     255, 240, 140),
+                                   Color.argb(pA / 2, 255, 200,  60),
+                                   Color.argb(0,      210, 150,  20) },
+                        null, Shader.TileMode.CLAMP));
+                    c.drawCircle(pX, pY, pR * 2.2f, partP);
+                    partP.setShader(null);
+
+                    // نقطة مركزية بيضاء ساطعة
+                    partP.setColor(Color.argb(Math.min(255, pA + 40), 255, 255, 220));
+                    c.drawCircle(pX, pY, pR * 0.5f, partP);
+                }
+            }
+
+            // ══════════════════════════════════════════════
+            // 5. خط متوهج رفيع يصعد من قمة المئذنة
+            //    (كخيط نور يمتد إلى السماء)
+            // ══════════════════════════════════════════════
+            float beamHeight = h * 0.18f * intensity;
+            float beamPulse  = 0.6f + 0.4f * (float) Math.sin(sec * 3.1);
+            int   beamAlpha  = (int)(intensity * beamPulse * 120);
+            if (beamAlpha > 5) {
+                p.setShader(new LinearGradient(mx, my, mx, my - beamHeight,
+                    new int[]{ Color.argb(beamAlpha,     255, 215, 80),
+                               Color.argb(beamAlpha / 2, 255, 235, 140),
+                               Color.argb(0,             230, 200,  80) },
+                    null, Shader.TileMode.CLAMP));
+                Paint beamP = new Paint(Paint.ANTI_ALIAS_FLAG);
+                beamP.setStyle(Paint.Style.STROKE);
+                beamP.setStrokeWidth(1.8f * intensity);
+                beamP.setShader(new LinearGradient(mx, my, mx, my - beamHeight,
+                    new int[]{ Color.argb(beamAlpha,     255, 215, 80),
+                               Color.argb(beamAlpha / 2, 255, 235, 140),
+                               Color.argb(0,             230, 200,  80) },
+                    null, Shader.TileMode.CLAMP));
+                c.drawLine(mx, my, mx, my - beamHeight, beamP);
+                p.setShader(null);
             }
         }
     }
