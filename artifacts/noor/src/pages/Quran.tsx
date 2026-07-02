@@ -298,12 +298,30 @@ function AyahMarker({ num, bookmarked, dark }: { num: number; bookmarked?: boole
 }
 
 const READING_RECITERS = [
-  { id: 'Alafasy_128kbps',               name: 'مشاري راشد العفاسي' },
-  { id: 'Husary_128kbps',                name: 'محمود خليل الحصري' },
-  { id: 'Minshawi_Murattal_128kbps',     name: 'محمد صديق المنشاوي' },
-  { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
-  { id: 'MaherAlMuaiqly128kbps',         name: 'ماهر المعيقلي' },
-  { id: 'Abdul_Basit_Murattal_192kbps',  name: 'عبد الباسط عبد الصمد' },
+  { id: 'Alafasy_128kbps',                             name: 'مشاري راشد العفاسي' },
+  { id: 'MaherAlMuaiqly128kbps',                       name: 'ماهر المعيقلي' },
+  { id: 'Abdurrahmaan_As-Sudais_192kbps',              name: 'عبد الرحمن السديس' },
+  { id: 'Saood_ash-Shuraym_128kbps',                   name: 'سعود الشريم' },
+  { id: 'Abdul_Basit_Murattal_192kbps',                name: 'عبد الباسط عبد الصمد (مرتل)' },
+  { id: 'Abdul_Basit_Mujawwad_128kbps',                name: 'عبد الباسط عبد الصمد (مجوّد)' },
+  { id: 'Husary_128kbps',                              name: 'محمود خليل الحصري (مرتل)' },
+  { id: 'Husary_128kbps_Mujawwad',                     name: 'محمود خليل الحصري (مجوّد)' },
+  { id: 'Minshawy_Murattal_128kbps',                   name: 'محمد صديق المنشاوي (مرتل)' },
+  { id: 'Minshawy_Mujawwad_192kbps',                   name: 'محمد صديق المنشاوي (مجوّد)' },
+  { id: 'Abu_Bakr_Ash-Shaatree_128kbps',               name: 'أبو بكر الشاطري' },
+  { id: 'Hudhaify_128kbps',                            name: 'علي الحذيفي' },
+  { id: 'Abdullah_Basfar_192kbps',                     name: 'عبد الله بصفر' },
+  { id: 'Nasser_Alqatami_128kbps',                     name: 'ناصر القطامي' },
+  { id: 'Yasser_Ad-Dussary_128kbps',                   name: 'ياسر الدوسري' },
+  { id: 'Muhammad_Ayyoub_128kbps',                     name: 'محمد أيوب' },
+  { id: 'Muhammad_Jibreel_128kbps',                    name: 'محمد جبريل' },
+  { id: 'Mohammad_al_Tablaway_128kbps',                name: 'محمد الطبلاوي' },
+  { id: 'Hani_Rifai_192kbps',                          name: 'هاني الرفاعي' },
+  { id: 'Muhsin_Al_Qasim_192kbps',                     name: 'محسن القاسم' },
+  { id: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net', name: 'أحمد العجمي' },
+  { id: 'Salah_Al_Budair_128kbps',                     name: 'صلاح البدير' },
+  { id: 'Salaah_AbdulRahman_Bukhatir_128kbps',         name: 'صلاح بوخاطر' },
+  { id: 'Muhammad_AbdulKareem_128kbps',                name: 'محمد عبد الكريم' },
 ];
 
 function ayahAudioUrl(reciterId: string, surah: number, ayah: number): string {
@@ -1393,7 +1411,7 @@ export function Quran() {
               <div className="w-12 h-1.5 rounded-full mx-auto mb-4" style={{ background: 'rgba(193,154,107,0.4)' }} />
               <h3 className="text-base font-bold mb-1 text-center" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>اختر القارئ</h3>
               <p className="text-xs text-center mb-4" style={{ color: C.subtleText, fontFamily: '"Tajawal", sans-serif' }}>سيُشغَّل القرآن آية بآية من البداية</p>
-              <div className="space-y-2 max-h-72 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto pb-1">
                 {READING_RECITERS.map(r => (
                   <button
                     key={r.id}
