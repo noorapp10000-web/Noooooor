@@ -15,10 +15,15 @@ import android.graphics.Shader;
 import java.util.Random;
 
 /**
- * محرك السماء الفلكي المتقدم — نسخة كاملة محسّنة
+ * محرك السماء الفلكي المتقدم — النسخة الشاملة
  *
  * المميزات:
- *  • 80 نجمة من كتالوج Yale Bright Star بألوان طيفية حقيقية (O/B/A/F/G/K/M)
+ *  • 94 نجمة من كتالوج Yale Bright Star بألوان طيفية حقيقية (O/B/A/F/G/K/M)
+ *  • خطوط 6 كوكبات عربية: الجبار، الدب الأكبر، ذات الكرسي، الدجاجة، العقرب، الأسد
+ *  • مجرة أندروميدا M31 + سديم الجبار M42
+ *  • نجم الغول Algol المتغير — يتغير سطوعه كل 2.867 يوم
+ *  • أمطار الشهب الموسمية: Perseids/Leonids/Geminids/Quadrantids
+ *  • الشفق القطبي Aurora Borealis لخطوط العرض العالية (>52°)
  *  • درب التبانة بكامل تفاصيله ومركزه المضيء
  *  • المريخ (أحمر) + زحل (بحلقة) + عطارد (قرب الأفق)
  *  • Belt of Venus + Earth's Shadow عند الشفق
@@ -126,6 +131,22 @@ public final class SkyBitmapRenderer {
         { 19.045, -29.880,  2.60, 3300, 1 }, // Ascella (A2) — القوس
         { 22.097,  -0.319,  2.95, 4100, 3 }, // Sadalmelik (G2) — الدلو
         {  3.038,   4.090,  2.53, 5000, 5 }, // Menkar (M2) — الحوت
+
+        // ══ نجوم الكوكبات الإضافية ══
+        { 11.031,  56.383,  2.37, 3000, 1 }, // [80] Merak (A1) — الدب الأكبر
+        { 11.897,  53.694,  2.44, 3200, 1 }, // [81] Phecda (A0) — الدب الأكبر
+        { 12.257,  57.033,  3.31, 4000, 1 }, // [82] Megrez (A3) — الدب الأكبر
+        {  0.153,  59.150,  2.27, 3400, 2 }, // [83] Caph (F2) — ذات الكرسي
+        {  0.945,  60.717,  2.47, 2100, 0 }, // [84] Navi/Gamma Cas (B0) — ذات الكرسي
+        {  1.431,  60.235,  2.68, 3600, 1 }, // [85] Ruchbah (A5) — ذات الكرسي
+        {  1.906,  63.670,  3.38, 4500, 0 }, // [86] Segin (B3) — ذات الكرسي
+        { 19.749,  45.131,  2.87, 2800, 0 }, // [87] Delta Cygni (B9) — الدجاجة
+        { 10.333,  19.841,  1.99, 2600, 4 }, // [88] Algieba (K0) — الأسد
+        { 11.235,  20.524,  2.56, 2900, 1 }, // [89] Zosma (A4) — الأسد
+        { 10.122,  23.417,  3.44, 3800, 2 }, // [90] Adhafera (F0) — الأسد
+        { 16.352, -25.593,  2.89, 2400, 0 }, // [91] Sigma Sco (B1) — العقرب
+        { 16.836, -34.293,  2.29, 3000, 4 }, // [92] Epsilon Sco (K2) — العقرب
+        { 16.600, -28.216,  2.82, 3500, 0 }, // [93] Tau Sco (B0) — العقرب
     };
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -181,6 +202,45 @@ public final class SkyBitmapRenderer {
     };
 
     // ═══════════════════════════════════════════════════════════════════════
+    // خطوط الكوكبات { index_a, index_b } — أزواج مؤشرات STARS
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final int[][] CONSTELLATION_LINES = {
+        // الجبار Orion
+        { 9, 25}, {25, 39}, {39, 47}, {47, 48}, { 9, 47}, { 6, 39}, {49, 48},
+        // الدب الأكبر Ursa Major (Dipper)
+        {54, 80}, {80, 81}, {81, 82}, {82, 54}, {82, 51}, {51, 56}, {56, 52},
+        // ذات الكرسي Cassiopeia (W-shape)
+        {83, 45}, {45, 84}, {84, 85}, {85, 86},
+        // الدجاجة Cygnus (Northern Cross)
+        {18, 41}, {41, 66}, {87, 41}, {41, 63},
+        // العقرب Scorpius
+        {91, 14}, {14, 93}, {93, 92}, {92, 23},
+        // الأسد Leo (Sickle)
+        {20, 88}, {88, 89}, {88, 90},
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // الأجرام السماوية العميقة { RA_h, Dec_deg, type }
+    // type: 0 = مجرة إهليلجية  1 = سديم
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final double[][] DSO = {
+        {  0.711,  41.269, 0 }, // M31 — مجرة أندروميدا
+        {  5.588,  -5.391, 1 }, // M42 — سديم الجبار (Orion Nebula)
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // أمطار الشهب الموسمية { dayOfYear_peak, duration_days, rateMultiplier }
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final double[][] METEOR_SHOWERS = {
+        {   3, 4, 8.0 }, // Quadrantids  — 3 يناير
+        { 125, 5, 5.0 }, // Eta Aquarids — 5 مايو
+        { 224, 8, 9.0 }, // Perseids     — 12 أغسطس ★
+        { 281, 3, 4.0 }, // Draconids    — 8 أكتوبر
+        { 321, 4, 7.0 }, // Leonids      — 17 نوفمبر
+        { 347, 7, 10.0}, // Geminids     — 13 ديسمبر ★
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
     // Cache فلكي — يُحدَّث مرة كل دقيقة
     // ═══════════════════════════════════════════════════════════════════════
     private static long      lastCalcMin = -1;
@@ -194,7 +254,9 @@ public final class SkyBitmapRenderer {
     private static double[][] cStarPos;    // [alt, az] لكل نجمة
     private static double[][] cMwPos;      // [x, y, brightness] لكل نقطة MW
     private static double[][] cPleiPos;    // [alt, az] للثريا
+    private static double[][] cDsoPos;     // [alt, az] للأجرام العميقة
     private static double    cGmst;        // نستخدمه في رسم درب التبانة
+    private static double    cLat;         // لتحديد ظهور الشفق القطبي
 
     // ═══════════════════════════════════════════════════════════════════════
     // نقطة الدخول الرئيسية
@@ -262,6 +324,16 @@ public final class SkyBitmapRenderer {
                     cMwPos[i][2] = MW_KNOTS[i][3]; // brightness
                 }
 
+                // مواقع الأجرام العميقة
+                cDsoPos = new double[DSO.length][2];
+                for (int i = 0; i < DSO.length; i++) {
+                    double[] hp = raDecToAltAz(DSO[i][0], DSO[i][1], lat, lng, cGmst);
+                    cDsoPos[i][0] = hp[0];
+                    cDsoPos[i][1] = hp[1];
+                }
+
+                cLat = lat;
+
             } else {
                 cSunAlt = fallbackSunAlt(now, fajrMs, sunriseMs, dhuhrMs, asrMs, maghribMs, ishaMs);
                 cSunAz  = fallbackSunAz(now, sunriseMs, maghribMs);
@@ -270,6 +342,7 @@ public final class SkyBitmapRenderer {
                 cMarsAlt  = 25; cMarsAz  = 150;
                 cSatAlt   = 20; cSatAz   = 200;
                 cMercAlt  = -5;
+                cLat = lat;
                 Random rnd = new Random(42);
                 cStarPos = new double[STARS.length][2];
                 for (int i = 0; i < STARS.length; i++) {
@@ -278,6 +351,7 @@ public final class SkyBitmapRenderer {
                 }
                 cMwPos = null;
                 cPleiPos = null;
+                cDsoPos  = null;
             }
 
             cMoonPhase = moonPhase(jd);
@@ -305,51 +379,60 @@ public final class SkyBitmapRenderer {
         // 04. توهج الأفق Golden/Blue Hour
         drawHorizonGlow(c, w, h, p, cSunAlt, sunX);
 
-        // 05. نور الزودياك (بعد الغروب / قبل الشروق)
+        // 05. شفق قطبي (لخطوط العرض > 52°)
+        drawAurora(c, w, h, p, cSunAlt, cLat, now);
+
+        // 06. نور الزودياك (بعد الغروب / قبل الشروق)
         drawZodiacalLight(c, w, h, p, cSunAlt, cSunAz);
 
-        // 06. درب التبانة
+        // 07. درب التبانة
         drawMilkyWay(c, w, h, p, cSunAlt);
 
-        // 07. النجوم بألوانها الطيفية
+        // 08. الأجرام السماوية العميقة (M31 / M42)
+        drawDeepSkyObjects(c, w, h, p, cSunAlt, now);
+
+        // 09. خطوط الكوكبات
+        drawConstellations(c, w, h, p, cSunAlt);
+
+        // 10. النجوم بألوانها الطيفية + نجم الغول المتغير
         drawStars(c, w, h, p, cSunAlt, cMoonPhase, now);
 
-        // 08. الثريا كعنقود مميز
+        // 11. الثريا كعنقود مميز
         drawPleiades(c, w, h, p, cSunAlt, now);
 
-        // 09. كوكب الزهرة
+        // 12. كوكب الزهرة
         if (cVenusAlt > 1.5) drawPlanet(c, p, cVenusAlt, cVenusAz, w, h, 0xFFDDF4FF, 3.8f, false);
-        // 10. كوكب المشتري
+        // 13. كوكب المشتري
         if (cJupAlt   > 1.5) drawPlanet(c, p, cJupAlt,   cJupAz,   w, h, 0xFFFFEECC, 4.5f, false);
-        // 11. كوكب المريخ (أحمر مميز)
+        // 14. كوكب المريخ (أحمر مميز)
         if (cMarsAlt  > 1.5) drawPlanet(c, p, cMarsAlt,  cMarsAz,  w, h, 0xFFFF6644, 3.5f, false);
-        // 12. كوكب زحل (مع تلميح بالحلقة)
+        // 15. كوكب زحل (مع حلقة)
         if (cSatAlt   > 1.5) drawSaturn(c, p, cSatAlt,   cSatAz,   w, h);
-        // 13. عطارد (قرب الأفق فقط)
+        // 16. عطارد (قرب الأفق فقط)
         if (cMercAlt  > 1.5 && cMercAlt < 18) drawPlanet(c, p, cMercAlt, cMercAz, w, h, 0xFFFFEEDD, 2.5f, false);
 
-        // 14. شهاب عشوائي (ليلاً)
+        // 17. شهاب موسمي ذكي
         drawShootingStar(c, w, h, p, cSunAlt, now);
 
-        // 15. القمر مع كل تفاصيله
+        // 18. القمر مع كل تفاصيله
         if (cMoonAlt > -2) drawMoon(c, p, moonX, moonY, h, cMoonPhase, cSunAlt, now);
 
-        // 16. الشمس مع هالتها وأشعتها
+        // 19. الشمس مع هالتها وأشعتها
         if (cSunAlt > -3) {
             drawCrepuscularRays(c, w, h, p, cSunAlt, sunX, sunY);
             drawSun(c, p, sunX, sunY, w, h, cSunAlt);
         }
 
-        // 17. سحاب بطبقات Parallax محسّن
+        // 20. سحاب بطبقات Parallax محسّن
         drawClouds(c, w, h, p, cSunAlt, now);
 
-        // 18. تلوث ضوئي للمدن
+        // 21. تلوث ضوئي للمدن
         drawLightPollution(c, w, h, p, cSunAlt);
 
-        // 19. خط الأفق
+        // 22. خط الأفق
         drawHorizonLine(c, w, h, p, cSunAlt);
 
-        // 20. حواف دائرية
+        // 23. حواف دائرية
         applyRoundedCorners(bmp, w, h);
 
         return bmp;
@@ -623,8 +706,21 @@ public final class SkyBitmapRenderer {
         float dark = (float) Math.min(1, (-sunAlt - 4) / 14.0);
         p.setStyle(Paint.Style.FILL);
 
+        // ── نجم الغول Algol المتغير (index 43) ──
+        // الفترة 2.8673043 يوم، عند الحد الأدنى mag=3.4 لمدة ~2 ساعة
+        double algolPeriod = 2.8673043 * 86400.0;
+        double algolRef    = 2452885.50;
+        double algolJd     = julianDate(now);
+        double algolPhase  = ((algolJd - algolRef) % algolPeriod / algolPeriod + 1) % 1;
+        double algolMag    = 2.12;
+        if (algolPhase < 0.04 || algolPhase > 0.96) {
+            double dp = Math.min(algolPhase, 1 - algolPhase) / 0.04;
+            algolMag  = 2.12 + (3.4 - 2.12) * (1 - dp * dp);
+        }
+
         for (int i = 0; i < STARS.length && cStarPos != null; i++) {
-            if (STARS[i][2] > maxMag) continue;
+            double mag = (i == 43) ? algolMag : STARS[i][2];
+            if (mag > maxMag) continue;
             double alt = cStarPos[i][0], az = cStarPos[i][1];
 
             // تصحيح انكسار جوي: النجوم تبدو أعلى قرب الأفق
@@ -634,7 +730,7 @@ public final class SkyBitmapRenderer {
             float sy = altToY(apparentAlt, h);
             if (sx < -10 || sx > w + 10 || sy < -10 || sy > h + 10) continue;
 
-            float bright = (float)(1.0 - (STARS[i][2] + 1.6) / 6.8);
+            float bright = (float)(1.0 - (mag + 1.6) / 6.8);
             bright = Math.max(0.06f, Math.min(1f, bright));
 
             // توهج غير متزامن (twinkle) — أقوى قرب الأفق
@@ -646,6 +742,8 @@ public final class SkyBitmapRenderer {
 
             // اللون الطيفي
             int specClass = (int) Math.max(0, Math.min(5, STARS[i][4]));
+            // الغول عند الحد الأدنى يميل للأحمر قليلاً
+            if (i == 43 && algolMag > 2.8) specClass = 4;
             int starColor = SPECTRAL_COLORS[specClass];
             int sr = Color.red(starColor), sg = Color.green(starColor), sb = Color.blue(starColor);
 
@@ -795,19 +893,197 @@ public final class SkyBitmapRenderer {
     private static long  sLastStart = 0, sNextDelay = 0;
     private static float sX1, sY1, sX2, sY2;
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // 09. خطوط الكوكبات — ست كوكبات عربية خافتة الخطوط
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawConstellations(Canvas c, int w, int h, Paint p, double sunAlt) {
+        if (sunAlt > -14 || cStarPos == null) return;
+        float dark = (float) Math.min(1, (-sunAlt - 14) / 10.0);
+        int alpha = (int)(30 * dark);
+        if (alpha < 6) return;
+
+        Paint lp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        lp.setStyle(Paint.Style.STROKE);
+        lp.setStrokeWidth(1.0f);
+        lp.setColor(Color.argb(alpha, 180, 210, 255));
+
+        for (int[] pair : CONSTELLATION_LINES) {
+            int ia = pair[0], ib = pair[1];
+            if (ia >= cStarPos.length || ib >= cStarPos.length) continue;
+            double altA = cStarPos[ia][0], azA = cStarPos[ia][1];
+            double altB = cStarPos[ib][0], azB = cStarPos[ib][1];
+            if (altA < 2 || altB < 2) continue;
+            float x1 = azToX(azA, w), y1 = altToY(altA + refractionCorrection(altA), h);
+            float x2 = azToX(azB, w), y2 = altToY(altB + refractionCorrection(altB), h);
+            if (x1 < -10 || x1 > w + 10 || x2 < -10 || x2 > w + 10) continue;
+            c.drawLine(x1, y1, x2, y2, lp);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 08-extra. الأجرام السماوية العميقة — M31 + M42
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawDeepSkyObjects(Canvas c, int w, int h, Paint p,
+                                           double sunAlt, long now) {
+        if (sunAlt > -15 || cDsoPos == null) return;
+        float dark = (float) Math.min(1, (-sunAlt - 15) / 8.0);
+
+        for (int i = 0; i < DSO.length && i < cDsoPos.length; i++) {
+            double alt = cDsoPos[i][0], az = cDsoPos[i][1];
+            if (alt < 4) continue;
+            float sx = azToX(az, w), sy = altToY(alt, h);
+            if (sx < 0 || sx > w || sy < 0 || sy > h) continue;
+
+            int type = (int) DSO[i][2];
+            if (type == 0) {
+                // M31 — مجرة أندروميدا: بيضاوي ضبابي
+                float rx = h * 0.065f, ry = h * 0.022f;
+                int a = (int)(28 * dark);
+                p.setStyle(Paint.Style.FILL);
+                p.setShader(new RadialGradient(sx, sy, rx,
+                    new int[]{ Color.argb(a, 220, 230, 255),
+                               Color.argb(a / 3, 180, 200, 255),
+                               Color.argb(0, 160, 180, 255) },
+                    new float[]{ 0f, 0.45f, 1f }, Shader.TileMode.CLAMP));
+                RectF rf = new RectF(sx - rx, sy - ry, sx + rx, sy + ry);
+                c.drawOval(rf, p);
+                p.setShader(null);
+                // نواة ساطعة
+                p.setColor(Color.argb(Math.min(255, a * 3), 240, 245, 255));
+                c.drawCircle(sx, sy, 2.5f, p);
+            } else {
+                // M42 — سديم الجبار: توهج أخضر-أزرق لطيف
+                float rOuter = h * 0.045f;
+                int a = (int)(22 * dark);
+                long seed = now / 300_000L;
+                float twistOff = (float)(new Random(seed).nextFloat() * 0.3f - 0.15f);
+                p.setStyle(Paint.Style.FILL);
+                p.setShader(new RadialGradient(sx + twistOff * rOuter, sy,
+                    rOuter,
+                    new int[]{ Color.argb(a, 160, 220, 200),
+                               Color.argb(a / 2, 120, 180, 200),
+                               Color.argb(0, 80, 140, 180) },
+                    new float[]{ 0f, 0.5f, 1f }, Shader.TileMode.CLAMP));
+                c.drawCircle(sx, sy, rOuter, p);
+                p.setShader(null);
+                // نجوم الجبار الأربعة Trapezium
+                p.setColor(Color.argb(Math.min(255, a * 4), 255, 255, 255));
+                for (int j = 0; j < 4; j++) {
+                    float ox = (j % 2 == 0 ? -1 : 1) * h * 0.004f;
+                    float oy = (j < 2 ? -1 : 1) * h * 0.004f;
+                    c.drawCircle(sx + ox, sy + oy, 1.2f, p);
+                }
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 05-extra. الشفق القطبي — Aurora Borealis (خطوط عرض > 52°)
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawAurora(Canvas c, int w, int h, Paint p,
+                                   double sunAlt, double lat, long now) {
+        if (Math.abs(lat) < 52 || sunAlt > -18) return;
+        float intensity = (float) Math.min(1.0, (Math.abs(lat) - 52) / 20.0);
+        float dark      = (float) Math.min(1.0, (-sunAlt - 18) / 10.0);
+        float amp       = intensity * dark;
+        if (amp < 0.05f) return;
+
+        Random rnd = new Random((now / 8000L));
+        int bandCount = 4 + rnd.nextInt(3);
+        float baseY = h * 0.35f;
+
+        for (int band = 0; band < bandCount; band++) {
+            float bandOffset = rnd.nextFloat() * h * 0.15f;
+            float waveAmp    = h * 0.035f * (0.6f + rnd.nextFloat() * 0.8f);
+            float waveFreq   = (float)(Math.PI * 2 / w * (2 + rnd.nextFloat() * 3));
+            float phaseShift = rnd.nextFloat() * (float)(Math.PI * 2);
+            float bandAlpha  = amp * (0.5f + rnd.nextFloat() * 0.5f);
+
+            // لون: أخضر أساسي (oxygen 557nm) مع أحيان أرجواني (nitrogen)
+            boolean purple = rnd.nextFloat() < 0.25f;
+            int cr = purple ? 160 : 40;
+            int cg = purple ? 40  : 210;
+            int cb = purple ? 200 : 100;
+
+            Path path = new Path();
+            float x0 = 0;
+            float y0  = baseY + bandOffset + (float)(Math.sin(waveFreq * x0 + phaseShift) * waveAmp);
+            path.moveTo(x0, y0);
+
+            int steps = 60;
+            float[] xs = new float[steps + 1], ys = new float[steps + 1];
+            for (int s = 0; s <= steps; s++) {
+                float xp = (float) s / steps * w;
+                float yp = baseY + bandOffset
+                    + (float)(Math.sin(waveFreq * xp + phaseShift) * waveAmp)
+                    + (float)(Math.sin(waveFreq * 2.3 * xp + phaseShift * 1.7) * waveAmp * 0.4);
+                xs[s] = xp; ys[s] = yp;
+                if (s == 0) path.moveTo(xp, yp);
+                else path.lineTo(xp, yp);
+            }
+
+            // رسم شريط عمودي (ستارة) لكل نقطة
+            Paint aurPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            aurPaint.setStyle(Paint.Style.STROKE);
+            aurPaint.setStrokeWidth(1.2f);
+            int curtainStep = 4;
+            for (int s = 0; s < steps; s += curtainStep) {
+                float curtainAlpha = bandAlpha * (0.4f + 0.6f * (float)Math.random());
+                int ca = (int)(curtainAlpha * 90);
+                if (ca < 5) continue;
+                float bx = xs[s], by = ys[s];
+                float curtainLen = h * 0.06f * (0.5f + rnd.nextFloat());
+                aurPaint.setShader(new LinearGradient(bx, by, bx, by + curtainLen,
+                    Color.argb(ca, cr, cg, cb), Color.argb(0, cr, cg, cb),
+                    Shader.TileMode.CLAMP));
+                c.drawLine(bx, by, bx, by + curtainLen, aurPaint);
+            }
+
+            // طبقة ضبابية أسفل الموجة
+            Paint fogPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            fogPaint.setStyle(Paint.Style.FILL);
+            for (int s = 0; s < steps; s += 2) {
+                float bx = xs[s], by = ys[s];
+                float fogR = h * 0.025f;
+                int fa = (int)(bandAlpha * 18);
+                if (fa < 2) continue;
+                fogPaint.setShader(new RadialGradient(bx, by, fogR,
+                    Color.argb(fa, cr, cg, cb), Color.argb(0, cr, cg, cb),
+                    Shader.TileMode.CLAMP));
+                c.drawCircle(bx, by, fogR, fogPaint);
+            }
+        }
+    }
+
     private static void drawShootingStar(Canvas c, int w, int h, Paint p,
                                          double sunAlt, long now) {
         if (sunAlt > -11) return;
         if (sNextDelay == 0) sNextDelay = 60_000L;
 
+        // ── حساب معامل تكثيف الشهب الموسمية ──
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int dayOfYear = cal.get(java.util.Calendar.DAY_OF_YEAR);
+        double showerRate = 1.0;
+        for (double[] shower : METEOR_SHOWERS) {
+            double dDiff = Math.abs(dayOfYear - shower[0]);
+            if (dDiff > 180) dDiff = 365 - dDiff;
+            if (dDiff <= shower[1]) {
+                showerRate = Math.max(showerRate, shower[2] * (1 - dDiff / shower[1]));
+            }
+        }
+
+        // الفترة بين الشهب تقل مع كثافة المطر
+        long baseDelay = (long)(60_000L / showerRate);
+
         if (now - sLastStart > sNextDelay) {
-            sLastStart  = now;
-            Random rnd  = new Random(now / 1000L);
-            sNextDelay  = 45_000L + (long)(rnd.nextFloat() * 80_000L);
+            sLastStart = now;
+            Random rnd = new Random(now / 1000L);
+            sNextDelay = (long)(baseDelay * (0.5f + rnd.nextFloat())) ;
             sX1 = rnd.nextFloat() * w;
             sY1 = rnd.nextFloat() * h * 0.42f;
             float angle = (float)(Math.PI / 6 + rnd.nextFloat() * Math.PI * 0.45);
-            float len   = w * 0.10f + rnd.nextFloat() * w * 0.18f;
+            float lenScale = (showerRate > 3) ? 1.4f : 1.0f;
+            float len = (w * 0.10f + rnd.nextFloat() * w * 0.18f) * lenScale;
             sX2 = sX1 + (float)(Math.cos(angle) * len);
             sY2 = sY1 + (float)(Math.sin(angle) * len);
         }
@@ -824,13 +1100,12 @@ public final class SkyBitmapRenderer {
         float tx = sX1 + (sX2 - sX1) * Math.max(0, t - 0.20f);
         float ty = sY1 + (sY2 - sY1) * Math.max(0, t - 0.20f);
 
-        // ذيل متدرج اللون (أبيض → أصفر خفيف)
+        // ذيل: خلال أمطار الشهب يميل للأصفر-البرتقالي
+        int tc = (showerRate > 3) ? Color.argb(a, 255, 240, 180) : Color.argb(a, 255, 255, 255);
         Paint trail = new Paint(Paint.ANTI_ALIAS_FLAG);
         trail.setShader(new LinearGradient(tx, ty, cx, cy,
-            Color.argb(0, 255, 252, 240),
-            Color.argb(a, 255, 255, 255),
-            Shader.TileMode.CLAMP));
-        trail.setStrokeWidth(2.0f);
+            Color.argb(0, 255, 252, 240), tc, Shader.TileMode.CLAMP));
+        trail.setStrokeWidth(showerRate > 3 ? 2.5f : 2.0f);
         trail.setStyle(Paint.Style.STROKE);
         trail.setStrokeCap(Paint.Cap.ROUND);
         c.drawLine(tx, ty, cx, cy, trail);
