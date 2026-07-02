@@ -137,7 +137,7 @@ export function useSurah(number: number) {
           .filter(v => v.verse_key.startsWith(prefix))
           .map(v => ({
             numberInSurah: parseInt(v.verse_key.split(':')[1], 10),
-            text: v.text_uthmani,
+            text: v.text_uthmani.replace(/^\uFEFF/, ''),
             number: v.id,
           }));
         if (ayahs.length > 0) {

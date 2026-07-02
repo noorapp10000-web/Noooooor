@@ -1103,9 +1103,19 @@ export function Quran() {
               </div>
 
               {selectedSurah !== 1 && selectedSurah !== 9 && (
-                <p className="text-xl mt-1 block" style={{ fontFamily: '"Scheherazade New", "Amiri Quran", serif', color: C.bismillah, lineHeight: 2.2 }}>
-                  بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ
-                </p>
+                <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${dark ? 'rgba(193,154,107,0.2)' : 'rgba(139,94,60,0.2)'}` }}>
+                  <p style={{
+                    fontFamily: '"Scheherazade New", "Amiri Quran", serif',
+                    color: C.bismillah,
+                    fontSize: '1.45rem',
+                    lineHeight: 2.4,
+                    letterSpacing: '0.04em',
+                    textAlign: 'center',
+                    display: 'block',
+                  }}>
+                    بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ
+                  </p>
+                </div>
               )}
 
               {/* Decorative bottom */}
