@@ -939,7 +939,7 @@ public final class SkyBitmapRenderer {
         for (float[] band : bands) {
             float bandCY = y + band[0] * r;
             float bandH  = band[1] * r;
-            int bandColor = band[2];
+            int bandColor = (int) band[2];
             int br = Color.red(bandColor), bg = Color.green(bandColor), bb = Color.blue(bandColor);
             bandPaint.setShader(new LinearGradient(0, bandCY - bandH, 0, bandCY + bandH,
                 new int[]{ Color.argb(0, br, bg, bb),
