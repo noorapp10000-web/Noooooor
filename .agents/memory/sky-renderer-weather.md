@@ -1,6 +1,6 @@
 ---
-name: Sky renderer seasonal weather system
-description: Weather state machine + enhanced city skyline in SkyBitmapRenderer.java
+name: Sky renderer seasonal weather system + v3.0 architecture
+description: Weather state machine + enhanced city skyline + all 60 improvements in SkyBitmapRenderer.java v3.0
 ---
 
 ## Weather State Machine
@@ -13,33 +13,9 @@ description: Weather state machine + enhanced city skyline in SkyBitmapRenderer.
 - `wsStormMult` — 0.0 or 1.0; `drawCumulonimbus` returns early if < 0.05
 - `wsOvercast`  — 0.0 → 0.65; drives `drawOvercastVeil` gradient alpha
 
-**State durations:** CLEAR 12min, PARTLY 9min, OVERCAST 8min, STORMY 5min, FOGGY 7min ±60%
+**Seasonal probs:** `seasonalProbs(month, lat)` returns float[5] for {CLEAR,PARTLY,OVERCAST,STORMY,FOGGY}
 
-**Seasonal probs:** `seasonalProbs(month, lat)` returns float[5] for {CLEAR,PARTLY,OVERCAST,STORMY,FOGGY}:
-- tropical |lat|<20: dry (CLEAR 55%) vs wet Jun-Sep (STORMY 34%)
-- northern winter: CLEAR 12%, STORMY 20%, FOGGY 18%
-- northern summer: CLEAR 52%, STORMY 6%, FOGGY 2%
-- southern hemisphere: shift month by +6
-
-**Why:** Weather must feel seasonal/geographic — Cairo should feel different from London in January.
-
-## Render Call Order (added steps)
-
-```
-00. updateWeatherState(now, cLat)   ← before any drawing
-...
-30. drawClouds     (uses wsCloudMult)
-30.5 drawOvercastVeil (uses wsOvercast)
-31. drawCumulonimbus  (returns if wsStormMult < 0.05)
-...
-35. drawGroundFog  (uses wsFogMult, extended to sunAlt>6 when foggy)
-36. drawCitySilhouette
-    └─ drawGlassCurtainSheen  (active when -3≤sunAlt≤75)
-    └─ drawCityLights (night)
-    └─ drawRooftopDetails (sunAlt > -8)
-```
-
-## Building Types (addSkylineBuilding)
+## Building Types (addSkylineBuilding) — v3.0
 
 | type | description |
 |------|-------------|
@@ -52,22 +28,40 @@ description: Weather state machine + enhanced city skyline in SkyBitmapRenderer.
 | 6 | twin towers (Petronas-esque): two columns + bridge connector |
 | 7 | cylindrical glass (Gherkin-esque): 5 tapering rings + dome cap |
 | 8 | diamond cap: setback + 4-point diamond top + mechanical floor |
+| 9 | **★ مئذنة إسلامية** — قاعدة + جسم + شرفة المؤذن + هلال أعلى المئذنة |
+| 10 | **★ مسجد بقبة** — قبة رئيسية + قبتان صغيرتان + إيوان مقوس + مئذنتان صغيرتان |
 
-## Rooftop Details (`drawRooftopDetails`)
+## v3.0 New Functions (render call order additions)
 
-Draws atop the silhouette path with a slightly lighter color (`silRGB + 18`):
-- **Water towers** (type 0, 55% chance): oval cylinder + 3 support legs
-- **HVAC units** (70% chance): 1-3 rectangles + ventilation line slits
-- **Elevator penthouse** (type≥1, h>10%, 60% chance): box + slight sloped roof
+```
+05.  drawAlpenglow           — وهج وردي بعد الغروب
+08.  drawZodiacalLight       — نور الزودياك (محسّن)
+09.  drawGegenschein         — توهج معاكس للشمس
+10.  drawAirglow             — توهج الغلاف الجوي الليلي
+13.  drawDeepSkyObjects      — M31 / M42 (سديم + مجرة)
+20.5 drawComet               — مذنب بذيلين (غبار أصفر + أيون أزرق)
+22.  drawMoon                — sun-relative terminator + 3D sphere + رمضان + عمود ضوء
+26.  drawSundog              — ظاهرة البرق (Sundog/Parhelion)
+27.  drawCircumzenithalArc   — Arc فوق الزينيث
+28.  drawSun                 — sunspots + solar flares + corona + solar pillar
+34.5 drawHeatHaze            — ضبابية حرارية (sunAlt > 55°)
+37.  drawBirds               — طيور مهاجرة بتشكيل V عند الغروب/الشروق
+38.  drawWaterReflection      — انعكاس المدينة في شريط ماء أسفل الشاشة
+```
 
-**Why:** Only visible at sunAlt > -8 (dawn through dusk); adds depth and realism without affecting night silhouette.
+## Moon phase fix (v3.0)
 
-## Glass Curtain Sheen (`drawGlassCurtainSheen`)
+- Reference JD changed from 2451550.26 → **2451549.72** (New Moon 2000 Jan 6.18 UT — more accurate)
+- `hijriMonth(jd)` — Tabular Islamic Calendar; شهر 9 = رمضان
+- `cHijriMonth` cached every minute alongside other calculations
+- Ramadan crescent: `cHijriMonth == 9 && phase < 0.07` → golden halo + golden rim on moon
+- Mosque crescent accent: `drawMosqueCrescentAccent` pulsates on type-9/type-10 buildings in Ramadan
 
-Diagonal light streak on right face of each tall tower (t[2]≥0.10):
-- Runs when `-3 ≤ sunAlt ≤ 75` and `wsOvercast < 0.8`
-- 4-stop linear gradient (transparent→slight blue-white→transparent) at 60% of tower width
-- Skips type 4 (stepped) which doesn't have flat glass faces
+## Sun-relative terminator (CRITICAL fix)
+
+`drawMoon` now calculates `sunAngleOnScreen = atan2(sunScreenY - moonY, sunScreenX - moonX)` then `c.rotate(toDegrees(sunAngleOnScreen) + 90, moonX, moonY)` before drawing the terminator path. This makes the lit side always face the actual sun position on screen regardless of hemisphere or time.
+
+**Why:** Previous code always lit the right side for waxing regardless of sun position, causing wrong crescent orientation when moon is at unusual azimuths.
 
 ## NO RAINBOW RULE
 
