@@ -248,9 +248,11 @@ public class PrayerWidgetService extends Service {
                 rv.setTextViewText(R.id.wg_hijri_date,        hijri);
                 rv.setTextViewText(R.id.wg_hijri_date_bottom, hijri);
                 rv.setTextViewText(R.id.wg_day_pct, dayPct + "%");
-                rv.setTextColor(R.id.wg_day_pct,       0xFFFFFFFF);
-                rv.setTextColor(R.id.wg_day_pct_label, 0x55FFFFFF);
-                rv.setTextColor(R.id.wg_hijri_label,   0x55FFFFFF);
+                rv.setTextColor(R.id.wg_hijri_date,        0xFFFFFFFF);
+                rv.setTextColor(R.id.wg_hijri_date_bottom, 0xFFFFFFFF);
+                rv.setTextColor(R.id.wg_day_pct,           0xFFFFFFFF);
+                rv.setTextColor(R.id.wg_day_pct_label,     0xBBFFFFFF);
+                rv.setTextColor(R.id.wg_hijri_label,       0xBBFFFFFF);
 
                 if (tier == TIER_MEDIUM || tier == TIER_LARGE) {
                     rv.setTextColor(R.id.wg_hours_label,   0xFFC19A6B);

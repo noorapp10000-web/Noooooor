@@ -118,7 +118,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""
-                android:textColor="#C19A6B"
+                android:textColor="#FFFFFF"
                 android:textSize="8.5sp"
                 android:textStyle="bold" />
             <TextView
@@ -126,7 +126,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="التاريخ الهجري"
-                android:textColor="#55FFFFFF"
+                android:textColor="#BBFFFFFF"
                 android:textSize="7sp" />
         </LinearLayout>
 
@@ -156,7 +156,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="نسبة اليوم المنقضي"
-                android:textColor="#55FFFFFF"
+                android:textColor="#BBFFFFFF"
                 android:textSize="7sp"
                 android:gravity="end" />
         </LinearLayout>
