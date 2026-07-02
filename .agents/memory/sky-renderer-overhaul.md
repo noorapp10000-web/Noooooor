@@ -46,7 +46,12 @@ Changed from 5–8 to 12–16 puffs per cloud.
 ## Building silhouette depth (city realism)
 - Night silR/G/B changed from (4,5,12) to (12,16,38) — dark blue-charcoal not pure black
 - Background layer uses gradient shader (`LinearGradient`) instead of solid color
-- Foreground fgPath drawn with 3-stop LinearGradient: lighter at top (sky reflection) → darker at base
+- Per-tower individual rendering: each tower drawn with its own `tPath` + type-specific LinearGradient
+  - `typeColorOffsets[11][6]` — {dR_top,dG_top,dB_top,dR_bot,dG_bot,dB_bot} offsets from silR/G/B
+  - Glass types (1,6,7): +65/62/78 blue boost; Minaret(9): warm +28R, -4B; Mosque(10): +30R
+  - fgPath is built by addPath(tPath) per tower — used ONLY for overlay effects (rim, street glow)
 - Street Glow: warm amber overlay (255,180,80) on bottom 6% of buildings when isNight/isDusk
 - Sky Rim: 1px stroke pass on fgPath — blue at night, amber at dusk, blue-white at day
+- Trees: drawn with their own treePath, separate color (+12/14/26 offsets)
+- Ground: solid rect at silR/G/B (no gradient) after all tower draws
 - widget resizeMode="none" with minWidth=270dp, minHeight=180dp locks 4×3 size

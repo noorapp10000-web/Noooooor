@@ -2851,31 +2851,69 @@ public final class SkyBitmapRenderer {
             { 0.97f, 0.032f, 0.080f, 1 },
         };
 
-        Path fgPath = new Path();
+        // ══ جدول ألوان لكل نوع بناء (offsets فوق silR/G/B) ══
+        // { dR_قمة, dG_قمة, dB_قمة, dR_قاعدة, dG_قاعدة, dB_قاعدة }
+        int[][] typeColorOffsets = {
+            { 18, 22, 52,  0,  0,  0 },  // 0: concrete flat — رمادي-أزرق
+            { 24, 28, 65,  4,  5, 15 },  // 1: setback glass — أزرق زجاجي
+            { 16, 20, 48,  0,  0,  0 },  // 2: tapered — رمادي فحمي
+            { 18, 22, 58, -2, -2,  8 },  // 3: wedge — أزرق عميق
+            { 22, 20, 45,  2,  2,  5 },  // 4: stepped — دافئ خفيف
+            { 12, 16, 44, -2, -2,  0 },  // 5: antenna — صلب داكن
+            { 22, 26, 62,  2,  4, 12 },  // 6: twin — أزرق زجاجي توأم
+            { 32, 36, 78,  8, 10, 24 },  // 7: cylinder glass — الأكثر انعكاساً
+            { 18, 22, 55, -2, -2,  5 },  // 8: diamond — معدني داكن
+            { 28, 18, 32,  6,  2, -4 },  // 9: minaret — رملي دافئ
+            { 30, 20, 36,  8,  4,  0 },  // 10: mosque — طيني-رملي
+        };
+
+        // ══ رسم كل برج منفرداً بتدرج خاص به ══
+        Path fgPath = new Path();  // يُستخدم للتأثيرات (rim/glow) فقط
         p.setStyle(Paint.Style.FILL);
+        Paint towerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        towerPaint.setStyle(Paint.Style.FILL);
 
         for (float[] t : towers) {
             float tx  = t[0] * w, tw  = t[1] * w, th  = t[2] * h;
             int   typ = (int) t[3];
-            addSkylineBuilding(fgPath, tx, baseY, tw, th, typ, w, h);
+
+            Path tPath = new Path();
+            addSkylineBuilding(tPath, tx, baseY, tw, th, typ, w, h);
+            fgPath.addPath(tPath);  // للتأثيرات لاحقاً
+
+            float tTop = baseY - th;
+            int[] co   = (typ >= 0 && typ < typeColorOffsets.length)
+                         ? typeColorOffsets[typ] : typeColorOffsets[0];
+
+            int r1 = Math.min(255, Math.max(0, silR + co[0]));
+            int g1 = Math.min(255, Math.max(0, silG + co[1]));
+            int b1 = Math.min(255, Math.max(0, silB + co[2]));
+            int r2 = Math.min(255, Math.max(0, silR + co[3]));
+            int g2 = Math.min(255, Math.max(0, silG + co[4]));
+            int b2 = Math.min(255, Math.max(0, silB + co[5]));
+
+            towerPaint.setShader(new LinearGradient(0, tTop, 0, baseY,
+                new int[]{ Color.argb(silA, r1, g1, b1),
+                           Color.argb(silA, (r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2),
+                           Color.argb(silA, r2, g2, b2) },
+                new float[]{ 0f, 0.5f, 1f }, Shader.TileMode.CLAMP));
+            c.drawPath(tPath, towerPaint);
+            towerPaint.setShader(null);
         }
 
-        // أشجار موسمية — تتغير حسب الفصل والموقع
-        addSeasonalTrees(fgPath, w, h, baseY, now);
+        // أشجار موسمية
+        {
+            Path treePath = new Path();
+            addSeasonalTrees(treePath, w, h, baseY, now);
+            fgPath.addPath(treePath);
+            p.setColor(Color.argb(silA, Math.min(255, silR + 12), Math.min(255, silG + 14), Math.min(255, silB + 26)));
+            c.drawPath(treePath, p);
+        }
 
         // الأرض
         fgPath.addRect(0, baseY - 1, w, h + 4, Path.Direction.CW);
-
-        // ══ رسم المباني بتدرج لوني ثلاثي الأبعاد ══
-        // الطبقة الأساسية (لون عميق في القاعدة)
-        float tallest = h * 0.235f; // أطول برج
-        p.setShader(new LinearGradient(0, baseY - tallest, 0, baseY,
-            new int[]{ Color.argb(silA, Math.min(255, silR + 22), Math.min(255, silG + 26), Math.min(255, silB + 55)),
-                       Color.argb(silA, Math.min(255, silR + 10), Math.min(255, silG + 12), Math.min(255, silB + 28)),
-                       Color.argb(silA, silR, silG, silB) },
-            new float[]{ 0f, 0.45f, 1f }, Shader.TileMode.CLAMP));
-        c.drawPath(fgPath, p);
-        p.setShader(null);
+        p.setColor(Color.argb(silA, silR, silG, silB));
+        c.drawRect(0, baseY - 1, w, h + 4, p);
 
         // ══ طبقة ضوء المدينة من الأسفل (Street Glow) ══
         if (isNight || isDusk) {
