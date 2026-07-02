@@ -50,23 +50,24 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
 export function Login({ onComplete }: LoginProps) {
   const [step, setStep] = useState<Step>('name');
   const [gender, setGender] = useState<Gender>('male');
-  const [canNext, setCanNext] = useState(false);
+  const [nameValue, setNameValue] = useState('');
   const [govId, setGovId] = useState('');
   const [focused, setFocused] = useState(false);
-  const [savedName, setSavedName] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const canNext = nameValue.trim().length > 0;
 
   useEffect(() => {
     const timer = setTimeout(() => nameInputRef.current?.focus(), 400);
     return () => clearTimeout(timer);
   }, []);
 
-  function handleNameInput() {
+  function syncNameFromInput() {
     const val = nameInputRef.current?.value ?? '';
-    setCanNext(val.trim().length > 0);
+    setNameValue(val);
   }
 
   function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -87,9 +88,8 @@ export function Login({ onComplete }: LoginProps) {
   }
 
   function handleNameNext() {
-    const val = nameInputRef.current?.value?.trim() ?? '';
+    const val = nameValue.trim() || nameInputRef.current?.value?.trim() || '';
     if (!val) return;
-    setSavedName(val);
     setStep('city');
   }
 
@@ -115,7 +115,7 @@ export function Login({ onComplete }: LoginProps) {
     if (!gov) return;
 
     const uid = getOrCreateLocalUid();
-    const userName = savedName || nameInputRef.current?.value?.trim() || '';
+    const userName = nameValue.trim() || nameInputRef.current?.value?.trim() || '';
     const profile: UserProfile = {
       uid,
       name: userName,
@@ -240,14 +240,16 @@ export function Login({ onComplete }: LoginProps) {
                   <input
                     ref={nameInputRef}
                     type="text"
-                    defaultValue=""
+                    value={nameValue}
                     placeholder="اسمك..."
                     maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
                     style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
                     onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    onInput={handleNameInput}
+                    onBlur={() => { setFocused(false); syncNameFromInput(); }}
+                    onChange={e => setNameValue(e.target.value)}
+                    onInput={syncNameFromInput}
+                    onCompositionEnd={syncNameFromInput}
                     onKeyDown={e => { if (e.key === 'Enter') handleNameNext(); }}
                   />
                 </div>

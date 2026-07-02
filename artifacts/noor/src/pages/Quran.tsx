@@ -738,6 +738,8 @@ export function Quran() {
                 placeholder="ابحث عن سورة..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+                onInput={e => setSearch((e.target as HTMLInputElement).value)}
+                onCompositionEnd={e => setSearch((e.target as HTMLInputElement).value)}
                 className="w-full py-3 pr-10 pl-4 rounded-2xl outline-none text-sm"
                 style={{
                   background: C.searchBg,
