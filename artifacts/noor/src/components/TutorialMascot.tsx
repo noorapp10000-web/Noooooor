@@ -224,6 +224,7 @@ export function TutorialMascot() {
       const t = setTimeout(() => showTutorial('route:' + location, msg), 800);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [location, showTutorial]);
 
   const lines   = message.split('\n');

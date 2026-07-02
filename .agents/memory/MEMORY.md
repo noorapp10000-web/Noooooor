@@ -2,5 +2,5 @@
 - [Islamic pattern dark mode](islamic-pattern-dark.md) — blend-mode must be screen in .dark + explicit background-color; multiply inverts in dark.
 - [Removed packages](removed-packages.md) — cmdk, date-fns, next-themes, embla-carousel, react-day-picker, input-otp, react-resizable-panels, recharts, mp4-muxer removed.
 - [IslamicTV event listener leak pattern](event-listener-cleanup.md) — always use named functions + removeEventListener for HLS/video event cleanup.
-- [Theme hook pattern](theme-hook-pattern.md) — use local MutationObserver hook (useDarkMode) not next-themes; all pages follow this pattern.
+- [Theme hook pattern](theme-hook-pattern.md) — shared useDarkMode hook at @/hooks/use-dark-mode (MutationObserver); shared normalizeArabic at @/lib/arabic-utils. Import from these, never re-define locally.
 - [Android widget sky renderer bugs](widget-sky-bugs.md) — greenwichSiderealTime had 12-hour UT error; fix is ((jd+0.5)%1.0)*24*1.00273791 not (jd%1)*24.

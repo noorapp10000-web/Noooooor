@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { ASMA_HUSNA } from '@/lib/constants';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Link } from 'wouter';
+import { normalizeArabic } from '@/lib/arabic-utils';
 
 export function Asma() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<typeof ASMA_HUSNA[0] | null>(null);
 
+  const normSearch = normalizeArabic(search);
   const filtered = ASMA_HUSNA.filter(a =>
-    a.name.includes(search) || a.transliteration.toLowerCase().includes(search.toLowerCase())
+    normalizeArabic(a.name).includes(normSearch) ||
+    a.transliteration.toLowerCase().includes(search.toLowerCase())
   );
 
   return (

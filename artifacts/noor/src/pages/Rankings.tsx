@@ -5,6 +5,7 @@ import { TasbihIcon } from '@/components/NoorIcons';
 import { getCacheValue, getProfileCache, getFullCache, todayKey } from '@/lib/rtdb';
 import { TASBIH_TYPES } from '@/lib/constants';
 import { HISN_ITEMS } from '@/lib/hisnData';
+import { useDarkMode } from '@/hooks/use-dark-mode';
 
 const MORNING_CAT_ID_R = 27;
 const EVENING_CAT_ID_R = 9001;
@@ -41,16 +42,6 @@ function cellColorR(score: number, isToday: boolean): string {
   if (score <= 6) return '#c5922a';
   if (score <= 7) return '#c5b060';
   return '#c5a059';
-}
-
-function useDarkMode() {
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
-  useEffect(() => {
-    const observer = new MutationObserver(() => setIsDark(document.documentElement.classList.contains('dark')));
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-  return isDark;
 }
 
 function OrnamentDivider({ isDark }: { isDark: boolean }) {

@@ -1,20 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WifiOff, Wifi } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-function useDarkMode() {
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains('dark'),
-  );
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-  return isDark;
-}
+import { useDarkMode } from '@/hooks/use-dark-mode';
 
 export function OfflineBanner() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);

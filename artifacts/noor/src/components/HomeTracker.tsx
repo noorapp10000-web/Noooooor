@@ -4,10 +4,10 @@ import { HISN_ITEMS } from '@/lib/hisnData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Link } from 'wouter';
-import { queueDailyTrackerSync, getCurrentUid, getCacheValue, getSettingCache } from '@/lib/rtdb';
-import { getOrCreateLocalUid } from '@/lib/rtdb';
+import { queueDailyTrackerSync, getCurrentUid, getCacheValue, getSettingCache, getOrCreateLocalUid } from '@/lib/rtdb';
 import { Capacitor } from '@capacitor/core';
 import NoorGuard from '@/lib/guard-bridge';
+import { getTodayKey } from '@/lib/utils';
 
 const MORNING_CAT_ID = 27;
 const EVENING_CAT_ID = 9001;
@@ -28,11 +28,6 @@ const DEFAULT_STATE: TrackerState = {
   quranWird: false,
 };
 
-
-function getTodayDateKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 /* ── Prayer icons — realistic ───────────────────────────────────── */
 function FajrIcon({ done }: { done: boolean }) {
@@ -317,7 +312,7 @@ const PRAYERS: { key: PrayerKey; label: string }[] = [
 
 /* ── Main component ─────────────────────────────────────────── */
 export function HomeTracker() {
-  const [currentDateKey, setCurrentDateKey] = useState(getTodayDateKey);
+  const [currentDateKey, setCurrentDateKey] = useState(getTodayKey);
 
   // Load from RTDB cache (populated at startup by initUserSync)
   const [state, setState] = useState<TrackerState>(() => {
@@ -370,7 +365,7 @@ export function HomeTracker() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      const k = getTodayDateKey();
+      const k = getTodayKey();
       if (k !== currentDateKey) setCurrentDateKey(k);
     }, 30000);
     return () => clearInterval(id);

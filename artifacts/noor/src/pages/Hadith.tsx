@@ -4,20 +4,8 @@ import { ChevronLeft, ChevronRight, Search, X, Copy, Share2, ArrowLeft, BookOpen
 import { Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
-
-function useDarkMode() {
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains('dark'),
-  );
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-  return isDark;
-}
+import { useDarkMode } from '@/hooks/use-dark-mode';
+import { normalizeArabic } from '@/lib/arabic-utils';
 
 /* ── Book definitions ── */
 const BOOKS = [
@@ -43,18 +31,6 @@ async function loadBook(slug: string): Promise<LocalHadith[]> {
   const data: LocalHadith[] = await res.json();
   bookCache.set(slug, data);
   return data;
-}
-
-/* Arabic normalization for search */
-function normalizeArabic(text: string): string {
-  return text
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي')
-    .replace(/[\u064B-\u065F\u0670]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
 }
 
 const PAGE_SIZE = 10;
@@ -381,7 +357,7 @@ function HadithReader({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     setLoading(true);
@@ -625,7 +601,7 @@ function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number)
   const [query, setQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const queryInputRef = useRef<HTMLInputElement>(null);
-  const queryDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const queryDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   return (
     <div dir="rtl">

@@ -5,24 +5,10 @@ import { Link } from 'wouter';
 import { useAudio } from '@/contexts/AudioContext';
 import { SURAH_NAMES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import { getOrCreateLocalUid } from '@/lib/rtdb';
-import { getSettingCache, queueRTDBUpdate, getCurrentUid } from '@/lib/rtdb';
+import { getOrCreateLocalUid, getSettingCache, queueRTDBUpdate, getCurrentUid } from '@/lib/rtdb';
 import { useToast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
-
-function useTheme() {
-  const [resolvedTheme, setResolvedTheme] = useState(() =>
-    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-  );
-  useEffect(() => {
-    const obs = new MutationObserver(() =>
-      setResolvedTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light')
-    );
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => obs.disconnect();
-  }, []);
-  return { resolvedTheme };
-}
+import { useDarkMode } from '@/hooks/use-dark-mode';
 
 type FavoriteReciter = {
   key: string;
@@ -368,8 +354,7 @@ export function Reciters() {
   const { data: reciters, isLoading, isError } = useReciters();
   const audio = useAudio();
   const { toast } = useToast();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const isDark = useDarkMode();
 
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<Phase>('reciters');

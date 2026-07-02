@@ -2,7 +2,6 @@ import { Router } from "express";
 
 const router = Router();
 
-/* Base domains — subdomains are also covered via endsWith check below */
 const ALLOWED_HOSTS = [
   "everyayah.com",
   "cdn.islamic.network",
@@ -18,6 +17,8 @@ const ALLOWED_HOSTS = [
   "ksu.edu.sa",
   "islamic.network",
 ];
+
+const FETCH_TIMEOUT_MS = 8000;
 
 router.get("/audio-proxy", async (req, res) => {
   const rawUrl = req.query.url as string | undefined;
@@ -39,10 +40,19 @@ router.get("/audio-proxy", async (req, res) => {
     return;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
-    const upstream = await fetch(rawUrl, {
-      headers: { "User-Agent": "NoorApp/2.0" },
-    });
+    let upstream: Response;
+    try {
+      upstream = await fetch(rawUrl, {
+        signal: controller.signal,
+        headers: { "User-Agent": "NoorApp/2.0" },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!upstream.ok) {
       res.status(upstream.status).json({ error: "Upstream error" });
@@ -50,15 +60,35 @@ router.get("/audio-proxy", async (req, res) => {
     }
 
     const contentType = upstream.headers.get("content-type") ?? "audio/mpeg";
+    const contentLength = upstream.headers.get("content-length");
+
     res.set("Content-Type", contentType);
     res.set("Cache-Control", "public, max-age=86400");
     res.set("Access-Control-Allow-Origin", "*");
+    if (contentLength) res.set("Content-Length", contentLength);
 
-    const buffer = await upstream.arrayBuffer();
-    res.send(Buffer.from(buffer));
-  } catch (err) {
-    console.error("[audio-proxy] error:", err);
-    res.status(502).json({ error: "Proxy fetch failed" });
+    if (!upstream.body) {
+      res.status(502).json({ error: "No response body" });
+      return;
+    }
+
+    const reader = upstream.body.getReader();
+    req.on("close", () => { reader.cancel().catch(() => {}); });
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) { res.end(); break; }
+      const ok = res.write(Buffer.from(value));
+      if (!ok) await new Promise<void>(r => res.once("drain", r));
+    }
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (!res.headersSent) {
+      const isTimeout = err?.name === "AbortError";
+      res.status(isTimeout ? 504 : 502).json({
+        error: isTimeout ? "Upstream timeout" : "Proxy fetch failed",
+      });
+    }
   }
 });
 

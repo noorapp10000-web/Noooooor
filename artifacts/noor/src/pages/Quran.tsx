@@ -3,8 +3,7 @@ import { useTutorial } from '@/components/TutorialMascotContext';
 import { useQuranSurahs, useSurah, useTafsir } from '@/hooks/use-api';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
-import { getOrCreateLocalUid } from '@/lib/rtdb';
-import { getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
+import { getOrCreateLocalUid, getCacheValue, getCurrentUid, queueRTDBUpdate, getSettingCache, queueSettingSync } from '@/lib/rtdb';
 import { SURAH_NAMES } from '@/lib/constants';
 import { Search, Headphones, FileText, Bookmark, X, ChevronRight, AArrowUp, AArrowDown, Download, Loader2, Copy, Share2 } from 'lucide-react';
 import { useLocation } from 'wouter';
@@ -12,17 +11,9 @@ import { Capacitor } from '@capacitor/core';
 import { padZero, cn } from '@/lib/utils';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
+import { normalizeArabic } from '@/lib/arabic-utils';
 
 type MoshafType = { id: number; name: string; description: string; img_src: string; download_link: string };
-
-// ── Arabic text normalizer (removes tashkeel, normalises alef variants) ──
-function normalizeArabic(text: string): string {
-  return text
-    .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E4\u06E7-\u06E8\u06EA-\u06ED]/g, '')
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي');
-}
 
 // ── Module-level caches for local JSON data ──
 type QuranEntry = { s: number; a: number; t: string; n: string };
@@ -346,7 +337,7 @@ export function Quran() {
   const [searchView, setSearchView] = useState<'surahs' | 'search' | 'juz' | 'hizb'>('surahs');
   const [quranSearch, setQuranSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchCount, setSearchCount] = useState(0);

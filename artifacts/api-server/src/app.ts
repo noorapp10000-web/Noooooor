@@ -14,14 +14,9 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'",
-          "'unsafe-eval'",
-          "https://*.google.com",
-          "https://*.googleapis.com",
-          "https://*.gstatic.com",
-          "https://*.firebaseapp.com",
         ],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", "data:"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "wss:", "https:"],
         mediaSrc: ["'self'", "blob:", "https:"],
@@ -46,7 +41,8 @@ app.use(
   }),
 );
 
-app.use(cors());
+const corsOrigin = process.env.FRONTEND_URL || "*";
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -57,7 +53,7 @@ app.use("/api-server/api", router);
 if (process.env.NODE_ENV === "production") {
   const staticDir = path.resolve(process.cwd(), "dist", "public");
   app.use(express.static(staticDir));
-  app.get("/{*path}", (_req, res) => {
+  app.get("*", (_req, res) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }

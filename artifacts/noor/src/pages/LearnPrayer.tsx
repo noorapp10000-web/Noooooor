@@ -245,7 +245,7 @@ interface Prayer {
   name: string;
   rakaas: number;
   color: string;
-  Icon: (props: { size?: number }) => JSX.Element;
+  Icon: (props: { size?: number }) => React.ReactElement;
 }
 
 const PRAYERS: Prayer[] = [

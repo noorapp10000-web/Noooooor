@@ -9,12 +9,12 @@ import {
 } from '@/lib/rtdb';
 import { BarChart2 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { useUserSetting } from '@/hooks/use-user-setting';
 
 const BEAD_COUNT = 33;
 
-function BeadsSVG({ count, limit }: { count: number; limit: number }) {
+const BeadsSVG = memo(function BeadsSVG({ count, limit }: { count: number; limit: number }) {
   const beadsToShow = Math.min(BEAD_COUNT, limit);
   const filled = count % beadsToShow;
   const rounds = Math.floor(count / beadsToShow);
@@ -57,7 +57,7 @@ function BeadsSVG({ count, limit }: { count: number; limit: number }) {
       )}
     </svg>
   );
-}
+});
 
 function ResetConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   return (
