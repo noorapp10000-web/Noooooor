@@ -37,3 +37,16 @@ Changed from 5–8 to 12–16 puffs per cloud.
 - puffs distributed in -135° to +135° arc (upper hemisphere only)
 - per-puff `lit` factor drives highlight interpolation for directional sun lighting
 - Silver Lining drawn as single RadialGradient overlay on whole layer (not per-puff)
+
+## Moon color tuning (critical)
+- `bloodMoon` must only activate at `moonAlt < 1.5 && ill > 0.82` — anything looser makes normal low moon go red
+- `horizonT` for orange tint starts at `(5.0 - moonAlt) / 7.0`, capped at 0.65 — start was 15° before fix, caused heavy orange even at 10°+ altitude
+- Normal (no-horizon) moon colors: moonBase1=0xFFF8F4EC (white-ivory), moonBase2=0xFFEEE4C8, moonBase3=0xFFD8C898
+
+## Building silhouette depth (city realism)
+- Night silR/G/B changed from (4,5,12) to (12,16,38) — dark blue-charcoal not pure black
+- Background layer uses gradient shader (`LinearGradient`) instead of solid color
+- Foreground fgPath drawn with 3-stop LinearGradient: lighter at top (sky reflection) → darker at base
+- Street Glow: warm amber overlay (255,180,80) on bottom 6% of buildings when isNight/isDusk
+- Sky Rim: 1px stroke pass on fgPath — blue at night, amber at dusk, blue-white at day
+- widget resizeMode="none" with minWidth=270dp, minHeight=180dp locks 4×3 size

@@ -1360,17 +1360,21 @@ public final class SkyBitmapRenderer {
         double ill = moonIllumination(phase);
 
         // ══ تلوين القمر حسب ارتفاعه ══
-        float horizonT = (float) Math.max(0, Math.min(1, (15 - moonAlt) / 15.0));
-        boolean bloodMoon = (moonAlt < 5 && ill > 0.45);
+        // الأفق: يبدأ أصفر خفيف فقط تحت 5°، يتعمق قليلاً تحت 2°
+        float horizonT = (float) Math.max(0, Math.min(0.65, (5.0 - moonAlt) / 7.0));
+        // دم القمر: فقط عند قمر شبه كامل (>82%) قريب جداً من الأفق (<1.5°)
+        boolean bloodMoon = (moonAlt < 1.5 && ill > 0.82);
         int moonBase1, moonBase2, moonBase3;
         if (bloodMoon) {
-            moonBase1 = 0xFFFF3300; moonBase2 = 0xFFCC2200; moonBase3 = 0xFF881100;
-        } else if (horizonT > 0.05f) {
-            moonBase1 = lerpColor(0xFFF8F0D8, 0xFFFFB860, horizonT);
-            moonBase2 = lerpColor(0xFFE8D8A8, 0xFFFF9040, horizonT);
-            moonBase3 = lerpColor(0xFFCCB87A, 0xFFCC6020, horizonT);
+            moonBase1 = 0xFFFF5020; moonBase2 = 0xFFCC3010; moonBase3 = 0xFF991808;
+        } else if (horizonT > 0.04f) {
+            // أصفر/عنبر فاتح — ليس برتقالي قوي
+            moonBase1 = lerpColor(0xFFF8F0D8, 0xFFFFD880, horizonT);
+            moonBase2 = lerpColor(0xFFE8D8A8, 0xFFEEBB55, horizonT);
+            moonBase3 = lerpColor(0xFFCCB87A, 0xFFCC9030, horizonT);
         } else {
-            moonBase1 = 0xFFF8F0E0; moonBase2 = 0xFFECDCB8; moonBase3 = 0xFFD4C090;
+            // القمر الطبيعي — أبيض-عاجي ناصع
+            moonBase1 = 0xFFF8F4EC; moonBase2 = 0xFFEEE4C8; moonBase3 = 0xFFD8C898;
         }
 
         // ══ هالة القمر 22° ملونة (أحمر←أبيض←أزرق) ══
@@ -2779,16 +2783,20 @@ public final class SkyBitmapRenderer {
 
         int silR, silG, silB, silA;
         if (isDay) {
-            silR = 30; silG = 36; silB = 52; silA = 130;
+            silR = 28; silG = 38; silB = 60; silA = 140;
         } else if (isDusk) {
             float t = (float)((sunAlt + 5) / 7.0);
-            silR = (int)(5  + t * 25); silG = (int)(5  + t * 31);
-            silB = (int)(10 + t * 42); silA = (int)(200 - t * 70);
+            silR = (int)(8  + t * 22); silG = (int)(10 + t * 28);
+            silB = (int)(22 + t * 38); silA = (int)(210 - t * 70);
         } else {
-            silR = 4; silG = 5; silB = 12; silA = 220;
+            // ليل: أزرق-فحمي عميق — ليس أسود خالص
+            silR = 12; silG = 16; silB = 38; silA = 225;
         }
 
-        // خلفية بنايات صغيرة (عمق)
+        // ألوان طبقة الخلفية (أبعد — أفتح قليلاً وأكثر ضبابية)
+        int bgR = silR + 14, bgG = silG + 16, bgB = Math.min(255, silB + 28);
+
+        // خلفية بنايات صغيرة (عمق — طبقة ثانية)
         Random rndBg = new Random(77321L);
         Path bgPath = new Path();
         float xb = -w * 0.01f;
@@ -2799,8 +2807,14 @@ public final class SkyBitmapRenderer {
             xb += bww + w * (0.002f + rndBg.nextFloat() * 0.008f);
         }
         p.setStyle(Paint.Style.FILL);
-        p.setColor(Color.argb(silA * 7 / 10, silR, silG, silB));
+        // تدرج المباني الخلفية: أفتح في القمة، أغمق عند الأرض
+        float bgTop = baseY - h * 0.07f;
+        p.setShader(new LinearGradient(0, bgTop, 0, baseY,
+            new int[]{ Color.argb(silA * 6 / 10, bgR + 10, bgG + 12, Math.min(255, bgB + 15)),
+                       Color.argb(silA * 7 / 10, bgR, bgG, bgB) },
+            null, Shader.TileMode.CLAMP));
         c.drawPath(bgPath, p);
+        p.setShader(null);
 
         // ══════════════════════════════════════════════════════════
         // أبراج المدينة — تشمل مسجدين ومئذنتين ونخلة
@@ -2839,7 +2853,6 @@ public final class SkyBitmapRenderer {
 
         Path fgPath = new Path();
         p.setStyle(Paint.Style.FILL);
-        p.setColor(Color.argb(silA, silR, silG, silB));
 
         for (float[] t : towers) {
             float tx  = t[0] * w, tw  = t[1] * w, th  = t[2] * h;
@@ -2852,15 +2865,57 @@ public final class SkyBitmapRenderer {
 
         // الأرض
         fgPath.addRect(0, baseY - 1, w, h + 4, Path.Direction.CW);
-        c.drawPath(fgPath, p);
 
-        // بريق زجاج الأبراج
+        // ══ رسم المباني بتدرج لوني ثلاثي الأبعاد ══
+        // الطبقة الأساسية (لون عميق في القاعدة)
+        float tallest = h * 0.235f; // أطول برج
+        p.setShader(new LinearGradient(0, baseY - tallest, 0, baseY,
+            new int[]{ Color.argb(silA, Math.min(255, silR + 22), Math.min(255, silG + 26), Math.min(255, silB + 55)),
+                       Color.argb(silA, Math.min(255, silR + 10), Math.min(255, silG + 12), Math.min(255, silB + 28)),
+                       Color.argb(silA, silR, silG, silB) },
+            new float[]{ 0f, 0.45f, 1f }, Shader.TileMode.CLAMP));
+        c.drawPath(fgPath, p);
+        p.setShader(null);
+
+        // ══ طبقة ضوء المدينة من الأسفل (Street Glow) ══
+        if (isNight || isDusk) {
+            float streetGlowH = h * 0.06f;
+            int sgAlpha = isNight ? (int)(silA * 0.18f) : (int)(silA * 0.08f);
+            p.setShader(new LinearGradient(0, baseY - streetGlowH, 0, baseY,
+                new int[]{ Color.argb(0, 255, 180, 80),
+                           Color.argb(sgAlpha, 255, 180, 80),
+                           Color.argb(sgAlpha, 255, 160, 60) },
+                new float[]{ 0f, 0.5f, 1f }, Shader.TileMode.CLAMP));
+            c.drawPath(fgPath, p);
+            p.setShader(null);
+        }
+
+        // ══ حواف مضيئة على جانب السماء (Sky Rim) ══
+        {
+            Paint rimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            rimPaint.setStyle(Paint.Style.STROKE);
+            rimPaint.setStrokeWidth(1.0f);
+            int rimA;
+            if (isDay) {
+                rimA = 55;
+                rimPaint.setColor(Color.argb(rimA, 180, 210, 255));
+            } else if (isDusk) {
+                rimA = (int) Math.max(0, Math.min(90, 80 * ((-sunAlt) / 5.0 + 0.3)));
+                rimPaint.setColor(Color.argb(rimA, 255, 190, 120));
+            } else {
+                rimA = 38;
+                rimPaint.setColor(Color.argb(rimA, 140, 180, 255));
+            }
+            c.drawPath(fgPath, rimPaint);
+        }
+
+        // ══ بريق زجاج الأبراج (نهاراً) ══
         if (sunAlt > -4) {
             float glassA = (float) Math.min(1.0, (sunAlt + 4) / 10.0);
             Paint gp = new Paint(Paint.ANTI_ALIAS_FLAG);
             gp.setStyle(Paint.Style.STROKE);
-            gp.setStrokeWidth(1.4f);
-            gp.setColor(Color.argb((int)(60 * glassA), 200, 225, 255));
+            gp.setStrokeWidth(1.2f);
+            gp.setColor(Color.argb((int)(50 * glassA), 200, 225, 255));
             c.drawPath(fgPath, gp);
         }
 
