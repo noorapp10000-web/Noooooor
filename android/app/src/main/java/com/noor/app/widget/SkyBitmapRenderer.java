@@ -1484,18 +1484,19 @@ public final class SkyBitmapRenderer {
             RectF oval = new RectF(x - r, yy - r, x + r, yy + r);
             float absT = Math.abs(term);
 
+            RectF termOval = new RectF(x - absT, yy - r, x + absT, yy + r);
             if (!waning) {
+                // نصف الدائرة المضيء (يمين) — دائماً ثابت
                 mp.addArc(oval, -90, 180);
-                if (term >= 0)
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), 90, 180);
-                else
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), 90, -180);
+                // قوس المُنهي (Terminator):
+                // term >= 0 → هلال (الكشكول يمين) → نمر عبر اليمين (sweep -180)
+                // term < 0  → محدبة (الكشكول يسار) → نمر عبر اليسار (sweep +180)
+                mp.arcTo(termOval, 90, term >= 0 ? -180 : 180);
             } else {
+                // نصف الدائرة المضيء (يسار) — دائماً ثابت
                 mp.addArc(oval, 90, 180);
-                if (term >= 0)
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), -90, 180);
-                else
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), -90, -180);
+                // قوس المُنهي — نفس المنطق
+                mp.arcTo(termOval, -90, term >= 0 ? 180 : -180);
             }
             mp.close();
 
