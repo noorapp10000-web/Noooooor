@@ -6,3 +6,4 @@
 - [Android widget sky renderer bugs](widget-sky-bugs.md) — greenwichSiderealTime had 12-hour UT error; fix is ((jd+0.5)%1.0)*24*1.00273791 not (jd%1)*24.
 - [Sky renderer draw signatures](sky-renderer-signatures.md) — drawMoon takes (c,p,x,y,h,w,phase,moonAlt,sunAlt,now); drawClouds takes (c,w,h,p,sunAlt,sunX,sunY,now); drawOrganicCloud takes (...,lightX,lightY,sunAlt,rnd).
 - [Sky renderer 2025 overhaul](sky-renderer-overhaul.md) — rainbow removed forever; drawMieHaze takes sunX param; skyColors returns int[6]; drawOrganicCloud uses saveLayer+flatBase+sizeFalloff; 5 new functions added.
+- [Sky renderer weather system](sky-renderer-weather.md) — seasonal weather state machine; wsCloudMult/wsFogMult/wsStormMult/wsOvercast drive all renderer multipliers; 9 building types (0-8); drawRooftopDetails+drawGlassCurtainSheen added.

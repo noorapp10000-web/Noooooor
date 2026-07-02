@@ -367,6 +367,9 @@ public final class SkyBitmapRenderer {
         float moonX = azToX(cMoonAz, w);
         float moonY = altToY(cMoonAlt, h);
 
+        // 00. تحديث نظام الطقس الموسمي
+        updateWeatherState(now, cLat);
+
         // 01. تدرج السماء (Rayleigh Scattering — 6 stops)
         drawSkyGradient(c, w, h, p, cSunAlt);
 
@@ -450,10 +453,13 @@ public final class SkyBitmapRenderer {
         // 29. سحاب Cirrus طبقة علوية رفيعة
         drawCirrus(c, w, h, p, cSunAlt, sunX, now);
 
-        // 30. سحاب Cumulus (saveLayer + قاع مستوي + puffs أكثر + إضاءة اتجاهية)
+        // 30. سحاب Cumulus (كثافة موسمية حسب نظام الطقس)
         drawClouds(c, w, h, p, cSunAlt, sunX, sunY, now);
 
-        // 31. سحاب Cumulonimbus + مطر + برق
+        // 30.5. غطاء الغيوم الكثيف (overcast / stormy)
+        drawOvercastVeil(c, w, h, p, cSunAlt);
+
+        // 31. سحاب Cumulonimbus + مطر + برق (نشط فقط في حالة العاصفة)
         drawCumulonimbus(c, w, h, p, cSunAlt, now);
 
         // 32. آثار الطائرات (Contrails)
@@ -967,6 +973,22 @@ public final class SkyBitmapRenderer {
     private static float cbCloudX = 0.62f, cbCloudW = 0;
     private static long  cbBoltTime = 0;
     private static float cbBoltX1, cbBoltY1;
+
+    // ── نظام الطقس الموسمي ──────────────────────────────────
+    private static final int WS_CLEAR    = 0;
+    private static final int WS_PARTLY   = 1;
+    private static final int WS_OVERCAST = 2;
+    private static final int WS_STORMY   = 3;
+    private static final int WS_FOGGY    = 4;
+    private static int   wsCurrent   = WS_PARTLY;
+    private static int   wsNextState  = WS_PARTLY;
+    private static float wsTrans      = 1.0f;     // 0→1 اكتمال التحول
+    private static long  wsChanged    = 0L;
+    private static long  wsHold       = 600_000L; // مدة الحالة الحالية (ms)
+    private static float wsCloudMult  = 0.5f;     // مضاعف كثافة السحاب
+    private static float wsFogMult    = 0.0f;     // مضاعف الضباب
+    private static float wsStormMult  = 0.0f;     // مضاعف العاصفة
+    private static float wsOvercast   = 0.0f;     // شفافية غطاء الغيوم
 
     // ═══════════════════════════════════════════════════════════════════════
     // 09. خطوط الكوكبات — ست كوكبات عربية خافتة الخطوط
@@ -1696,9 +1718,19 @@ public final class SkyBitmapRenderer {
     // ═══════════════════════════════════════════════════════════════════════
     private static void drawClouds(Canvas c, int w, int h, Paint p,
                                    double sunAlt, float sunX, float sunY, long now) {
+        if (wsCloudMult < 0.04f) return;
         CloudColors cc = cloudColors(sunAlt);
         float sec  = now / 1000f;
         Random rnd = new Random(777);
+
+        // تطبيق مضاعف الطقس على ألفا الألوان
+        float cm = Math.min(2.0f, wsCloudMult);
+        int baseA = Math.min(255, (int)(Color.alpha(cc.base)      * cm));
+        int shadA = Math.min(255, (int)(Color.alpha(cc.shadow)    * cm));
+        int highA = Math.min(255, (int)(Color.alpha(cc.highlight) * cm));
+        int scaledBase = Color.argb(baseA, Color.red(cc.base), Color.green(cc.base), Color.blue(cc.base));
+        int scaledShad = Color.argb(shadA, Color.red(cc.shadow), Color.green(cc.shadow), Color.blue(cc.shadow));
+        int scaledHigh = Color.argb(highA, Color.red(cc.highlight), Color.green(cc.highlight), Color.blue(cc.highlight));
 
         for (float[] s : CLOUD_SEEDS) {
             int   layer  = (int)s[3];
@@ -1709,7 +1741,7 @@ public final class SkyBitmapRenderer {
             int   np     = (int)s[4];
             float aspect = s[5];
             drawOrganicCloud(c, p, cx, cy, sz, np, aspect,
-                             cc.base, cc.shadow, cc.highlight,
+                             scaledBase, scaledShad, scaledHigh,
                              sunX, sunY, sunAlt, rnd);
         }
     }
@@ -2096,6 +2128,261 @@ public final class SkyBitmapRenderer {
     static double normDeg(double d) { d %= 360; return d < 0 ? d + 360 : d; }
     static double normH  (double h) { h %=  24; return h < 0 ? h +  24 : h; }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // نظام الطقس الموسمي
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void updateWeatherState(long now, double lat) {
+        if (wsChanged == 0L) { wsChanged = now; wsHold = 480_000L; }
+        long sinceChange = now - wsChanged;
+
+        // انتقال سلس خلال 90 ثانية
+        float transMs = 90_000L;
+        wsTrans = Math.min(1.0f, sinceChange / transMs);
+
+        if (sinceChange < wsHold) {
+            // ابق في الحالة الحالية — حدّث المضاعفات
+            applyWeatherMults(wsCurrent, wsNextState, wsTrans);
+            return;
+        }
+
+        // اختر الحالة التالية بناءً على الموسم والموقع
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int month = cal.get(java.util.Calendar.MONTH); // 0-11
+        float[] probs = seasonalProbs(month, lat);
+
+        // وزن عشوائي بثبات ساعي (يتغير كل ساعة)
+        Random wRnd = new Random(now / 3_600_000L + wsCurrent * 7L);
+        float roll = wRnd.nextFloat();
+        float cum = 0;
+        int picked = WS_PARTLY;
+        for (int i = 0; i < 5; i++) {
+            cum += probs[i];
+            if (roll < cum) { picked = i; break; }
+        }
+
+        // لا تكرر نفس الحالة مرتين متتاليتين
+        if (picked == wsCurrent) picked = (picked + 1) % 5;
+
+        wsNextState = picked;
+        wsCurrent   = picked;
+        wsChanged   = now;
+        wsTrans     = 0f;
+
+        // مدة الحالة — تعتمد على نوعها
+        long[] holdTimes = { 720_000L, 540_000L, 480_000L, 300_000L, 420_000L };
+        long base2 = holdTimes[picked];
+        wsHold = base2 + (long)(wRnd.nextFloat() * base2 * 0.6f);
+
+        applyWeatherMults(wsCurrent, wsNextState, 0f);
+    }
+
+    private static float[] seasonalProbs(int month, double lat) {
+        // تحديد الفصل
+        boolean southern = lat < -10;
+        boolean tropical  = Math.abs(lat) < 20;
+        int adjMonth = southern ? (month + 6) % 12 : month;
+
+        // شتاء/صيف/ربيع/خريف
+        boolean isWinter = (adjMonth == 11 || adjMonth == 0 || adjMonth == 1);
+        boolean isSummer = (adjMonth >= 5 && adjMonth <= 7);
+        boolean isSpring = (adjMonth >= 2 && adjMonth <= 4);
+
+        if (tropical) {
+            // موسم جاف (أكتوبر-مايو بالشمال) / موسم مطر (يونيو-سبتمبر)
+            boolean isWet = (month >= 5 && month <= 9);
+            return isWet
+                ? new float[]{ 0.12f, 0.22f, 0.24f, 0.34f, 0.08f } // ممطر
+                : new float[]{ 0.55f, 0.28f, 0.08f, 0.06f, 0.03f }; // جاف
+        }
+        if (isWinter) return new float[]{ 0.12f, 0.22f, 0.28f, 0.20f, 0.18f };
+        if (isSummer) return new float[]{ 0.52f, 0.32f, 0.08f, 0.06f, 0.02f };
+        if (isSpring)  return new float[]{ 0.28f, 0.34f, 0.18f, 0.12f, 0.08f };
+        return               new float[]{ 0.22f, 0.30f, 0.25f, 0.14f, 0.09f }; // خريف
+    }
+
+    private static void applyWeatherMults(int cur, int nxt, float t) {
+        // { cloudMult, fogMult, stormMult, overcast }
+        float[][] params = {
+            { 0.0f, 0.0f, 0.0f, 0.0f },   // CLEAR
+            { 0.7f, 0.0f, 0.0f, 0.0f },   // PARTLY
+            { 1.8f, 0.2f, 0.0f, 0.45f },  // OVERCAST
+            { 2.4f, 0.1f, 1.0f, 0.65f },  // STORMY
+            { 0.5f, 1.5f, 0.0f, 0.20f },  // FOGGY
+        };
+        float[] a = params[cur], b = params[nxt];
+        wsCloudMult = a[0] + (b[0] - a[0]) * t;
+        wsFogMult   = a[1] + (b[1] - a[1]) * t;
+        wsStormMult = a[2] + (b[2] - a[2]) * t;
+        wsOvercast  = a[3] + (b[3] - a[3]) * t;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // طبقة الغيوم الكثيفة — Overcast Veil
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawOvercastVeil(Canvas c, int w, int h, Paint p, double sunAlt) {
+        if (wsOvercast < 0.02f) return;
+        float oa = Math.min(0.80f, wsOvercast);
+
+        // لون الغطاء يعتمد على وقت اليوم
+        int vR, vG, vB;
+        if (sunAlt > 8) { vR = 195; vG = 200; vB = 212; }
+        else if (sunAlt > 0) { vR = 160; vG = 155; vB = 175; }
+        else if (sunAlt > -5) { vR = 80; vG = 75; vB = 95; }
+        else { vR = 18; vG = 18; vB = 30; }
+
+        int topA = (int)(oa * 210);
+        int botA = (int)(oa * 140);
+
+        p.setShader(new LinearGradient(0, 0, 0, h * 0.68f,
+            new int[]{ Color.argb(topA, vR, vG, vB),
+                       Color.argb(botA, vR, vG, vB),
+                       Color.argb(0, vR, vG, vB) },
+            new float[]{ 0f, 0.65f, 1f }, Shader.TileMode.CLAMP));
+        c.drawRect(0, 0, w, h * 0.68f, p);
+        p.setShader(null);
+
+        // نسيج غيوم داكن — خطوط أفقية بطيئة
+        if (wsOvercast > 0.20f) {
+            Random rnd = new Random(11111L);
+            Paint cp = new Paint(Paint.ANTI_ALIAS_FLAG);
+            cp.setStyle(Paint.Style.STROKE);
+            cp.setStrokeCap(Paint.Cap.ROUND);
+            for (int i = 0; i < 6; i++) {
+                float ly = h * (0.02f + rnd.nextFloat() * 0.30f);
+                float lw = w * (0.30f + rnd.nextFloat() * 0.55f);
+                float lx = rnd.nextFloat() * w;
+                int la = (int)(wsOvercast * (25 + rnd.nextFloat() * 30));
+                cp.setStrokeWidth(h * (0.018f + rnd.nextFloat() * 0.028f));
+                cp.setShader(new LinearGradient(lx, ly, lx + lw, ly,
+                    Color.argb(0, vR, vG, vB),
+                    Color.argb(la, vR - 20, vG - 20, vB - 15),
+                    Shader.TileMode.MIRROR));
+                c.drawLine(lx, ly, lx + lw, ly, cp);
+            }
+            cp.setShader(null);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // تفاصيل سطح المباني — خزانات مياه + وحدات HVAC + بنتهاوس
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawRooftopDetails(Canvas c, int w, int h, Paint p,
+                                           float[][] towers, float baseY,
+                                           int silR, int silG, int silB, int silA) {
+        Random rnd = new Random(65432L);
+        p.setStyle(Paint.Style.FILL);
+
+        // اللون يكون أفتح قليلاً من السيلويت لإظهار العمق
+        int detailA = Math.min(255, silA + 30);
+        int dR = Math.min(255, silR + 18), dG = Math.min(255, silG + 18), dB = Math.min(255, silB + 22);
+
+        for (float[] t : towers) {
+            float tx  = t[0] * w;
+            float tw  = t[1] * w;
+            float th  = t[2] * h;
+            float top = baseY - th;
+            float mx2 = tx + tw / 2f;
+            int   typ = (int) t[3];
+
+            // تفاصيل فقط على المباني المستطيلة / المتدرجة / الكبيرة
+            if (th < h * 0.06f) continue;
+
+            p.setColor(Color.argb(detailA, dR, dG, dB));
+
+            // خزان مياه على المباني العادية (type 0)
+            if (typ == 0 && rnd.nextFloat() < 0.55f) {
+                float tR = Math.max(2f, tw * 0.14f);
+                float tH = tR * 1.35f;
+                float tX = mx2 + (rnd.nextFloat() - 0.5f) * tw * 0.28f;
+                // حوض أسطواني (oval)
+                c.drawOval(new RectF(tX - tR, top - tH, tX + tR, top), p);
+                // أعمدة الحوض
+                p.setColor(Color.argb(detailA - 30, dR, dG, dB));
+                float legW = Math.max(1f, tR * 0.18f);
+                for (int lg = -1; lg <= 1; lg++) {
+                    c.drawRect(tX + lg * tR * 0.6f - legW, top - tH * 0.40f,
+                               tX + lg * tR * 0.6f + legW, top, p);
+                }
+                p.setColor(Color.argb(detailA, dR, dG, dB));
+            }
+
+            // وحدات HVAC — مربعات صغيرة
+            if (rnd.nextFloat() < 0.70f) {
+                int nUnits = 1 + rnd.nextInt(3);
+                for (int u = 0; u < nUnits; u++) {
+                    float uw = Math.max(2.5f, tw * (0.08f + rnd.nextFloat() * 0.10f));
+                    float uh = uw * (0.55f + rnd.nextFloat() * 0.30f);
+                    float ux = tx + w * 0.004f + rnd.nextFloat() * (tw - uw - w * 0.006f);
+                    c.drawRect(ux, top - uh, ux + uw, top, p);
+                    // فتحات التهوية — خطوط رفيعة
+                    Paint vp = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    vp.setStyle(Paint.Style.STROKE);
+                    vp.setStrokeWidth(0.8f);
+                    vp.setColor(Color.argb(detailA / 2, silR, silG, silB));
+                    for (int vl = 0; vl < 3; vl++) {
+                        float vy = top - uh * (0.25f + vl * 0.22f);
+                        c.drawLine(ux + uw * 0.12f, vy, ux + uw * 0.88f, vy, vp);
+                    }
+                }
+            }
+
+            // بنتهاوس مصعد (elevator penthouse) — برج صغير مركزي
+            if (typ >= 1 && th > h * 0.10f && rnd.nextFloat() < 0.60f) {
+                float epW = Math.max(3f, tw * 0.18f);
+                float epH = th * (0.055f + rnd.nextFloat() * 0.040f);
+                c.drawRect(mx2 - epW / 2f, top - epH, mx2 + epW / 2f, top, p);
+                // سطح مائل خفيف
+                Path epRoof = new Path();
+                epRoof.moveTo(mx2 - epW / 2f - w * 0.002f, top - epH);
+                epRoof.lineTo(mx2, top - epH - epH * 0.30f);
+                epRoof.lineTo(mx2 + epW / 2f + w * 0.002f, top - epH);
+                epRoof.close();
+                c.drawPath(epRoof, p);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // انعكاس واجهات زجاجية — لمعة مائلة حسب اتجاه الشمس
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawGlassCurtainSheen(Canvas c, int w, int h, Paint p,
+                                              float[][] towers, float baseY,
+                                              double sunAlt) {
+        if (sunAlt < -3 || sunAlt > 75) return;
+        float sA = (float) Math.min(1.0, (sunAlt + 3) / 20.0) * (1.0f - wsOvercast * 0.8f);
+        if (sA < 0.03f) return;
+
+        Paint gp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        gp.setStyle(Paint.Style.FILL);
+
+        for (float[] t : towers) {
+            // انعكاس فقط على الأبراج الكبيرة (>10% ارتفاع)
+            if (t[2] < 0.10f) continue;
+            int typ = (int) t[3];
+            if (typ == 4) continue; // stepped لا تعكس بنفس الطريقة
+
+            float tx  = t[0] * w;
+            float tw  = t[1] * w;
+            float th  = t[2] * h;
+            float top = baseY - th;
+
+            // شريط لمعان مائل — يتحرك بزاوية 30° عبر الواجهة
+            float sheenW = tw * 0.22f;
+            float sheenX = tx + tw * 0.60f; // الجانب الذي يواجه الشمس
+
+            RectF sheenRect = new RectF(sheenX, top + th * 0.05f,
+                                        sheenX + sheenW, baseY - h * 0.005f);
+            gp.setShader(new LinearGradient(sheenX, top, sheenX + sheenW, top,
+                new int[]{ Color.argb(0, 200, 225, 255),
+                           Color.argb((int)(sA * 45), 220, 238, 255),
+                           Color.argb((int)(sA * 28), 210, 230, 255),
+                           Color.argb(0, 200, 220, 255) },
+                new float[]{ 0f, 0.35f, 0.70f, 1f }, Shader.TileMode.CLAMP));
+            c.drawRect(sheenRect, gp);
+        }
+        gp.setShader(null);
+    }
+
     static int lerpColor(int c1, int c2, float t) {
         t = Math.max(0f, Math.min(1f, t));
         return Color.argb(
@@ -2257,10 +2544,15 @@ public final class SkyBitmapRenderer {
     // ═══════════════════════════════════════════════════════════════════════
     private static void drawGroundFog(Canvas c, int w, int h, Paint p,
                                       double sunAlt, long now) {
-        if (sunAlt > 6 || sunAlt < -10) return;
-        float intensity = (float)(1.0 - Math.abs(sunAlt - (-1)) / 7.0);
-        intensity = Math.max(0.15f, Math.min(1f, intensity));
-        int alpha = (int)(48 * intensity);
+        // توقيت طبيعي: فجر/غروب. الطقس يمد نطاق وكثافة الضباب
+        float timeIntensity = (float)(1.0 - Math.abs(sunAlt - (-1)) / 7.0);
+        timeIntensity = Math.max(0f, Math.min(1f, timeIntensity));
+        float weatherFog = wsFogMult * 0.85f;
+        float intensity = Math.max(timeIntensity * 0.6f, weatherFog);
+        if (sunAlt > 6 && weatherFog < 0.25f) return;
+        if (sunAlt < -12) return;
+        intensity = Math.max(0.08f, Math.min(1.5f, intensity));
+        int alpha = (int)(Math.min(255, 48 * intensity + wsFogMult * 58));
         if (alpha < 6) return;
 
         float fogBase = h * 0.87f;
@@ -2331,36 +2623,32 @@ public final class SkyBitmapRenderer {
         c.drawPath(bgPath, p);
 
         // ══════════════════════════════════════════════════════════
-        // الطبقة الأمامية — أبراج وناطحات سحاب محددة
-        // Format: { xFrac, widthFrac, heightFrac, type }
-        // type: 0=flat, 1=setback, 2=tapered, 3=wedge, 4=stepped, 5=antenna
-        // ══════════════════════════════════════════════════════════
+        // type: 0=flat 1=setback 2=tapered 3=wedge 4=stepped 5=antenna 6=twin 7=cylinder 8=diamond
         float[][] towers = {
-            // xFrac  wFrac   hFrac   type
-            { 0.01f, 0.055f, 0.072f, 0 },   // مبنى منخفض على اليسار
-            { 0.06f, 0.038f, 0.095f, 1 },   // برج مرحلي
-            { 0.10f, 0.028f, 0.062f, 0 },
-            { 0.13f, 0.048f, 0.108f, 4 },   // برج متدرج متوسط
-            { 0.18f, 0.022f, 0.055f, 0 },
-            { 0.20f, 0.062f, 0.145f, 2 },   // برج مدبب كبير
-            { 0.26f, 0.018f, 0.068f, 0 },
-            { 0.28f, 0.072f, 0.185f, 5 },   // ★ ناطحة مع هوائي — الأعلى على اليسار
-            { 0.35f, 0.024f, 0.075f, 0 },
-            { 0.38f, 0.055f, 0.128f, 3 },   // برج إسفيني
-            { 0.43f, 0.030f, 0.092f, 1 },
-            { 0.46f, 0.085f, 0.230f, 5 },   // ★★ أعلى برج في المنتصف (BurjKhalifa-esque)
-            { 0.55f, 0.025f, 0.080f, 0 },
-            { 0.57f, 0.048f, 0.158f, 2 },   // برج مدبب جانب الأعلى
-            { 0.62f, 0.020f, 0.065f, 0 },
-            { 0.64f, 0.068f, 0.172f, 4 },   // برج متدرج كبير
-            { 0.71f, 0.032f, 0.090f, 0 },
-            { 0.73f, 0.052f, 0.138f, 1 },
-            { 0.78f, 0.018f, 0.058f, 0 },
-            { 0.80f, 0.060f, 0.118f, 3 },
-            { 0.86f, 0.025f, 0.072f, 0 },
-            { 0.88f, 0.045f, 0.095f, 5 },   // برج مع هوائي على اليمين
-            { 0.93f, 0.035f, 0.062f, 0 },
-            { 0.96f, 0.048f, 0.085f, 1 },
+            { 0.01f, 0.048f, 0.068f, 0 },
+            { 0.05f, 0.032f, 0.092f, 1 },
+            { 0.09f, 0.022f, 0.058f, 0 },
+            { 0.11f, 0.052f, 0.118f, 4 },   // متدرج متوسط
+            { 0.17f, 0.020f, 0.052f, 0 },
+            { 0.19f, 0.058f, 0.148f, 7 },   // ★ برج أسطواني زجاجي
+            { 0.25f, 0.016f, 0.065f, 0 },
+            { 0.27f, 0.068f, 0.188f, 5 },   // ★ ناطحة مع هوائي
+            { 0.34f, 0.022f, 0.078f, 0 },
+            { 0.36f, 0.050f, 0.132f, 3 },   // إسفيني
+            { 0.41f, 0.026f, 0.088f, 8 },   // diamond cap
+            { 0.44f, 0.082f, 0.235f, 5 },   // ★★ أعلى برج (BurjKhalifa-esque)
+            { 0.53f, 0.044f, 0.155f, 2 },   // مدبب جانب الأعلى
+            { 0.58f, 0.018f, 0.062f, 0 },
+            { 0.60f, 0.070f, 0.168f, 6 },   // ★ توأم (Petronas-esque)
+            { 0.68f, 0.028f, 0.085f, 0 },
+            { 0.70f, 0.055f, 0.138f, 1 },
+            { 0.76f, 0.015f, 0.055f, 0 },
+            { 0.77f, 0.052f, 0.112f, 4 },   // متدرج
+            { 0.83f, 0.020f, 0.070f, 8 },   // diamond cap صغير
+            { 0.85f, 0.058f, 0.125f, 3 },
+            { 0.91f, 0.022f, 0.068f, 0 },
+            { 0.93f, 0.042f, 0.098f, 7 },   // أسطواني صغير
+            { 0.97f, 0.032f, 0.080f, 1 },
         };
 
         Path fgPath = new Path();
@@ -2380,16 +2668,21 @@ public final class SkyBitmapRenderer {
         c.drawPath(fgPath, p);
 
         // ══════════════════════════════════════════════════════════
-        // حافة زجاجية — خط ضوئي رفيع على قمم الأبراج النهارية
+        // بريق زجاج الأبراج — لمعان ناعم على المحيط
         // ══════════════════════════════════════════════════════════
-        if (sunAlt > -2) {
-            float glassA = (float) Math.min(1.0, (sunAlt + 2) / 8.0);
+        if (sunAlt > -4) {
+            float glassA = (float) Math.min(1.0, (sunAlt + 4) / 10.0);
             Paint gp = new Paint(Paint.ANTI_ALIAS_FLAG);
             gp.setStyle(Paint.Style.STROKE);
-            gp.setStrokeWidth(1.2f);
-            gp.setColor(Color.argb((int)(55 * glassA), 200, 220, 255));
+            gp.setStrokeWidth(1.4f);
+            gp.setColor(Color.argb((int)(60 * glassA), 200, 225, 255));
             c.drawPath(fgPath, gp);
         }
+
+        // ══════════════════════════════════════════════════════════
+        // واجهات زجاجية — انعكاس ضوء الشمس على الأبراج الكبيرة
+        // ══════════════════════════════════════════════════════════
+        drawGlassCurtainSheen(c, w, h, p, towers, baseY, sunAlt);
 
         // ══════════════════════════════════════════════════════════
         // نوافذ مضيئة ليلاً
@@ -2426,6 +2719,9 @@ public final class SkyBitmapRenderer {
 
         // أضواء الشوارع والسيارات ليلاً
         if (isNight) drawCityLights(c, w, h, p, baseY, sunAlt, now);
+
+        // تفاصيل السطح — خزانات مياه + وحدات HVAC + بنتهاوس مصعد
+        if (sunAlt > -8) drawRooftopDetails(c, w, h, p, towers, baseY, silR, silG, silB, silA);
     }
 
     /** يضيف مبنى ناطح واحد للـ Path حسب النوع */
@@ -2433,48 +2729,60 @@ public final class SkyBitmapRenderer {
                                            float bw, float bh, int type,
                                            int w, int h) {
         float top = base - bh;
+        float mx  = x + bw / 2f;
         switch (type) {
-            case 0: // مستطيل بسيط
+            case 0: { // مستطيل بسيط مع حائط عند السطح (parapet)
                 path.addRect(x, top, x + bw, base, Path.Direction.CW);
-                break;
-
-            case 1: { // setback — كتفان أعلى وأضيق
-                path.addRect(x, top, x + bw, base, Path.Direction.CW);
-                float sw = bw * 0.60f, sx = x + bw * 0.20f;
-                path.addRect(sx, top - bh * 0.28f, sx + sw, top, Path.Direction.CW);
-                float sw2 = bw * 0.35f, sx2 = x + bw * 0.325f;
-                path.addRect(sx2, top - bh * 0.52f, sx2 + sw2, top - bh * 0.28f, Path.Direction.CW);
+                // parapet — جدار أمان بسيط
+                path.addRect(x - w * 0.002f, top - bh * 0.022f, x + bw + w * 0.002f, top, Path.Direction.CW);
                 break;
             }
 
-            case 2: { // مدبب — يتناقص للأعلى
-                path.addRect(x, top + bh * 0.18f, x + bw, base, Path.Direction.CW);
+            case 1: { // setback كلاسيكي — 3 كتل متراجعة
+                path.addRect(x, top, x + bw, base, Path.Direction.CW);
+                float sw1 = bw * 0.72f, sx1 = x + bw * 0.14f;
+                path.addRect(sx1, top - bh * 0.30f, sx1 + sw1, top, Path.Direction.CW);
+                float sw2 = bw * 0.46f, sx2 = x + bw * 0.27f;
+                path.addRect(sx2, top - bh * 0.55f, sx2 + sw2, top - bh * 0.30f, Path.Direction.CW);
+                // طابق ميكانيكي — شريط أداكن على الجسم
+                float mechY = base - bh * 0.38f;
+                path.addRect(x - w * 0.001f, mechY, x + bw + w * 0.001f, mechY + bh * 0.025f, Path.Direction.CW);
+                break;
+            }
+
+            case 2: { // مدبب — جسم + مخروط
+                path.addRect(x, top + bh * 0.20f, x + bw, base, Path.Direction.CW);
+                // setback خفيف قبل المخروط
+                float sw = bw * 0.70f, sx = x + bw * 0.15f;
+                path.addRect(sx, top + bh * 0.08f, sx + sw, top + bh * 0.20f, Path.Direction.CW);
                 Path tri = new Path();
-                float mx = x + bw / 2f;
-                tri.moveTo(x, top + bh * 0.18f);
+                tri.moveTo(sx, top + bh * 0.08f);
                 tri.lineTo(mx, top);
-                tri.lineTo(x + bw, top + bh * 0.18f);
+                tri.lineTo(sx + sw, top + bh * 0.08f);
                 tri.close();
                 path.addPath(tri);
                 break;
             }
 
-            case 3: { // wedge — أفضل من الجانب الأيمن
-                path.addRect(x, top + bh * 0.12f, x + bw, base, Path.Direction.CW);
+            case 3: { // wedge — ينحدر من اليسار لليمين
+                path.addRect(x, top + bh * 0.14f, x + bw, base, Path.Direction.CW);
                 Path wed = new Path();
-                wed.moveTo(x, top + bh * 0.12f);
-                wed.lineTo(x + bw, top);
-                wed.lineTo(x + bw, top + bh * 0.12f);
+                wed.moveTo(x, top + bh * 0.14f);
+                wed.lineTo(x + bw, top - bh * 0.04f);
+                wed.lineTo(x + bw, top + bh * 0.14f);
                 wed.close();
                 path.addPath(wed);
+                // شريط ميكانيكي
+                float mechY = base - bh * 0.42f;
+                path.addRect(x, mechY, x + bw, mechY + bh * 0.020f, Path.Direction.CW);
                 break;
             }
 
-            case 4: { // متدرج — 4 طوابق من الأكبر للأصغر
-                float[] ws = { bw, bw * 0.78f, bw * 0.56f, bw * 0.34f };
-                float[] hs = { bh * 0.38f, bh * 0.28f, bh * 0.20f, bh * 0.14f };
+            case 4: { // متدرج — 5 كتل
+                float[] ws = { bw, bw * 0.82f, bw * 0.62f, bw * 0.42f, bw * 0.24f };
+                float[] hs = { bh * 0.32f, bh * 0.24f, bh * 0.18f, bh * 0.14f, bh * 0.12f };
                 float curY = base;
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 5; i++) {
                     float offX = (bw - ws[i]) / 2f;
                     path.addRect(x + offX, curY - hs[i], x + offX + ws[i], curY, Path.Direction.CW);
                     curY -= hs[i];
@@ -2482,18 +2790,77 @@ public final class SkyBitmapRenderer {
                 break;
             }
 
-            case 5: { // هوائي + مبنى متدرج
-                // جسم المبنى (setback بسيط)
+            case 5: { // هوائي + setback — ناطحة سحاب بدقة عالية
+                path.addRect(x, top + bh * 0.20f, x + bw, base, Path.Direction.CW);
+                float sw1 = bw * 0.72f, sx1 = x + bw * 0.14f;
+                path.addRect(sx1, top + bh * 0.10f, sx1 + sw1, top + bh * 0.20f, Path.Direction.CW);
+                float sw2 = bw * 0.50f, sx2 = x + bw * 0.25f;
+                path.addRect(sx2, top + bh * 0.03f, sx2 + sw2, top + bh * 0.10f, Path.Direction.CW);
+                path.addRect(sx2, top, sx2 + sw2, top + bh * 0.03f, Path.Direction.CW);
+                // طابق ميكانيكي بارز
+                path.addRect(x - w*0.002f, base - bh*0.40f, x + bw + w*0.002f, base - bh*0.36f, Path.Direction.CW);
+                // هوائي رفيع ثلاثي الطبقات
+                float antW = Math.max(1.5f, w * 0.003f);
+                path.addRect(mx - antW, top - bh * 0.38f, mx + antW, top, Path.Direction.CW);
+                // أقراص هوائي
+                for (int d = 0; d < 2; d++) {
+                    float dy = top - bh * (0.15f + d * 0.12f);
+                    path.addRect(mx - antW * 4f, dy, mx + antW * 4f, dy + bh * 0.020f, Path.Direction.CW);
+                }
+                break;
+            }
+
+            case 6: { // توأم — برجان متماثلان (Petronas-esque)
+                float gap  = bw * 0.10f;
+                float tw2  = bw * 0.44f;
+                for (int side = 0; side < 2; side++) {
+                    float tx = x + side * (tw2 + gap);
+                    // جسم البرج الرئيسي (متدرج)
+                    path.addRect(tx, top + bh * 0.20f, tx + tw2, base, Path.Direction.CW);
+                    path.addRect(tx + tw2*0.12f, top + bh*0.08f, tx + tw2*0.88f, top + bh*0.20f, Path.Direction.CW);
+                    path.addRect(tx + tw2*0.22f, top, tx + tw2*0.78f, top + bh*0.08f, Path.Direction.CW);
+                    // هوائي رفيع
+                    float atW = Math.max(1.2f, w * 0.0025f);
+                    float atX = tx + tw2 / 2f;
+                    path.addRect(atX - atW, top - bh * 0.22f, atX + atW, top, Path.Direction.CW);
+                }
+                // جسر رابط بين البرجين في المنتصف
+                float bridgeY = base - bh * 0.55f;
+                path.addRect(x + tw2, bridgeY, x + tw2 + gap, bridgeY + bh * 0.035f, Path.Direction.CW);
+                break;
+            }
+
+            case 7: { // برج أسطواني زجاجي — Gherkin / Salesforce-esque
+                // أسفل مستطيل واسع ← يضيق للأعلى (5 مراحل)
+                float[] cws = { bw, bw * 0.88f, bw * 0.74f, bw * 0.58f, bw * 0.38f };
+                float[] chs = { bh * 0.30f, bh * 0.22f, bh * 0.18f, bh * 0.14f, bh * 0.16f };
+                float curY = base;
+                for (int i = 0; i < 5; i++) {
+                    float offX = (bw - cws[i]) / 2f;
+                    path.addRect(x + offX, curY - chs[i], x + offX + cws[i], curY, Path.Direction.CW);
+                    curY -= chs[i];
+                }
+                // قبة القمة
+                float domeR = bw * 0.20f;
+                path.addOval(new RectF(mx - domeR, top - domeR * 0.7f, mx + domeR, top), Path.Direction.CW);
+                break;
+            }
+
+            case 8: { // diamond cap — قمة ماسية مشطوفة
                 path.addRect(x, top + bh * 0.18f, x + bw, base, Path.Direction.CW);
-                float sw = bw * 0.55f, sx = x + bw * 0.225f;
-                path.addRect(sx, top + bh * 0.08f, sx + sw, top + bh * 0.18f, Path.Direction.CW);
-                float mx = x + bw / 2f;
-                path.addRect(sx, top, sx + sw, top + bh * 0.08f, Path.Direction.CW);
-                // عمود الهوائي — رفيع جداً
-                float antW = w * 0.004f;
-                path.addRect(mx - antW, top - bh * 0.32f, mx + antW, top, Path.Direction.CW);
-                // قرص الهوائي
-                path.addRect(mx - antW * 3.5f, top - bh * 0.24f, mx + antW * 3.5f, top - bh * 0.20f, Path.Direction.CW);
+                // الطابق الميكانيكي
+                path.addRect(x - w*0.002f, base - bh*0.45f, x + bw + w*0.002f, base - bh*0.40f, Path.Direction.CW);
+                // setback
+                float sw = bw * 0.65f, sx = x + bw * 0.175f;
+                path.addRect(sx, top + bh * 0.06f, sx + sw, top + bh * 0.18f, Path.Direction.CW);
+                // القمة الماسية (معين 4 نقاط)
+                Path diamond = new Path();
+                diamond.moveTo(mx, top);                          // قمة
+                diamond.lineTo(sx + sw, top + bh * 0.06f);       // يمين
+                diamond.lineTo(mx, top + bh * 0.12f);            // أسفل
+                diamond.lineTo(sx, top + bh * 0.06f);            // يسار
+                diamond.close();
+                path.addPath(diamond);
                 break;
             }
         }
@@ -2611,7 +2978,7 @@ public final class SkyBitmapRenderer {
     // ═══════════════════════════════════════════════════════════════════════
     private static void drawCumulonimbus(Canvas c, int w, int h, Paint p,
                                          double sunAlt, long now) {
-        if (sunAlt < -20) return;
+        if (sunAlt < -20 || wsStormMult < 0.05f) return;
 
         // ═══ State machine — العاصفة تظهر كل فترة ═══
         boolean stormActive = false;
