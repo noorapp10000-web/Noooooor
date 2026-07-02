@@ -39,6 +39,18 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/framer-motion")) return "vendor-motion";
+          if (id.includes("node_modules/lucide-react"))  return "vendor-icons";
+          if (id.includes("node_modules/@radix-ui"))     return "vendor-radix";
+          if (id.includes("node_modules/@capacitor"))    return "vendor-capacitor";
+          if (id.includes("node_modules/hls.js"))        return "vendor-hls";
+          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) return "vendor-react";
+        },
+      },
+    },
   },
   server: {
     port,
