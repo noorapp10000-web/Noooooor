@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
@@ -16,70 +15,190 @@ import android.graphics.Shader;
 import java.util.Random;
 
 /**
- * محرك السماء الفلكي — سماء حقيقية بناءً على:
- * • موقع الشمس الفعلي (Solar Elevation & Azimuth) — USNO Simplified Algorithm
- * • طور القمر الحقيقي وموقعه (Jean Meeus)
- * • مواقع 30 نجماً من كتالوج IAU تظهر تدريجياً حسب الظلام
- * • كوكبا الزهرة والمشتري في مواقعهما التقريبية
- * • مراحل الشفق الثلاث: Civil (-6°) / Nautical (-12°) / Astronomical (-18°)
- * • تبعثر رايلي (Rayleigh Scattering) — أزرق داكن أعلى، فاتح عند الأفق
- * • Golden Hour وBlue Hour أثناء الفجر والمغرب
- * • سحاب بثلاث طبقات Parallax بسرعات مختلفة
- * • هالات حول الشمس والقمر وشهب عشوائية وتوهج نجمي غير متزامن
+ * محرك السماء الفلكي المتقدم — نسخة كاملة محسّنة
+ *
+ * المميزات:
+ *  • 80 نجمة من كتالوج Yale Bright Star بألوان طيفية حقيقية (O/B/A/F/G/K/M)
+ *  • درب التبانة بكامل تفاصيله ومركزه المضيء
+ *  • المريخ (أحمر) + زحل (بحلقة) + عطارد (قرب الأفق)
+ *  • Belt of Venus + Earth's Shadow عند الشفق
+ *  • نور الزودياك (Zodiacal Light) بعد الغروب
+ *  • أشعة الإله / Crepuscular Rays من الشمس
+ *  • هالة القمر 22° + Earthshine + فوهات
+ *  • سحاب عضوي متعدد الطبقات مع إضاءة من الأسفل
+ *  • تلوث ضوئي (Light Pollution) للمدن
+ *  • خط أفق واضح مع ضبابية جوية
+ *  • ثريا Pleiades كعنقود نجمي مستقل
+ *  • مراحل الشفق الجوي الثلاث مُحسَّنة
+ *  • تصحيح الانكسار الجوي قرب الأفق
  */
 public final class SkyBitmapRenderer {
 
     private SkyBitmapRenderer() {}
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // كتالوج النجوم: { RA_hours, Dec_degrees, magnitude, twinkle_period_ms }
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // كتالوج النجوم: { RA_h, Dec_deg, magnitude, twinkle_ms, spectral }
+    // spectral: 0=O/B أزرق  1=A أبيض  2=F أصفر-أبيض  3=G أصفر  4=K برتقالي  5=M أحمر
+    // ═══════════════════════════════════════════════════════════════════════
     private static final double[][] STARS = {
-        {  6.753, -16.716, -1.46, 2200 }, // Sirius
-        {  6.399, -52.696, -0.74, 3100 }, // Canopus
-        { 14.261,  19.182, -0.05, 2700 }, // Arcturus
-        { 18.615,  38.783,  0.03, 1900 }, // Vega
-        {  5.278,  45.998,  0.08, 3400 }, // Capella
-        {  5.242,  -8.202,  0.13, 2500 }, // Rigel
-        {  7.655,   5.225,  0.38, 2900 }, // Procyon
-        {  1.628, -57.237,  0.46, 4100 }, // Achernar
-        {  5.919,   7.407,  0.50, 3700 }, // Betelgeuse
-        { 14.064, -60.373,  0.61, 2300 }, // Hadar
-        { 19.847,   8.868,  0.77, 1800 }, // Altair
-        { 12.443, -63.099,  0.77, 4300 }, // Acrux
-        {  4.599,  16.509,  0.87, 2600 }, // Aldebaran
-        { 16.490, -26.432,  0.96, 3900 }, // Antares
-        { 13.420, -11.161,  0.98, 2100 }, // Spica
-        {  7.755,  28.026,  1.16, 3300 }, // Pollux
-        { 22.961, -29.622,  1.17, 2800 }, // Fomalhaut
-        { 20.691,  45.280,  1.25, 4700 }, // Deneb
-        { 12.795, -59.689,  1.25, 3600 }, // Mimosa
-        { 10.140,  11.967,  1.36, 2400 }, // Regulus
-        {  6.977, -28.972,  1.50, 5100 }, // Adhara
-        {  7.577,  31.888,  1.58, 2000 }, // Castor
-        { 17.560, -37.104,  1.62, 4400 }, // Shaula
-        { 12.519, -57.113,  1.64, 3200 }, // Gacrux
-        {  5.418,   6.350,  1.64, 2700 }, // Bellatrix
-        {  5.438,  28.608,  1.68, 3800 }, // Elnath
-        { 17.621, -43.239,  1.62, 4900 }, // Kaus Australis
-        {  9.459, -65.072,  1.67, 3500 }, // Avior
-        {  8.159, -47.337,  1.75, 2200 }, // Miaplacidus
-        { 11.062, -61.685,  1.75, 4600 }, // Epsilon Carinae
+        // ══ أشد النجوم إضاءةً ══
+        {  6.753, -16.716, -1.46, 2200, 1 }, // Sirius (A1)
+        {  6.399, -52.696, -0.74, 3100, 1 }, // Canopus (A9)
+        { 14.261,  19.182, -0.05, 2700, 4 }, // Arcturus (K0)
+        { 14.660, -60.835, -0.27, 3000, 3 }, // Alpha Centauri (G2)
+        { 18.615,  38.783,  0.03, 1900, 1 }, // Vega (A0)
+        {  5.278,  45.998,  0.08, 3400, 3 }, // Capella (G5)
+        {  5.242,  -8.202,  0.13, 2500, 0 }, // Rigel (B8)
+        {  7.655,   5.225,  0.38, 2900, 2 }, // Procyon (F5)
+        {  1.628, -57.237,  0.46, 4100, 0 }, // Achernar (B6)
+        {  5.919,   7.407,  0.50, 3700, 5 }, // Betelgeuse (M2)
+        { 14.064, -60.373,  0.61, 2300, 0 }, // Hadar (B1)
+        { 19.847,   8.868,  0.77, 1800, 1 }, // Altair (A7)
+        { 12.443, -63.099,  0.77, 4300, 0 }, // Acrux (B0)
+        {  4.599,  16.509,  0.87, 2600, 4 }, // Aldebaran (K5)
+        { 16.490, -26.432,  0.96, 3900, 5 }, // Antares (M1)
+        { 13.420, -11.161,  0.98, 2100, 0 }, // Spica (B1)
+        {  7.755,  28.026,  1.16, 3300, 4 }, // Pollux (K0)
+        { 22.961, -29.622,  1.17, 2800, 1 }, // Fomalhaut (A3)
+        { 20.691,  45.280,  1.25, 4700, 1 }, // Deneb (A2)
+        { 12.795, -59.689,  1.25, 3600, 0 }, // Mimosa (B0)
+        { 10.140,  11.967,  1.36, 2400, 0 }, // Regulus (B7)
+        {  6.977, -28.972,  1.50, 5100, 0 }, // Adhara (B2)
+        {  7.577,  31.888,  1.58, 2000, 1 }, // Castor (A2)
+        { 17.560, -37.104,  1.62, 4400, 0 }, // Shaula (B2)
+        { 12.519, -57.113,  1.64, 3200, 0 }, // Gacrux (M4)
+        {  5.418,   6.350,  1.64, 2700, 0 }, // Bellatrix (B2)
+        {  5.438,  28.608,  1.68, 3800, 0 }, // Elnath (B7)
+        { 17.621, -43.239,  1.62, 4900, 0 }, // Kaus Australis (B9)
+        {  8.159, -47.337,  1.75, 2200, 1 }, // Miaplacidus (A2)
+        {  9.459, -65.072,  1.67, 3500, 4 }, // Avior (K3)
+
+        // ══ النجوم من الحجم 1.7 – 2.2 ══
+        {  2.530,  89.264,  1.97, 5500, 2 }, // Polaris (F7) — القطبي
+        {  3.791,  24.113,  1.87, 2800, 0 }, // Alcyone/Pleiades ref (B7)
+        {  9.460,  -8.658,  1.99, 3100, 4 }, // Alphard (K3)
+        {  2.120,  23.463,  2.00, 4200, 4 }, // Hamal (K2)
+        {  0.139,  29.090,  2.06, 2700, 0 }, // Alpheratz (B9)
+        { 14.845,  74.156,  2.08, 3900, 4 }, // Kochab (K4)
+        { 17.582,  12.560,  2.08, 2600, 1 }, // Rasalhague (A5)
+        { 20.428, -56.735,  1.94, 3300, 0 }, // Peacock (B2)
+        {  1.162,  35.621,  2.07, 4400, 5 }, // Mirach (M0)
+        {  5.534,  -0.299,  2.23, 2100, 0 }, // Mintaka (O9) — حزام الجبار
+        { 15.578,  26.715,  2.23, 3700, 1 }, // Alphekka (A0)
+        { 20.370,  40.257,  2.23, 2900, 2 }, // Sadr (F8) — صدر الدجاجة
+        { 17.943,  51.489,  2.24, 4100, 4 }, // Eltanin (K5)
+        {  3.136,  40.956,  2.12, 2400, 0 }, // Algol (B8) — رأس الغول!
+        { 21.736,  58.782,  2.47, 3600, 0 }, // Gamma Cep (K1)
+        {  0.675,  56.537,  2.23, 3200, 4 }, // Schedar (K0)
+        { 22.137, -46.961,  1.74, 2800, 0 }, // Alnair (B7)
+        {  5.603,  -1.202,  1.70, 1900, 0 }, // Alnilam (B0) — حزام الجبار
+        {  5.680,  -1.943,  1.74, 2200, 0 }, // Alnitak (O9) — حزام الجبار
+        {  5.796,  -9.670,  2.07, 3000, 0 }, // Saiph (B0)
+
+        // ══ نجوم 2.2 – 2.7 (مهمة بصرياً) ══
+        { 18.921, -26.296,  2.05, 2500, 0 }, // Nunki (B2) — القوس
+        { 12.901,  55.960,  1.77, 2100, 1 }, // Alioth (A0) — الدب الأكبر
+        { 13.792,  49.314,  1.86, 3800, 0 }, // Alkaid (B3) — ذيل الدب
+        {  3.406,  49.861,  1.79, 2900, 2 }, // Mirfak (F5) — برشاوس
+        { 11.062,  61.751,  1.79, 4500, 4 }, // Dubhe (K0) — الدب الأكبر
+        {  2.065,  42.330,  2.10, 3300, 4 }, // Almach (K3)
+        { 13.399,  54.926,  2.23, 2700, 1 }, // Mizar (A2) — الدب الأكبر
+        {  6.248,  22.505,  1.65, 2000, 0 }, // Alhena (A0) — الجوزاء
+        {  7.401, -29.303,  2.45, 3700, 0 }, // Aludra (B5)
+        { 17.173, -15.724,  2.43, 4200, 1 }, // Sabik (A2) — الحواء
+        {  5.130,  -5.086,  2.79, 3100, 1 }, // Cursa (A3)
+        { 23.079,  15.183,  2.49, 2600, 1 }, // Markab (A0) — بيغاسوس
+        { 23.063,  28.082,  2.44, 4800, 5 }, // Scheat (M2) — بيغاسوس
+        { 20.770,  33.971,  2.48, 3500, 4 }, // Gienah (K0) — الدجاجة
+        { 14.750,  27.074,  2.35, 3900, 4 }, // Izar (K0) — العواء
+        { 16.962,  -3.694,  2.74, 4600, 5 }, // Yed Prior (M1)
+        { 19.512,  27.960,  3.05, 2200, 4 }, // Albireo (K3) — الدجاجة الجميلة
+        { 13.911,  18.398,  2.68, 3000, 3 }, // Muphrid (G0)
+        { 12.694,  -1.450,  2.74, 2800, 2 }, // Porrima (F0)
+        { 21.526,  -5.571,  2.90, 4300, 3 }, // Sadalsuud (G0) — الدلو
+        { 15.738,   6.426,  2.63, 3600, 4 }, // Unukalhai (K2) — الحية
+        {  7.140, -26.393,  1.84, 2100, 2 }, // Wezen (F8)
+        { 19.771,  10.613,  2.72, 4000, 4 }, // Tarazed (K3)
+        { 17.531, -37.296,  2.69, 2900, 0 }, // Lesath (B2)
+        { 14.850, -16.042,  2.75, 3200, 1 }, // Zubenelgenubi (A3)
+        { 17.725,   4.567,  2.77, 3700, 4 }, // Cebalrai (K2)
+        { 18.350, -29.828,  2.70, 2600, 4 }, // Kaus Media (K3) — القوس
+        { 19.045, -29.880,  2.60, 3300, 1 }, // Ascella (A2) — القوس
+        { 22.097,  -0.319,  2.95, 4100, 3 }, // Sadalmelik (G2) — الدلو
+        {  3.038,   4.090,  2.53, 5000, 5 }, // Menkar (M2) — الحوت
     };
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Cache فلكي — يُحدَّث مرة كل دقيقة
-    // ─────────────────────────────────────────────────────────────────────────
-    private static long     lastCalcMin  = -1;
-    private static double   cSunAlt, cSunAz;
-    private static double   cMoonAlt, cMoonAz, cMoonPhase;
-    private static double   cVenusAlt, cVenusAz;
-    private static double   cJupAlt,   cJupAz;
-    private static double[][] cStarPos; // [alt, az] لكل نجم
+    // ═══════════════════════════════════════════════════════════════════════
+    // ألوان الأطياف النجمية الحقيقية
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final int[] SPECTRAL_COLORS = {
+        0xFFB8CCFF, // 0 = O/B — أزرق-أبيض
+        0xFFFFFFFF, // 1 = A   — أبيض نقي
+        0xFFFFF8E8, // 2 = F   — أبيض-أصفر
+        0xFFFFEEB0, // 3 = G   — أصفر (مثل الشمس)
+        0xFFFFCC88, // 4 = K   — برتقالي
+        0xFFFF9966, // 5 = M   — أحمر-برتقالي
+    };
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // نقطة الدخول — تُستدعى كل ثانية من الـ Service
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // درب التبانة — نقاط على المستوى المجري { RA_h, Dec_deg, عرض°, سطوع 0-1 }
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final double[][] MW_KNOTS = {
+        {  5.80,  28.5,  8.0, 0.28 }, // قوس قزح (anticenter)
+        {  6.20,  18.0,  9.0, 0.32 }, // الجوزاء
+        {  7.00,   6.0,  8.0, 0.28 }, // وحيد القرن
+        {  8.50,  -3.0,  7.0, 0.24 }, // القطعة البحرية
+        { 10.00, -16.0,  7.0, 0.22 }, // الشراع
+        { 12.00, -50.0,  8.0, 0.30 }, // الصليب الجنوبي
+        { 13.50, -60.0,  9.5, 0.40 }, // القنطور
+        { 15.00, -52.0, 10.0, 0.48 }, // الذئب / القاعدة
+        { 16.00, -40.0, 10.5, 0.58 }, // العقرب الذيل
+        { 16.50, -43.0, 11.0, 0.65 }, // العقرب
+        { 17.50, -29.0, 16.0, 1.00 }, // ★ مركز المجرة! القوس
+        { 18.00, -22.0, 14.0, 0.90 }, // الترس
+        { 18.50, -10.0, 12.0, 0.80 }, // الترس الشمالي
+        { 19.30,   3.0, 11.0, 0.72 }, // النسر الطائر
+        { 20.00,  20.0, 10.5, 0.68 }, // السهم / الثعلب
+        { 20.70,  40.0, 12.0, 0.72 }, // الدجاجة (Cygnus)
+        { 21.50,  53.0, 10.0, 0.60 }, // قيفاوس
+        { 22.90,  60.0,  9.5, 0.55 }, // ذات الكرسي (Cassiopeia) — مضيء!
+        { 23.80,  57.0,  9.0, 0.45 }, // برشاوس
+        {  2.50,  46.0,  8.5, 0.35 }, // برشاوس / الثور
+        {  4.50,  36.0,  8.0, 0.30 }, // قوس قزح
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // الثريا — Pleiades { RA_h, Dec_deg, magnitude }
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final double[][] PLEIADES = {
+        { 3.791, 24.105, 2.87 }, // Alcyone
+        { 3.783, 24.367, 3.63 }, // Atlas
+        { 3.774, 24.053, 3.70 }, // Electra
+        { 3.793, 24.031, 3.87 }, // Maia
+        { 3.786, 23.948, 4.18 }, // Merope
+        { 3.760, 24.113, 5.09 }, // Taygeta
+        { 3.788, 24.287, 5.45 }, // Pleione
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Cache فلكي — يُحدَّث مرة كل دقيقة
+    // ═══════════════════════════════════════════════════════════════════════
+    private static long      lastCalcMin = -1;
+    private static double    cSunAlt,  cSunAz;
+    private static double    cMoonAlt, cMoonAz, cMoonPhase;
+    private static double    cVenusAlt, cVenusAz;
+    private static double    cJupAlt,   cJupAz;
+    private static double    cMarsAlt,  cMarsAz;
+    private static double    cSatAlt,   cSatAz;
+    private static double    cMercAlt,  cMercAz;
+    private static double[][] cStarPos;    // [alt, az] لكل نجمة
+    private static double[][] cMwPos;      // [x, y, brightness] لكل نقطة MW
+    private static double[][] cPleiPos;    // [alt, az] للثريا
+    private static double    cGmst;        // نستخدمه في رسم درب التبانة
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // نقطة الدخول الرئيسية
+    // ═══════════════════════════════════════════════════════════════════════
     public static Bitmap render(int w, int h,
                                 double lat, double lng,
                                 long fajrMs, long sunriseMs, long dhuhrMs,
@@ -88,482 +207,1000 @@ public final class SkyBitmapRenderer {
 
         long now    = System.currentTimeMillis();
         long nowMin = now / 60_000L;
-
-        // أعِد الحسابات الفلكية كل دقيقة فقط (مُكلفة)
         boolean hasGps = (lat != 0.0 || lng != 0.0);
+
         if (nowMin != lastCalcMin || cStarPos == null) {
             lastCalcMin = nowMin;
-            double jd   = julianDate(now);
+            double jd = julianDate(now);
 
             if (hasGps) {
-                double[] sun   = solarPosition(jd, lat, lng);
+                double[] sun  = solarPosition(jd, lat, lng);
                 cSunAlt = sun[0];  cSunAz = sun[1];
 
-                double[] moon  = moonPosition(jd, lat, lng);
+                double[] moon = moonPosition(jd, lat, lng);
                 cMoonAlt = moon[0]; cMoonAz = moon[1];
 
-                double[] venus = planetPosition(jd, lat, lng, 181.979, 1.6021302, 0.723);
+                double[] venus = planetPosition(jd, lat, lng, 181.979,  1.6021302, 0.387098, 0.723);
                 cVenusAlt = venus[0]; cVenusAz = venus[1];
 
-                double[] jup   = planetPosition(jd, lat, lng,  34.351, 0.0830853, 5.203);
+                double[] jup   = planetPosition(jd, lat, lng,  34.351,  0.0830853, 5.458104, 5.203);
                 cJupAlt = jup[0]; cJupAz = jup[1];
 
-                double gmst = greenwichSiderealTime(jd);
+                double[] mars  = planetPosition(jd, lat, lng, 355.433,  0.5240707, 1.523688, 1.524);
+                cMarsAlt = mars[0]; cMarsAz = mars[1];
+
+                double[] sat   = planetPosition(jd, lat, lng,  50.077,  0.0334597, 8.997011, 9.537);
+                cSatAlt = sat[0]; cSatAz = sat[1];
+
+                double[] merc  = planetPosition(jd, lat, lng, 252.251,  4.0923345, 0.240846, 0.387);
+                cMercAlt = merc[0]; cMercAz = merc[1];
+
+                cGmst = greenwichSiderealTime(jd);
+
+                // مواقع النجوم
                 cStarPos = new double[STARS.length][2];
                 for (int i = 0; i < STARS.length; i++) {
-                    double[] hp = raDecToAltAz(STARS[i][0], STARS[i][1], lat, lng, gmst);
+                    double[] hp = raDecToAltAz(STARS[i][0], STARS[i][1], lat, lng, cGmst);
                     cStarPos[i][0] = hp[0];
                     cStarPos[i][1] = hp[1];
                 }
+
+                // مواقع الثريا
+                cPleiPos = new double[PLEIADES.length][2];
+                for (int i = 0; i < PLEIADES.length; i++) {
+                    double[] hp = raDecToAltAz(PLEIADES[i][0], PLEIADES[i][1], lat, lng, cGmst);
+                    cPleiPos[i][0] = hp[0];
+                    cPleiPos[i][1] = hp[1];
+                }
+
+                // مواقع درب التبانة
+                cMwPos = new double[MW_KNOTS.length][3];
+                for (int i = 0; i < MW_KNOTS.length; i++) {
+                    double[] hp = raDecToAltAz(MW_KNOTS[i][0], MW_KNOTS[i][1], lat, lng, cGmst);
+                    cMwPos[i][0] = hp[0]; // alt
+                    cMwPos[i][1] = hp[1]; // az
+                    cMwPos[i][2] = MW_KNOTS[i][3]; // brightness
+                }
+
             } else {
-                // فولباك: اخترع موقع الشمس من أوقات الصلاة
                 cSunAlt = fallbackSunAlt(now, fajrMs, sunriseMs, dhuhrMs, asrMs, maghribMs, ishaMs);
                 cSunAz  = fallbackSunAz(now, sunriseMs, maghribMs);
-                cMoonAlt = 35; cMoonAz = 250;
-                cVenusAlt = -1; cJupAlt = -1;
-                // نجوم بمواقع تقريبية ثابتة
-                cStarPos = new double[STARS.length][2];
+                cMoonAlt = 38; cMoonAz = 220;
+                cVenusAlt = -1; cJupAlt = 30; cJupAz = 180;
+                cMarsAlt  = 25; cMarsAz  = 150;
+                cSatAlt   = 20; cSatAz   = 200;
+                cMercAlt  = -5;
                 Random rnd = new Random(42);
+                cStarPos = new double[STARS.length][2];
                 for (int i = 0; i < STARS.length; i++) {
-                    cStarPos[i][0] = 10 + rnd.nextDouble() * 70;
+                    cStarPos[i][0] = 8 + rnd.nextDouble() * 72;
                     cStarPos[i][1] = rnd.nextDouble() * 360;
                 }
+                cMwPos = null;
+                cPleiPos = null;
             }
+
             cMoonPhase = moonPhase(jd);
         }
 
-        // ── الرسم ────────────────────────────────────────────────────────
+        // ── الرسم ──────────────────────────────────────────────────────────
         Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas c   = new Canvas(bmp);
         Paint  p   = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
         float sunX  = azToX(cSunAz,  w);
         float sunY  = altToY(cSunAlt, h);
-        float moonX = azToX(cMoonAz,  w);
+        float moonX = azToX(cMoonAz, w);
         float moonY = altToY(cMoonAlt, h);
 
-        // 1. تدرج السماء الرئيسي (Rayleigh scattering)
+        // 01. تدرج السماء الرئيسي (Rayleigh Scattering المحسّن)
         drawSkyGradient(c, w, h, p, cSunAlt);
 
-        // 2. توهج الأفق عند الشروق / الغروب
+        // 02. ضباب Mie عند الأفق
+        drawMieHaze(c, w, h, p, cSunAlt);
+
+        // 03. ظل الأرض + Belt of Venus عند الشفق
+        drawBeltOfVenus(c, w, h, p, cSunAlt, cSunAz);
+
+        // 04. توهج الأفق Golden/Blue Hour
         drawHorizonGlow(c, w, h, p, cSunAlt, sunX);
 
-        // 3. النجوم بمواقعها الحقيقية
+        // 05. نور الزودياك (بعد الغروب / قبل الشروق)
+        drawZodiacalLight(c, w, h, p, cSunAlt, cSunAz);
+
+        // 06. درب التبانة
+        drawMilkyWay(c, w, h, p, cSunAlt);
+
+        // 07. النجوم بألوانها الطيفية
         drawStars(c, w, h, p, cSunAlt, cMoonPhase, now);
 
-        // 4. كوكب الزهرة
-        if (cVenusAlt > 2) drawPlanet(c, p, cVenusAlt, cVenusAz, w, h, 0xFFFFFFDD, 3.0f);
-        // 5. كوكب المشتري
-        if (cJupAlt   > 2) drawPlanet(c, p, cJupAlt,   cJupAz,   w, h, 0xFFFFEECC, 4.0f);
+        // 08. الثريا كعنقود مميز
+        drawPleiades(c, w, h, p, cSunAlt, now);
 
-        // 6. شهاب عشوائي (ليلاً فقط)
+        // 09. كوكب الزهرة
+        if (cVenusAlt > 1.5) drawPlanet(c, p, cVenusAlt, cVenusAz, w, h, 0xFFDDF4FF, 3.8f, false);
+        // 10. كوكب المشتري
+        if (cJupAlt   > 1.5) drawPlanet(c, p, cJupAlt,   cJupAz,   w, h, 0xFFFFEECC, 4.5f, false);
+        // 11. كوكب المريخ (أحمر مميز)
+        if (cMarsAlt  > 1.5) drawPlanet(c, p, cMarsAlt,  cMarsAz,  w, h, 0xFFFF6644, 3.5f, false);
+        // 12. كوكب زحل (مع تلميح بالحلقة)
+        if (cSatAlt   > 1.5) drawSaturn(c, p, cSatAlt,   cSatAz,   w, h);
+        // 13. عطارد (قرب الأفق فقط)
+        if (cMercAlt  > 1.5 && cMercAlt < 18) drawPlanet(c, p, cMercAlt, cMercAz, w, h, 0xFFFFEEDD, 2.5f, false);
+
+        // 14. شهاب عشوائي (ليلاً)
         drawShootingStar(c, w, h, p, cSunAlt, now);
 
-        // 7. القمر بطوره الحقيقي (فوق الأفق فقط)
-        if (cMoonAlt > 0) drawMoon(c, p, moonX, moonY, h, cMoonPhase, cSunAlt);
+        // 15. القمر مع كل تفاصيله
+        if (cMoonAlt > -2) drawMoon(c, p, moonX, moonY, h, cMoonPhase, cSunAlt, now);
 
-        // 8. الشمس مع هالتها
-        if (cSunAlt > -2) drawSun(c, p, sunX, sunY, h, cSunAlt);
+        // 16. الشمس مع هالتها وأشعتها
+        if (cSunAlt > -3) {
+            drawCrepuscularRays(c, w, h, p, cSunAlt, sunX, sunY);
+            drawSun(c, p, sunX, sunY, w, h, cSunAlt);
+        }
 
-        // 9. سحاب بطبقات Parallax
+        // 17. سحاب بطبقات Parallax محسّن
         drawClouds(c, w, h, p, cSunAlt, now);
 
-        // 10. حواف دائرية (clip to RoundRect)
+        // 18. تلوث ضوئي للمدن
+        drawLightPollution(c, w, h, p, cSunAlt);
+
+        // 19. خط الأفق
+        drawHorizonLine(c, w, h, p, cSunAlt);
+
+        // 20. حواف دائرية
         applyRoundedCorners(bmp, w, h);
 
         return bmp;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 1. تدرج السماء — Rayleigh Scattering
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // 01. تدرج السماء — Rayleigh Scattering محسّن
+    // ═══════════════════════════════════════════════════════════════════════
     private static void drawSkyGradient(Canvas c, int w, int h, Paint p, double sunAlt) {
         int[] colors = skyColors(sunAlt);
         p.setShader(new LinearGradient(0, 0, 0, h,
-            new int[]{ colors[0], colors[1], colors[2] },
-            new float[]{ 0f, 0.55f, 1f },
+            new int[]{ colors[0], colors[1], colors[2], colors[3] },
+            new float[]{ 0f, 0.4f, 0.75f, 1f },
             Shader.TileMode.CLAMP));
         p.setStyle(Paint.Style.FILL);
         c.drawRect(0, 0, w, h, p);
         p.setShader(null);
     }
 
-    /** ألوان [سمت الرأس، منتصف، أفق] بناءً على ارتفاع الشمس بالدرجات */
     private static int[] skyColors(double a) {
-        if (a >= 40)
-            return new int[]{ 0xFF0B4DB8, 0xFF2575D8, 0xFF90C6FF };
-        if (a >= 20) {
-            float t = (float)((a - 20) / 20);
+        // [سمت الرأس، وسط، قريب أفق، أفق]
+        if (a >= 45)
+            return new int[]{ 0xFF062A8C, 0xFF0A3FB8, 0xFF2A72D8, 0xFF6AB0FF };
+        if (a >= 25) {
+            float t = (float)((a - 25) / 20);
             return new int[]{
-                lerpColor(0xFF163590, 0xFF0B4DB8, t),
-                lerpColor(0xFF2A64C0, 0xFF2575D8, t),
-                lerpColor(0xFFB5DCFF, 0xFF90C6FF, t) };
+                lerpColor(0xFF0E2370, 0xFF062A8C, t),
+                lerpColor(0xFF1A50A0, 0xFF0A3FB8, t),
+                lerpColor(0xFF3A88CC, 0xFF2A72D8, t),
+                lerpColor(0xFF90CCFF, 0xFF6AB0FF, t) };
         }
-        if (a >= 6) {
-            float t = (float)((a - 6) / 14);
+        if (a >= 10) {
+            float t = (float)((a - 10) / 15);
             return new int[]{
-                lerpColor(0xFF192870, 0xFF163590, t),
-                lerpColor(0xFF264EA8, 0xFF2A64C0, t),
-                lerpColor(0xFFFFD8A0, 0xFFB5DCFF, t) };
+                lerpColor(0xFF101A50, 0xFF0E2370, t),
+                lerpColor(0xFF1A3888, 0xFF1A50A0, t),
+                lerpColor(0xFFC0CCFF, 0xFF3A88CC, t),
+                lerpColor(0xFFFFE8C0, 0xFF90CCFF, t) };
         }
-        if (a >= 0) {                         // Golden Hour
-            float t = (float)(a / 6);
+        if (a >= 4) {
+            float t = (float)((a - 4) / 6);
             return new int[]{
-                lerpColor(0xFF0D1858, 0xFF192870, t),
-                lerpColor(0xFF261470, 0xFF264EA8, t),
-                lerpColor(0xFFFF6B10, 0xFFFFD8A0, t) };
+                lerpColor(0xFF0C1240, 0xFF101A50, t),
+                lerpColor(0xFF141E68, 0xFF1A3888, t),
+                lerpColor(0xFFFFBB88, 0xFFC0CCFF, t),
+                lerpColor(0xFFFF5500, 0xFFFFE8C0, t) };
         }
-        if (a >= -6) {                        // Civil Twilight
-            float t = (float)((a + 6) / 6);
+        if (a >= 0) {             // Golden Hour
+            float t = (float)(a / 4);
             return new int[]{
-                lerpColor(0xFF050820, 0xFF0D1858, t),
-                lerpColor(0xFF120A3A, 0xFF261470, t),
-                lerpColor(0xFF7A0C18, 0xFFFF6B10, t) };
+                lerpColor(0xFF060B28, 0xFF0C1240, t),
+                lerpColor(0xFF18084A, 0xFF141E68, t),
+                lerpColor(0xFFDD5500, 0xFFFFBB88, t),
+                lerpColor(0xFFFF2200, 0xFFFF5500, t) };
         }
-        if (a >= -12) {                       // Nautical Twilight
-            float t = (float)((a + 12) / 6);
+        if (a >= -4) {            // Civil Twilight
+            float t = (float)((a + 4) / 4);
             return new int[]{
-                lerpColor(0xFF020410, 0xFF050820, t),
-                lerpColor(0xFF07051E, 0xFF120A3A, t),
-                lerpColor(0xFF260520, 0xFF7A0C18, t) };
+                lerpColor(0xFF030614, 0xFF060B28, t),
+                lerpColor(0xFF0C052A, 0xFF18084A, t),
+                lerpColor(0xFF880820, 0xFFDD5500, t),
+                lerpColor(0xFF660010, 0xFFFF2200, t) };
         }
-        if (a >= -18) {                       // Astronomical Twilight
-            float t = (float)((a + 18) / 6);
+        if (a >= -8) {            // Civil→Nautical
+            float t = (float)((a + 8) / 4);
+            return new int[]{
+                lerpColor(0xFF020410, 0xFF030614, t),
+                lerpColor(0xFF070322, 0xFF0C052A, t),
+                lerpColor(0xFF460418, 0xFF880820, t),
+                lerpColor(0xFF2A0210, 0xFF660010, t) };
+        }
+        if (a >= -12) {           // Nautical Twilight
+            float t = (float)((a + 12) / 4);
             return new int[]{
                 lerpColor(0xFF010208, 0xFF020410, t),
-                lerpColor(0xFF02020C, 0xFF07051E, t),
-                lerpColor(0xFF090510, 0xFF260520, t) };
+                lerpColor(0xFF040218, 0xFF070322, t),
+                lerpColor(0xFF1E0210, 0xFF460418, t),
+                lerpColor(0xFF0E010A, 0xFF2A0210, t) };
         }
-        return new int[]{ 0xFF010208, 0xFF020210, 0xFF06040E }; // ليل تام
+        if (a >= -18) {           // Astronomical Twilight
+            float t = (float)((a + 18) / 6);
+            return new int[]{
+                lerpColor(0xFF010106, 0xFF010208, t),
+                lerpColor(0xFF020110, 0xFF040218, t),
+                lerpColor(0xFF080108, 0xFF1E0210, t),
+                lerpColor(0xFF050106, 0xFF0E010A, t) };
+        }
+        return new int[]{ 0xFF010106, 0xFF020112, 0xFF040110, 0xFF030108 }; // ليل تام
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 2. توهج الأفق (Golden / Blue Hour Glow)
-    // ─────────────────────────────────────────────────────────────────────────
-    private static void drawHorizonGlow(Canvas c, int w, int h, Paint p,
-                                        double sunAlt, float sunX) {
-        if (sunAlt < -10 || sunAlt > 25) return;
-        float inten = (float)(sunAlt < 0
-            ? 1.0 - Math.abs(sunAlt) / 10.0
-            : 1.0 - sunAlt / 25.0);
-        inten = Math.max(0, Math.min(1, inten));
-        int a = (int)(200 * inten);
+    // ═══════════════════════════════════════════════════════════════════════
+    // 02. ضباب Mie عند الأفق (Atmospheric Haze)
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawMieHaze(Canvas c, int w, int h, Paint p, double sunAlt) {
+        if (sunAlt < -6) return;
+        float intense = (float) Math.min(1, (sunAlt + 6) / 20.0);
+        int alpha = (int)(60 * intense);
+        p.setShader(new LinearGradient(0, h * 0.65f, 0, h,
+            new int[]{ Color.argb(0, 180, 200, 220), Color.argb(alpha, 180, 200, 220) },
+            null, Shader.TileMode.CLAMP));
+        c.drawRect(0, h * 0.65f, w, h, p);
+        p.setShader(null);
+    }
 
-        int innerColor = sunAlt < 1 ? Color.argb(a, 255, 120, 10) : Color.argb(a, 255, 200, 80);
-        p.setShader(new RadialGradient(sunX, h, w * 0.75f,
-            new int[]{ innerColor, Color.argb(a / 3, 255, 80, 0), Color.argb(0, 0, 0, 0) },
-            new float[]{ 0f, 0.4f, 1f }, Shader.TileMode.CLAMP));
-        c.drawOval(new RectF(sunX - w * 0.75f, h * 0.55f, sunX + w * 0.75f, h * 1.1f), p);
+    // ═══════════════════════════════════════════════════════════════════════
+    // 03. Belt of Venus + Earth's Shadow
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawBeltOfVenus(Canvas c, int w, int h, Paint p,
+                                        double sunAlt, double sunAz) {
+        if (sunAlt < -8 || sunAlt > 3) return;
+
+        float t = (float)((3 - sunAlt) / 11.0);
+        t = Math.max(0, Math.min(1, t));
+        int shadowAlpha = (int)(110 * t);
+        int beltAlpha   = (int)(90  * t);
+
+        // الجانب المقابل للشمس
+        double antiAz = (sunAz + 180) % 360;
+        float  antiX  = azToX(antiAz, w);
+
+        // ظل الأرض — شريط أزرق داكن قرب الأفق
+        float shadowTop = h * 0.62f;
+        float shadowBot = h * 0.82f;
+        p.setShader(new LinearGradient(0, shadowTop, 0, shadowBot,
+            new int[]{ Color.argb(0, 30, 50, 110), Color.argb(shadowAlpha, 30, 55, 120) },
+            null, Shader.TileMode.CLAMP));
+        p.setStyle(Paint.Style.FILL);
+        // نرسم RadialGradient مركزه على antiX
+        p.setShader(new RadialGradient(antiX, h * 0.9f, w * 0.85f,
+            new int[]{ Color.argb(shadowAlpha, 28, 48, 120),
+                       Color.argb(shadowAlpha / 2, 30, 50, 110),
+                       Color.argb(0, 20, 40, 90) },
+            new float[]{ 0f, 0.5f, 1f }, Shader.TileMode.CLAMP));
+        c.drawRect(0, h * 0.55f, w, h, p);
         p.setShader(null);
 
-        // Blue Hour بعيد عن قرص الشمس
-        if (sunAlt > -4 && sunAlt < 4) {
-            int ba = (int)(80 * inten);
-            p.setShader(new RadialGradient(w - sunX, h, w * 0.6f,
-                new int[]{ Color.argb(ba, 40, 80, 200), Color.argb(0, 0, 0, 0) },
+        // Belt of Venus — شريط وردي فوق الظل
+        p.setShader(new RadialGradient(antiX, h * 0.5f, w * 0.72f,
+            new int[]{ Color.argb(beltAlpha, 210, 140, 180),
+                       Color.argb(beltAlpha / 2, 200, 130, 165),
+                       Color.argb(0, 180, 110, 150) },
+            new float[]{ 0f, 0.45f, 1f }, Shader.TileMode.CLAMP));
+        c.drawRect(0, h * 0.38f, w, h * 0.7f, p);
+        p.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 04. توهج الأفق Golden Hour / Blue Hour
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawHorizonGlow(Canvas c, int w, int h, Paint p,
+                                        double sunAlt, float sunX) {
+        if (sunAlt < -12 || sunAlt > 28) return;
+        float inten = (float)(sunAlt < 0
+            ? 1.0 - Math.abs(sunAlt) / 12.0
+            : 1.0 - sunAlt / 28.0);
+        inten = Math.max(0, Math.min(1, inten));
+        int a = (int)(220 * inten);
+
+        // توهج الغروب/الشروق
+        int innerColor = sunAlt < 2 ? Color.argb(a, 255, 100, 15) : Color.argb(a, 255, 190, 70);
+        int midColor   = sunAlt < 2 ? Color.argb(a/2, 255, 55, 0) : Color.argb(a/2, 255, 150, 0);
+        p.setShader(new RadialGradient(sunX, h * 0.92f, w * 0.80f,
+            new int[]{ innerColor, midColor, Color.argb(0, 255, 80, 0) },
+            new float[]{ 0f, 0.38f, 1f }, Shader.TileMode.CLAMP));
+        c.drawOval(new RectF(sunX - w * 0.8f, h * 0.45f, sunX + w * 0.8f, h * 1.12f), p);
+        p.setShader(null);
+
+        // Blue Hour على الجانب الآخر
+        if (sunAlt > -5 && sunAlt < 6) {
+            int ba = (int)(90 * inten);
+            p.setShader(new RadialGradient(w - sunX, h * 0.8f, w * 0.55f,
+                new int[]{ Color.argb(ba, 30, 70, 210), Color.argb(0, 20, 50, 180) },
                 null, Shader.TileMode.CLAMP));
             c.drawRect(0, 0, w, h, p);
             p.setShader(null);
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 3. النجوم — تظهر تدريجياً حسب الظلام، وتتلألأ بشكل غير متزامن
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // 05. نور الزودياك
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawZodiacalLight(Canvas c, int w, int h, Paint p,
+                                          double sunAlt, double sunAz) {
+        if (sunAlt < -20 || sunAlt > -4) return;
+
+        double t = Math.min(1, (-sunAlt - 4) / 16.0);
+        int alpha = (int)(50 * t);
+
+        // مخروط يمتد من اتجاه الشمس نحو الأعلى على طول دائرة البروج
+        float sx = azToX(sunAz, w);
+        p.setShader(new RadialGradient(sx, h, w * 0.45f,
+            new int[]{ Color.argb(alpha, 255, 250, 220),
+                       Color.argb(alpha / 2, 240, 230, 190),
+                       Color.argb(0, 220, 210, 170) },
+            new float[]{ 0f, 0.4f, 1f }, Shader.TileMode.CLAMP));
+        Path cone = new Path();
+        cone.moveTo(sx, h);
+        cone.lineTo(sx - w * 0.22f, h * 0.15f);
+        cone.lineTo(sx + w * 0.22f, h * 0.15f);
+        cone.close();
+        c.drawPath(cone, p);
+        p.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 06. درب التبانة
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawMilkyWay(Canvas c, int w, int h, Paint p, double sunAlt) {
+        if (sunAlt > -14 || cMwPos == null) return;
+
+        double darkness = Math.min(1.0, (-sunAlt - 14) / 8.0);
+        Paint mwPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mwPaint.setStyle(Paint.Style.FILL);
+
+        for (int i = 0; i < cMwPos.length; i++) {
+            double alt  = cMwPos[i][0];
+            double az   = cMwPos[i][1];
+            double brig = cMwPos[i][2];
+
+            if (alt < -8) continue;
+
+            float x = azToX(az, w);
+            float y = altToY(alt, h);
+            if (x < -w * 0.3f || x > w * 1.3f) continue;
+
+            // عرض الكتلة المجرية على الشاشة
+            float widthDeg = (float) MW_KNOTS[i][2];
+            float radiusPx = (widthDeg / 90f) * h * 0.55f;
+
+            // ارتفاع أقل من الأفق — نقص التوهج تدريجياً
+            double altFade = alt < 5 ? Math.max(0, (alt + 8) / 13.0) : 1.0;
+            int alpha = (int)(58 * brig * darkness * altFade);
+            if (alpha < 3) continue;
+
+            // مركز درب التبانة أكثر كثافة ويميل للأحمر/البني
+            int r, g, b;
+            if (brig > 0.7) {           // المنطقة المركزية — دافئة اللون
+                r = 255; g = 240; b = 200;
+            } else if (brig > 0.4) {    // مناطق متوسطة — أبيض-أصفر
+                r = 245; g = 248; b = 235;
+            } else {                    // أطراف — أبيض-أزرق خفيف
+                r = 220; g = 228; b = 255;
+            }
+
+            mwPaint.setShader(new RadialGradient(x, y, radiusPx,
+                new int[]{ Color.argb(alpha, r, g, b),
+                           Color.argb(alpha / 2, r, g, b),
+                           Color.argb(0, r, g, b) },
+                new float[]{ 0f, 0.5f, 1f }, Shader.TileMode.CLAMP));
+            c.drawCircle(x, y, radiusPx, mwPaint);
+        }
+        mwPaint.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 07. النجوم — ألوان طيفية حقيقية + توهج + هالة
+    // ═══════════════════════════════════════════════════════════════════════
     private static void drawStars(Canvas c, int w, int h, Paint p,
                                   double sunAlt, double moonPhase, long now) {
-        if (sunAlt > -5) return;
+        if (sunAlt > -4) return;
 
-        // حد الحجم الظاهري بناءً على الظلام
         double maxMag;
-        if      (sunAlt > -12) maxMag = -0.3;  // شفق بحري
-        else if (sunAlt > -18) maxMag =  1.6;  // شفق فلكي
-        else                   maxMag =  3.0;  // ليل كامل
+        if      (sunAlt > -10) maxMag = 0.0;
+        else if (sunAlt > -14) maxMag = 1.8;
+        else if (sunAlt > -18) maxMag = 3.5;
+        else                   maxMag = 5.0;
 
-        // القمر المضيء يُضعف النجوم
         double moonIll = moonIllumination(moonPhase);
-        if (moonIll > 0.4 && cMoonAlt > 10) maxMag -= (moonIll - 0.4) * 2.0;
+        if (moonIll > 0.35 && cMoonAlt > 8) maxMag -= (moonIll - 0.35) * 2.5;
 
-        float dark = (float)(Math.min(1, (-sunAlt - 5) / 13.0));
+        float dark = (float) Math.min(1, (-sunAlt - 4) / 14.0);
         p.setStyle(Paint.Style.FILL);
 
         for (int i = 0; i < STARS.length && cStarPos != null; i++) {
             if (STARS[i][2] > maxMag) continue;
             double alt = cStarPos[i][0], az = cStarPos[i][1];
-            if (alt < 2) continue;
 
-            float sx = azToX(az, w), sy = altToY(alt, h);
-            if (sx < -8 || sx > w + 8 || sy < -8 || sy > h + 8) continue;
+            // تصحيح انكسار جوي: النجوم تبدو أعلى قرب الأفق
+            if (alt < 0.5) continue;
+            double apparentAlt = alt + refractionCorrection(alt);
+            float sx = azToX(az, w);
+            float sy = altToY(apparentAlt, h);
+            if (sx < -10 || sx > w + 10 || sy < -10 || sy > h + 10) continue;
 
-            // لمعة بناءً على الحجم الظاهري
-            float bright = (float)(1.0 - (STARS[i][2] + 1.5) / 4.8);
-            bright = Math.max(0.08f, Math.min(1f, bright));
+            float bright = (float)(1.0 - (STARS[i][2] + 1.6) / 6.8);
+            bright = Math.max(0.06f, Math.min(1f, bright));
 
-            // توهج غير متزامن (twinkle)
+            // توهج غير متزامن (twinkle) — أقوى قرب الأفق
             double period = STARS[i][3];
-            float twinkle = 0.78f + 0.22f * (float)Math.sin((now % (long)period) / period * 2 * Math.PI);
+            float twinkleAmp = (float) Math.min(0.35, 0.12 + 0.23 * Math.max(0, (20 - alt) / 20));
+            float twinkle = (1f - twinkleAmp) + twinkleAmp *
+                (float) Math.sin((now % (long)period) / period * 2 * Math.PI);
             bright *= twinkle * dark;
 
-            float r = 0.6f + bright * 1.8f;
-            int   a = (int)(255 * bright);
-            // النجوم اللامعة جداً لها هالة صغيرة
-            if (STARS[i][2] < 0.5) {
-                p.setShader(new RadialGradient(sx, sy, r * 5,
-                    new int[]{ Color.argb(a / 4, 210, 225, 255), Color.argb(0, 200, 220, 255) },
+            // اللون الطيفي
+            int specClass = (int) Math.max(0, Math.min(5, STARS[i][4]));
+            int starColor = SPECTRAL_COLORS[specClass];
+            int sr = Color.red(starColor), sg = Color.green(starColor), sb = Color.blue(starColor);
+
+            int a = (int)(255 * bright);
+            float r = 0.55f + bright * 2.2f;
+
+            // هالة للنجوم اللامعة جداً (< 1.0 حجماً ظاهرياً)
+            if (STARS[i][2] < 1.0) {
+                float haloR = r * (STARS[i][2] < 0 ? 7f : 5f);
+                p.setShader(new RadialGradient(sx, sy, haloR,
+                    new int[]{ Color.argb(a / 3, sr, sg, sb), Color.argb(0, sr, sg, sb) },
                     null, Shader.TileMode.CLAMP));
-                c.drawCircle(sx, sy, r * 5, p);
+                c.drawCircle(sx, sy, haloR, p);
                 p.setShader(null);
             }
-            // جسم النجم مع لون بناءً على درجة الحرارة
-            int starColor = STARS[i][2] < 0 ? 0xFFCCDDFF : (STARS[i][2] < 1 ? 0xFFFFFFFF : 0xFFFFEEDD);
-            p.setColor(Color.argb(a, Color.red(starColor), Color.green(starColor), Color.blue(starColor)));
+
+            // جسم النجمة
+            p.setColor(Color.argb(a, sr, sg, sb));
+            c.drawCircle(sx, sy, r, p);
+
+            // بريق صليبي للنجوم الألمع جداً
+            if (STARS[i][2] < -0.3 && dark > 0.6) {
+                drawStarSpike(c, p, sx, sy, r * 6f, a / 2, sr, sg, sb);
+            }
+        }
+    }
+
+    /** بريق صليبي (Diffraction Spike) للنجوم شديدة الإضاءة */
+    private static void drawStarSpike(Canvas c, Paint p, float x, float y,
+                                      float len, int alpha, int r, int g, int b) {
+        Paint sp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        sp.setStrokeCap(Paint.Cap.ROUND);
+        sp.setStyle(Paint.Style.STROKE);
+        sp.setStrokeWidth(1.0f);
+        sp.setColor(Color.argb(alpha, r, g, b));
+        c.drawLine(x - len, y, x + len, y, sp);
+        c.drawLine(x, y - len * 0.7f, x, y + len * 0.7f, sp);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 08. الثريا — Pleiades
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawPleiades(Canvas c, int w, int h, Paint p,
+                                     double sunAlt, long now) {
+        if (sunAlt > -8 || cPleiPos == null) return;
+
+        double dark = Math.min(1.0, (-sunAlt - 8) / 10.0);
+
+        // توهج ضبابي حول المجموعة (Nebulosity)
+        float cx = azToX(cPleiPos[0][1], w);
+        float cy = altToY(cPleiPos[0][0], h);
+        if (cx < -20 || cx > w + 20 || cy < -20 || cy > h + 20) return;
+        if (cPleiPos[0][0] < 2) return;
+
+        int nebAlpha = (int)(28 * dark);
+        p.setShader(new RadialGradient(cx, cy, h * 0.07f,
+            new int[]{ Color.argb(nebAlpha, 180, 200, 255), Color.argb(0, 160, 180, 255) },
+            null, Shader.TileMode.CLAMP));
+        c.drawCircle(cx, cy, h * 0.07f, p);
+        p.setShader(null);
+
+        // نجوم الثريا الفردية
+        p.setStyle(Paint.Style.FILL);
+        for (int i = 0; i < PLEIADES.length && cPleiPos != null; i++) {
+            double alt = cPleiPos[i][0];
+            if (alt < 2) continue;
+            float sx = azToX(cPleiPos[i][1], w);
+            float sy = altToY(alt, h);
+            float bright = (float)(0.6 - (PLEIADES[i][2] - 2.5) / 4.0);
+            bright = (float)(bright * dark);
+            if (bright < 0.05) continue;
+            // توهج
+            double period = 2200 + i * 700;
+            float tw = 0.82f + 0.18f * (float)Math.sin((now % (long)period) / period * 2 * Math.PI);
+            bright *= tw;
+            int a = (int)(255 * bright);
+            float r = 0.7f + bright * 1.4f;
+            p.setColor(Color.argb(a, 200, 215, 255));
             c.drawCircle(sx, sy, r, p);
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 4. كواكب
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // 09. كواكب عامة
+    // ═══════════════════════════════════════════════════════════════════════
     private static void drawPlanet(Canvas c, Paint p,
                                    double alt, double az, int w, int h,
-                                   int color, float r) {
-        float x = azToX(az, w), y = altToY(alt, h);
-        p.setShader(new RadialGradient(x, y, r * 5,
-            new int[]{ Color.argb(90, Color.red(color), Color.green(color), Color.blue(color)),
-                       Color.argb(0, 0, 0, 0) }, null, Shader.TileMode.CLAMP));
-        c.drawCircle(x, y, r * 5, p);
+                                   int color, float r, boolean bright) {
+        double appAlt = alt + refractionCorrection(alt);
+        float x = azToX(az, w), y = altToY(appAlt, h);
+        if (x < -10 || x > w + 10 || y < -10 || y > h + 10) return;
+
+        int cr = Color.red(color), cg = Color.green(color), cb = Color.blue(color);
+
+        // هالة الكوكب
+        p.setShader(new RadialGradient(x, y, r * 6.5f,
+            new int[]{ Color.argb(70, cr, cg, cb), Color.argb(0, cr, cg, cb) },
+            null, Shader.TileMode.CLAMP));
+        c.drawCircle(x, y, r * 6.5f, p);
         p.setShader(null);
-        p.setColor(color);
+
+        // قرص الكوكب
+        p.setShader(new RadialGradient(x - r * 0.25f, y - r * 0.25f, r * 1.4f,
+            new int[]{ Color.argb(255, Math.min(255, cr + 30), Math.min(255, cg + 30), Math.min(255, cb + 30)),
+                       color },
+            null, Shader.TileMode.CLAMP));
         c.drawCircle(x, y, r, p);
+        p.setShader(null);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 5. شهاب عشوائي ليلاً
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // زحل مع حلقاته
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawSaturn(Canvas c, Paint p, double alt, double az, int w, int h) {
+        if (alt < 1.5) return;
+        double appAlt = alt + refractionCorrection(alt);
+        float x = azToX(az, w), y = altToY(appAlt, h);
+        if (x < -15 || x > w + 15 || y < -15 || y > h + 15) return;
+
+        float r = 4.0f;
+
+        // هالة
+        p.setShader(new RadialGradient(x, y, r * 7,
+            new int[]{ Color.argb(60, 255, 240, 180), Color.argb(0, 255, 230, 160) },
+            null, Shader.TileMode.CLAMP));
+        c.drawCircle(x, y, r * 7, p);
+        p.setShader(null);
+
+        // حلقة زحل (ellipse مائلة)
+        Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ringPaint.setStyle(Paint.Style.STROKE);
+        ringPaint.setStrokeWidth(1.8f);
+        ringPaint.setColor(Color.argb(180, 255, 235, 160));
+        RectF ringRect = new RectF(x - r * 2.4f, y - r * 0.7f, x + r * 2.4f, y + r * 0.7f);
+        c.drawOval(ringRect, ringPaint);
+
+        // قرص الكوكب (فوق الحلقة)
+        p.setShader(new RadialGradient(x - r * 0.2f, y - r * 0.2f, r * 1.3f,
+            new int[]{ 0xFFFFEEAA, 0xFFDDB860 }, null, Shader.TileMode.CLAMP));
+        c.drawCircle(x, y, r, p);
+        p.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 14. شهاب عشوائي محسّن
+    // ═══════════════════════════════════════════════════════════════════════
     private static long  sLastStart = 0, sNextDelay = 0;
     private static float sX1, sY1, sX2, sY2;
 
     private static void drawShootingStar(Canvas c, int w, int h, Paint p,
                                          double sunAlt, long now) {
-        if (sunAlt > -12) return;
-        if (sNextDelay == 0) sNextDelay = 75_000L;
+        if (sunAlt > -11) return;
+        if (sNextDelay == 0) sNextDelay = 60_000L;
 
         if (now - sLastStart > sNextDelay) {
             sLastStart  = now;
             Random rnd  = new Random(now / 1000L);
-            sNextDelay  = 50_000L + (long)(rnd.nextFloat() * 90_000L);
+            sNextDelay  = 45_000L + (long)(rnd.nextFloat() * 80_000L);
             sX1 = rnd.nextFloat() * w;
-            sY1 = rnd.nextFloat() * h * 0.45f;
-            float angle = (float)(Math.PI / 5 + rnd.nextFloat() * Math.PI / 3);
-            float len   = w * 0.12f + rnd.nextFloat() * w * 0.14f;
+            sY1 = rnd.nextFloat() * h * 0.42f;
+            float angle = (float)(Math.PI / 6 + rnd.nextFloat() * Math.PI * 0.45);
+            float len   = w * 0.10f + rnd.nextFloat() * w * 0.18f;
             sX2 = sX1 + (float)(Math.cos(angle) * len);
             sY2 = sY1 + (float)(Math.sin(angle) * len);
         }
 
-        long dur = 1100L, elapsed = now - sLastStart;
+        long dur = 1200L, elapsed = now - sLastStart;
         if (elapsed >= dur) return;
 
-        float t  = elapsed / (float) dur;
-        float fa = t < 0.15f ? t / 0.15f : 1f - (t - 0.15f) / 0.85f;
-        int   a  = (int)(230 * fa);
+        float t  = elapsed / (float)dur;
+        float fa = t < 0.12f ? t / 0.12f : 1f - (t - 0.12f) / 0.88f;
+        int a = (int)(240 * fa);
 
         float cx = sX1 + (sX2 - sX1) * t;
         float cy = sY1 + (sY2 - sY1) * t;
-        float tx = sX1 + (sX2 - sX1) * Math.max(0, t - 0.25f);
-        float ty = sY1 + (sY2 - sY1) * Math.max(0, t - 0.25f);
+        float tx = sX1 + (sX2 - sX1) * Math.max(0, t - 0.20f);
+        float ty = sY1 + (sY2 - sY1) * Math.max(0, t - 0.20f);
 
+        // ذيل متدرج اللون (أبيض → أصفر خفيف)
         Paint trail = new Paint(Paint.ANTI_ALIAS_FLAG);
-        trail.setColor(Color.argb(a, 255, 252, 240));
-        trail.setStrokeWidth(1.8f);
+        trail.setShader(new LinearGradient(tx, ty, cx, cy,
+            Color.argb(0, 255, 252, 240),
+            Color.argb(a, 255, 255, 255),
+            Shader.TileMode.CLAMP));
+        trail.setStrokeWidth(2.0f);
         trail.setStyle(Paint.Style.STROKE);
         trail.setStrokeCap(Paint.Cap.ROUND);
         c.drawLine(tx, ty, cx, cy, trail);
 
-        p.setShader(new RadialGradient(cx, cy, 5,
+        // رأس لامع
+        p.setShader(new RadialGradient(cx, cy, 6,
             new int[]{ Color.argb(a, 255, 255, 255), Color.argb(0, 255, 255, 255) },
             null, Shader.TileMode.CLAMP));
-        c.drawCircle(cx, cy, 5, p);
+        c.drawCircle(cx, cy, 6, p);
         p.setShader(null);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 6. القمر بطوره الحقيقي + هالة + تعتيم الجانب المظلم
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // 15. القمر المحسّن — فوهات + Earthshine + هالة
+    // ═══════════════════════════════════════════════════════════════════════
     private static void drawMoon(Canvas c, Paint p, float x, float y,
-                                 int h, double phase, double sunAlt) {
-        float r  = h * 0.072f;
-        // اربط Y بين r+4 (لا يخرج من الأعلى) وh-r-4 (لا يخرج من الأسفل)
-        float yy = Math.max(r + 4, Math.min(y, h - r - 4));
-
-        // هالة عند وجود إضاءة كافية
+                                 int h, double phase, double sunAlt, long now) {
+        float r  = h * 0.075f;
+        float yy = Math.max(r + 4, Math.min(y, (float)(h - r - 4)));
         double ill = moonIllumination(phase);
-        if (ill > 0.1 && sunAlt < 0) {
-            int haloA = (int)(55 * ill);
-            p.setShader(new RadialGradient(x, yy, r * 4f,
-                new int[]{ Color.argb(haloA, 240, 238, 200),
+
+        // ── هالة القمر 22° ──
+        if (ill > 0.15 && sunAlt < 0) {
+            float halo22 = r * 5.5f;
+            Paint haloPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            haloPaint.setStyle(Paint.Style.STROKE);
+            haloPaint.setStrokeWidth(1.2f);
+            haloPaint.setColor(Color.argb((int)(25 * ill), 230, 230, 200));
+            c.drawCircle(x, yy, halo22, haloPaint);
+
+            // Aureole — توهج ملون داخلي
+            p.setShader(new RadialGradient(x, yy, r * 4.0f,
+                new int[]{ Color.argb((int)(50 * ill), 240, 238, 200),
                            Color.argb(0, 200, 200, 180) },
                 null, Shader.TileMode.CLAMP));
-            c.drawCircle(x, yy, r * 4f, p);
+            c.drawCircle(x, yy, r * 4.0f, p);
             p.setShader(null);
         }
 
-        // الجانب المظلم
-        p.setColor(0xFF0B1220); p.setStyle(Paint.Style.FILL);
+        // ── الجانب المظلم ──
+        p.setColor(0xFF080E1C); p.setStyle(Paint.Style.FILL);
         c.drawCircle(x, yy, r, p);
 
-        // الجانب المضيء — منحنى الطور
-        if (ill > 0.015) {
-            // زاوية الطور: terminator x على سطح القمر
+        // ── Earthshine — إضاءة خافتة جداً للجانب المظلم ──
+        if (ill < 0.35 && sunAlt < 0) {
+            int esAlpha = (int)(18 * (1 - ill / 0.35));
+            p.setColor(Color.argb(esAlpha, 60, 90, 140));
+            c.drawCircle(x, yy, r, p);
+        }
+
+        // ── الجانب المضيء ──
+        if (ill > 0.012) {
             double phAngle = phase * 2 * Math.PI;
-            float term = r * (float) Math.cos(phAngle);  // موضع حد الإضاءة
+            float term = r * (float)Math.cos(phAngle);
             boolean waning = (phase > 0.5);
 
             Path mp = new Path();
             RectF oval = new RectF(x - r, yy - r, x + r, yy + r);
+            float absT = Math.abs(term);
 
             if (!waning) {
-                // تزايد: الجانب الأيمن مضيء
                 mp.addArc(oval, -90, 180);
-                float absT = Math.abs(term);
-                if (term >= 0) {
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), 90, 180);
-                } else {
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), 90, -180);
-                }
+                if (term >= 0) mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), 90, 180);
+                else           mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), 90, -180);
             } else {
-                // تناقص: الجانب الأيسر مضيء
                 mp.addArc(oval, 90, 180);
-                float absT = Math.abs(term);
-                if (term >= 0) {
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), -90, 180);
-                } else {
-                    mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), -90, -180);
-                }
+                if (term >= 0) mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), -90, 180);
+                else           mp.arcTo(new RectF(x - absT, yy - r, x + absT, yy + r), -90, -180);
             }
             mp.close();
 
-            p.setShader(new RadialGradient(x, yy - r * 0.15f, r * 1.3f,
-                new int[]{ 0xFFEEE8C8, 0xFFD8CCA0, 0xFFC0B87A },
-                new float[]{ 0f, 0.65f, 1f }, Shader.TileMode.CLAMP));
+            // سطح مضيء مع تدرج دافئ
+            p.setShader(new RadialGradient(x + term * 0.2f, yy - r * 0.1f, r * 1.25f,
+                new int[]{ 0xFFF8F0D8, 0xFFE8D8A8, 0xFFCCB87A },
+                new float[]{ 0f, 0.60f, 1f }, Shader.TileMode.CLAMP));
             c.drawPath(mp, p);
             p.setShader(null);
+
+            // ── فوهات القمر (crater hints) على الجانب المضيء ──
+            if (ill > 0.15 && r > 8) drawMoonCraters(c, x, yy, r, phase, ill);
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 7. الشمس — هالة جوية + Corona + قرص
-    // ─────────────────────────────────────────────────────────────────────────
-    private static void drawSun(Canvas c, Paint p, float x, float y, int h, double sunAlt) {
-        float r = h * 0.068f;
-        // اربط Y: لا يخرج من الأعلى (r+4) ولا يزيد عن الأفق (h) — الشمس لا ترسم أسفل الأفق
-        float yy = Math.max(r + 4, Math.min(y, (float) h));
+    /** فوهات قمرية واقعية */
+    private static void drawMoonCraters(Canvas c, float mx, float my, float r,
+                                        double phase, double ill) {
+        // مواقع نسبية لأبرز الفوهات { x_rel, y_rel, r_rel }
+        float[][] craters = {
+            { 0.25f, -0.10f, 0.065f }, // Tycho
+            {-0.15f,  0.30f, 0.055f }, // Copernicus
+            { 0.40f, -0.35f, 0.045f }, // Clavius (north)
+            {-0.30f, -0.20f, 0.038f }, // Plato
+            { 0.10f,  0.45f, 0.040f }, // Grimaldi
+            {-0.20f,  0.05f, 0.032f }, // Mare Imbrium hint
+        };
 
-        // حدة اللون تبعاً للارتفاع (أحمر/برتقالي قرب الأفق)
-        boolean lowSun = sunAlt < 8;
-        int haloInner = lowSun ? Color.argb(110, 255, 130, 10) : Color.argb(90, 255, 210, 60);
-        int haloOuter = lowSun ? Color.argb( 45, 255,  70,  0) : Color.argb(35, 255, 180, 0);
+        Paint cp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        cp.setStyle(Paint.Style.FILL);
+        int alpha = (int)(35 * ill);
 
-        // هالة خارجية كبيرة
-        p.setShader(new RadialGradient(x, yy, r * 10,
-            new int[]{ haloInner, haloOuter, Color.argb(0, 255, 140, 0) },
-            new float[]{ 0f, 0.35f, 1f }, Shader.TileMode.CLAMP));
-        c.drawCircle(x, yy, r * 10, p);
+        for (float[] cr : craters) {
+            float cx = mx + cr[0] * r;
+            float cy = my + cr[1] * r;
+            float cr2 = cr[2] * r;
+            // ظل الفوهة
+            cp.setColor(Color.argb(alpha, 80, 65, 45));
+            c.drawCircle(cx, cy, cr2, cp);
+            // انعكاس ضوء داخل الفوهة
+            cp.setColor(Color.argb(alpha / 2, 255, 248, 220));
+            c.drawCircle(cx - cr2 * 0.25f, cy - cr2 * 0.25f, cr2 * 0.55f, cp);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 16. أشعة الإله / Crepuscular Rays
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawCrepuscularRays(Canvas c, int w, int h, Paint p,
+                                            double sunAlt, float sunX, float sunY) {
+        if (sunAlt < -8 || sunAlt > 20) return;
+
+        double intensity = 0;
+        if (sunAlt < 0)       intensity = 1.0 - Math.abs(sunAlt) / 8.0;
+        else if (sunAlt < 8)  intensity = 1.0 - sunAlt / 8.0;
+        else                  intensity = (20 - sunAlt) / 12.0;
+        intensity = Math.max(0, Math.min(1, intensity));
+
+        Random rnd = new Random(12345); // ثابت — نفس الأشعة دائماً
+        int numRays = 9;
+
+        for (int i = 0; i < numRays; i++) {
+            double angle = -Math.PI / 2 + (i - numRays / 2.0) * (Math.PI * 0.16) +
+                           rnd.nextDouble() * 0.15;
+            float ex = sunX + (float)(Math.cos(angle) * w * 1.5);
+            float ey = sunY + (float)(Math.sin(angle) * w * 1.5);
+            float rayW = (0.8f + rnd.nextFloat() * 2.5f);
+            int alpha = (int)((25 + rnd.nextFloat() * 30) * intensity);
+
+            Paint rayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            rayPaint.setShader(new LinearGradient(sunX, sunY, ex, ey,
+                Color.argb(alpha, 255, 245, 200),
+                Color.argb(0, 255, 240, 180),
+                Shader.TileMode.CLAMP));
+            rayPaint.setStyle(Paint.Style.STROKE);
+            rayPaint.setStrokeWidth(rayW);
+            rayPaint.setStrokeCap(Paint.Cap.ROUND);
+            c.drawLine(sunX, sunY, ex, ey, rayPaint);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 16. الشمس المحسّنة
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawSun(Canvas c, Paint p, float x, float y, int w, int h, double sunAlt) {
+        // حجم الشمس يبدو أكبر قرب الأفق (وهم بصري)
+        float sizeMult = (sunAlt < 10) ? (1.0f + (float)(10 - sunAlt) * 0.025f) : 1.0f;
+        float r = h * 0.070f * sizeMult;
+        float yy = Math.max(r + 4, Math.min(y, (float)(h * 1.05)));
+
+        boolean lowSun = (sunAlt < 10);
+
+        // لون يتغير من أبيض-أصفر → برتقالي → أحمر حسب الارتفاع
+        int centerColor, edgeColor;
+        if (sunAlt > 20) { centerColor = 0xFFFFFFF0; edgeColor = 0xFFFFF080; }
+        else if (sunAlt > 8) { centerColor = 0xFFFFFECC; edgeColor = 0xFFFFEC44; }
+        else if (sunAlt > 2) { centerColor = 0xFFFFE888; edgeColor = 0xFFFF9000; }
+        else                 { centerColor = 0xFFFFCC44; edgeColor = 0xFFFF4400; }
+
+        // هالة خارجية كبيرة (Atmospheric Glow)
+        int haloInner = lowSun ? Color.argb(100, 255, 110, 5) : Color.argb(80, 255, 200, 50);
+        int haloMid   = lowSun ? Color.argb(40,  255,  60, 0) : Color.argb(30, 255, 170, 0);
+        p.setShader(new RadialGradient(x, yy, r * 11f,
+            new int[]{ haloInner, haloMid, Color.argb(0, 255, 120, 0) },
+            new float[]{ 0f, 0.3f, 1f }, Shader.TileMode.CLAMP));
+        c.drawCircle(x, yy, r * 11f, p);
         p.setShader(null);
 
         // Corona داخلية
-        p.setShader(new RadialGradient(x, yy, r * 2.8f,
-            new int[]{ Color.argb(170, 255, 255, 210),
-                       Color.argb(55,  255, 210, 80),
+        p.setShader(new RadialGradient(x, yy, r * 3.0f,
+            new int[]{ Color.argb(160, 255, 255, 210),
+                       Color.argb(50,  255, 210, 80),
                        Color.argb(0,   255, 160, 0) },
             null, Shader.TileMode.CLAMP));
-        c.drawCircle(x, yy, r * 2.8f, p);
+        c.drawCircle(x, yy, r * 3.0f, p);
         p.setShader(null);
 
-        // قرص الشمس
-        int center = lowSun ? 0xFFFFE080 : 0xFFFFFFCC;
-        int edge   = lowSun ? 0xFFFF9000 : 0xFFFFEC44;
-        p.setShader(new RadialGradient(x - r * 0.2f, yy - r * 0.2f, r,
-            new int[]{ center, edge }, null, Shader.TileMode.CLAMP));
+        // قرص الشمس مع Limb Darkening (الحواف أقل سطوعاً)
+        p.setShader(new RadialGradient(x, yy, r,
+            new int[]{ centerColor, edgeColor, lerpColor(edgeColor, 0xFF884400, 0.5f) },
+            new float[]{ 0f, 0.72f, 1f }, Shader.TileMode.CLAMP));
         c.drawCircle(x, yy, r, p);
         p.setShader(null);
-    }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 8. سحاب بثلاث طبقات Parallax
-    // ─────────────────────────────────────────────────────────────────────────
-    // { base_x[0..1], base_y[0..1], size[0..1], layer(0=بعيد،2=قريب), num_puffs }
-    private static final float[][] CLOUD_SEEDS = {
-        { 0.05f, 0.12f, 0.28f, 0, 7 }, { 0.55f, 0.10f, 0.23f, 0, 6 },
-        { 0.82f, 0.16f, 0.26f, 0, 6 }, { 0.30f, 0.20f, 0.19f, 0, 5 },
-        { 0.15f, 0.30f, 0.21f, 1, 6 }, { 0.62f, 0.27f, 0.25f, 1, 7 },
-        { 0.88f, 0.25f, 0.17f, 1, 5 }, { 0.40f, 0.38f, 0.23f, 1, 5 },
-        { 0.22f, 0.46f, 0.17f, 2, 5 }, { 0.68f, 0.42f, 0.21f, 2, 5 },
-        { 0.48f, 0.52f, 0.15f, 2, 4 },
-    };
-    private static final float[] LAYER_SPEED = { 0.0035f, 0.007f, 0.013f };
-
-    private static void drawClouds(Canvas c, int w, int h, Paint p,
-                                   double sunAlt, long now) {
-        int cBase, cShad;
-        if      (sunAlt > 15) { cBase = Color.argb(195, 255, 255, 255); cShad = Color.argb(70, 130, 150, 195); }
-        else if (sunAlt > 0)  {
-            float t = (float)(sunAlt / 15);
-            cBase = lerpColor(Color.argb(190, 255, 200, 160), Color.argb(195, 255, 255, 255), t);
-            cShad = lerpColor(Color.argb( 70,  90,  40,  20), Color.argb( 70, 130, 150, 195), t);
-        } else if (sunAlt > -6) { cBase = Color.argb(150, 190, 100,  90); cShad = Color.argb(55, 50, 20, 40); }
-        else                    { cBase = Color.argb( 90,  25,  35,  65); cShad = Color.argb(40,  8, 12, 28); }
-
-        float sec = now / 1000f;
-        Random rnd = new Random(42);
-
-        for (float[] s : CLOUD_SEEDS) {
-            int   layer = (int) s[3];
-            float drift = (sec * LAYER_SPEED[layer] * w) % (w * 1.5f);
-            float cx = (s[0] * w - drift + w * 1.5f) % (w * 1.5f) - w * 0.25f;
-            float cy = s[1] * h;
-            float sz = s[2] * w;
-            int   np = (int) s[4];
-            drawCloudPuffs(c, p, cx, cy, sz, np, cBase, cShad, rnd);
+        // Solar Pillar عند الغروب/الشروق (عمود ضوء رأسي)
+        if (sunAlt < 4 && sunAlt > -5) {
+            float pillarAlpha = (float)(1.0 - Math.abs(sunAlt) / 5.0) * 60;
+            p.setShader(new LinearGradient(x, yy - r * 5, x, yy + r * 3,
+                new int[]{ Color.argb(0, 255, 200, 80),
+                           Color.argb((int)pillarAlpha, 255, 180, 60),
+                           Color.argb(0, 255, 160, 40) },
+                null, Shader.TileMode.CLAMP));
+            c.drawRect(x - r * 0.5f, yy - r * 5, x + r * 0.5f, yy + r * 3, p);
+            p.setShader(null);
         }
     }
 
-    private static void drawCloudPuffs(Canvas c, Paint p, float cx, float cy,
-                                       float sz, int n, int base, int shad, Random rnd) {
-        for (int i = 0; i < n; i++) {
-            float ox = (rnd.nextFloat() - 0.5f) * sz * 1.5f;
-            float oy = (rnd.nextFloat() - 0.5f) * sz * 0.45f;
-            float r  =  sz * (0.28f + rnd.nextFloat() * 0.26f);
-            float px = cx + ox, py = cy + oy;
+    // ═══════════════════════════════════════════════════════════════════════
+    // 17. سحاب محسّن — أشكال عضوية + إضاءة صحيحة
+    // ═══════════════════════════════════════════════════════════════════════
+    private static final float[][] CLOUD_SEEDS = {
+        { 0.04f, 0.10f, 0.32f, 0, 8,  2.2f }, // طبقة بعيدة
+        { 0.52f, 0.08f, 0.27f, 0, 7,  1.8f },
+        { 0.80f, 0.14f, 0.30f, 0, 7,  2.0f },
+        { 0.28f, 0.19f, 0.22f, 0, 6,  1.6f },
+        { 0.13f, 0.28f, 0.24f, 1, 7,  1.9f }, // طبقة وسطى
+        { 0.60f, 0.25f, 0.28f, 1, 8,  2.1f },
+        { 0.86f, 0.22f, 0.20f, 1, 6,  1.7f },
+        { 0.38f, 0.36f, 0.26f, 1, 6,  1.8f },
+        { 0.20f, 0.44f, 0.19f, 2, 6,  1.5f }, // طبقة أمامية
+        { 0.66f, 0.40f, 0.24f, 2, 6,  1.7f },
+        { 0.46f, 0.50f, 0.17f, 2, 5,  1.4f },
+    };
+    private static final float[] LAYER_SPEED = { 0.003f, 0.006f, 0.011f };
 
-            // ظل تحت الغيمة
-            p.setShader(new RadialGradient(px, py + r * 0.35f, r * 0.85f,
-                new int[]{ shad, Color.argb(0, 0, 0, 0) }, null, Shader.TileMode.CLAMP));
-            c.drawOval(new RectF(px - r, py, px + r, py + r * 1.2f), p);
+    private static void drawClouds(Canvas c, int w, int h, Paint p,
+                                   double sunAlt, long now) {
+        // ألوان السحاب حسب الوقت
+        CloudColors cc = cloudColors(sunAlt);
+
+        float sec  = now / 1000f;
+        Random rnd = new Random(777);
+
+        for (float[] s : CLOUD_SEEDS) {
+            int   layer = (int)s[3];
+            float drift = (sec * LAYER_SPEED[layer] * w) % (w * 1.6f);
+            float cx    = (s[0] * w - drift + w * 1.6f) % (w * 1.6f) - w * 0.3f;
+            float cy    = s[1] * h;
+            float sz    = s[2] * w;
+            int   np    = (int)s[4];
+            float aspect = s[5];
+            drawOrganicCloud(c, p, cx, cy, sz, np, aspect, cc.base, cc.shadow, cc.highlight, rnd);
+        }
+    }
+
+    /** سحابة عضوية الشكل */
+    private static void drawOrganicCloud(Canvas c, Paint p, float cx, float cy,
+                                         float sz, int n, float aspect,
+                                         int base, int shadow, int highlight, Random rnd) {
+        for (int i = 0; i < n; i++) {
+            // توزيع عضوي بدل الشبكي
+            double angle = rnd.nextDouble() * Math.PI * 2;
+            float  dist  = (float)(rnd.nextDouble() * 0.45 * sz);
+            float  ox    = (float)(Math.cos(angle) * dist * aspect);
+            float  oy    = (float)(Math.sin(angle) * dist * 0.45);
+            float  r     = sz * (0.22f + rnd.nextFloat() * 0.28f);
+            float  px = cx + ox, py = cy + oy;
+
+            // ظل أسفل كل puff
+            int sa = Color.alpha(shadow);
+            p.setShader(new RadialGradient(px, py + r * 0.4f, r * 0.9f,
+                new int[]{ shadow, Color.argb(0, Color.red(shadow), Color.green(shadow), Color.blue(shadow)) },
+                null, Shader.TileMode.CLAMP));
+            c.drawOval(new RectF(px - r, py + r * 0.1f, px + r, py + r * 1.15f), p);
             p.setShader(null);
 
-            // جسم الغيمة
-            int br = Color.red(base), bg = Color.green(base),
-                bb = Color.blue(base), ba = Color.alpha(base);
-            p.setShader(new RadialGradient(px, py - r * 0.12f, r,
+            // جسم الـ puff مع تدرج
+            int br = Color.red(base), bg = Color.green(base), bb = Color.blue(base), ba = Color.alpha(base);
+            int hr = Color.red(highlight), hg = Color.green(highlight), hb = Color.blue(highlight);
+            p.setShader(new RadialGradient(px - r * 0.15f, py - r * 0.15f, r,
                 new int[]{
-                    Color.argb(ba, Math.min(255, br + 28), Math.min(255, bg + 28), Math.min(255, bb + 28)),
+                    Color.argb(ba, Math.min(255, hr), Math.min(255, hg), Math.min(255, hb)),
                     Color.argb(ba, br, bg, bb),
-                    Color.argb(0,  br, bg, bb)
-                }, new float[]{ 0f, 0.62f, 1f }, Shader.TileMode.CLAMP));
+                    Color.argb(ba / 2, br, bg, bb),
+                    Color.argb(0, br, bg, bb) },
+                new float[]{ 0f, 0.45f, 0.78f, 1f }, Shader.TileMode.CLAMP));
             c.drawCircle(px, py, r, p);
             p.setShader(null);
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 9. حواف دائرية — clip الـ Bitmap بـ PorterDuff DST_IN
-    // ─────────────────────────────────────────────────────────────────────────
+    private static class CloudColors { int base, shadow, highlight; }
+
+    private static CloudColors cloudColors(double a) {
+        CloudColors cc = new CloudColors();
+        if (a > 18) {
+            cc.base = Color.argb(185, 255, 255, 255);
+            cc.shadow = Color.argb(65, 110, 135, 190);
+            cc.highlight = Color.argb(220, 255, 255, 255);
+        } else if (a > 5) {
+            float t = (float)((a - 5) / 13);
+            cc.base = lerpColor(Color.argb(180, 255, 215, 170), Color.argb(185, 255, 255, 255), t);
+            cc.shadow = lerpColor(Color.argb(65, 100, 60, 30), Color.argb(65, 110, 135, 190), t);
+            cc.highlight = lerpColor(Color.argb(200, 255, 230, 180), Color.argb(220, 255, 255, 255), t);
+        } else if (a > -1) {
+            float t = (float)((a + 1) / 6);
+            cc.base = lerpColor(Color.argb(170, 200, 110, 70), Color.argb(180, 255, 215, 170), t);
+            cc.shadow = lerpColor(Color.argb(60, 60, 20, 15), Color.argb(65, 100, 60, 30), t);
+            cc.highlight = lerpColor(Color.argb(190, 255, 160, 100), Color.argb(200, 255, 230, 180), t);
+        } else if (a > -8) {
+            cc.base = Color.argb(140, 180, 90, 60);
+            cc.shadow = Color.argb(50, 40, 15, 10);
+            cc.highlight = Color.argb(160, 220, 120, 80);
+        } else {
+            cc.base = Color.argb(80, 22, 30, 60);
+            cc.shadow = Color.argb(35, 8, 10, 25);
+            cc.highlight = Color.argb(90, 35, 45, 80);
+        }
+        return cc;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 18. تلوث ضوئي
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawLightPollution(Canvas c, int w, int h, Paint p, double sunAlt) {
+        if (sunAlt > -5) return; // النهار: لا يظهر
+        double dark = Math.min(1.0, (-sunAlt - 5) / 13.0);
+        int alpha = (int)(45 * dark); // خفيف — لا يطغى على السماء
+
+        // توهج برتقالي/أصفر في الجزء السفلي (ضوء المدينة)
+        p.setShader(new LinearGradient(0, h * 0.72f, 0, h,
+            new int[]{ Color.argb(0, 255, 140, 30),
+                       Color.argb(alpha / 2, 255, 120, 20),
+                       Color.argb(alpha, 255, 100, 10) },
+            null, Shader.TileMode.CLAMP));
+        c.drawRect(0, h * 0.72f, w, h, p);
+        p.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 19. خط الأفق
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawHorizonLine(Canvas c, int w, int h, Paint p, double sunAlt) {
+        float horizonY = altToY(0, h);
+        if (horizonY > h || horizonY < 0) return;
+
+        // ضبابية ناعمة أسفل الأفق مباشرة
+        float hazeH = h * 0.06f;
+        if (sunAlt > -6) {
+            int hazeAlpha = (int)(40 * Math.min(1, (sunAlt + 6) / 12.0));
+            p.setShader(new LinearGradient(0, horizonY - hazeH * 0.5f, 0, horizonY + hazeH,
+                new int[]{ Color.argb(0, 190, 210, 230),
+                           Color.argb(hazeAlpha, 190, 210, 230),
+                           Color.argb(hazeAlpha / 2, 180, 200, 220) },
+                null, Shader.TileMode.CLAMP));
+            c.drawRect(0, horizonY - hazeH * 0.5f, w, horizonY + hazeH, p);
+            p.setShader(null);
+        }
+
+        // خط الأفق نفسه — خافت
+        Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        linePaint.setStyle(Paint.Style.STROKE);
+        if (sunAlt > 2) {
+            linePaint.setColor(Color.argb(60, 200, 220, 255));
+        } else if (sunAlt > -4) {
+            linePaint.setColor(Color.argb(50, 255, 200, 150));
+        } else {
+            linePaint.setColor(Color.argb(30, 100, 130, 180));
+        }
+        linePaint.setStrokeWidth(0.8f);
+        c.drawLine(0, horizonY, w, horizonY, linePaint);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 20. حواف دائرية
+    // ═══════════════════════════════════════════════════════════════════════
     private static void applyRoundedCorners(Bitmap bmp, int w, int h) {
         Bitmap mask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas mc   = new Canvas(mask);
         Paint  mp   = new Paint(Paint.ANTI_ALIAS_FLAG);
         mp.setColor(0xFFFFFFFF);
-        float rad = w * 0.085f;
+        float rad = w * 0.082f;
         mc.drawRoundRect(new RectF(0, 0, w, h), rad, rad, mp);
 
         Paint xfer = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -572,18 +1209,26 @@ public final class SkyBitmapRenderer {
         mask.recycle();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
     // الحسابات الفلكية
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
 
     static double julianDate(long millis) {
         return millis / 86400000.0 + 2440587.5;
     }
 
-    /** موقع الشمس بالدرجات [altitude, azimuth] — USNO Simplified */
+    /** تصحيح الانكسار الجوي (Bennett 1982) بالدرجات */
+    static double refractionCorrection(double altDeg) {
+        if (altDeg > 85) return 0;
+        if (altDeg < 0.5) return 0.57;
+        double tanA = Math.tan(Math.toRadians(altDeg));
+        return (1.02 / (60.0 * tanA));
+    }
+
+    /** موقع الشمس [altitude, azimuth] — USNO Simplified */
     static double[] solarPosition(double jd, double lat, double lng) {
         double n  = jd - 2451545.0;
-        double L  = normDeg(280.46   + 0.9856474 * n);
+        double L  = normDeg(280.46 + 0.9856474 * n);
         double g  = Math.toRadians(normDeg(357.528 + 0.9856003 * n));
         double lam = Math.toRadians(L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
         double eps = Math.toRadians(23.439 - 0.0000004 * n);
@@ -595,8 +1240,8 @@ public final class SkyBitmapRenderer {
         double lst  = normH(gmst + lng / 15.0);
         double ha   = Math.toRadians((lst - Math.toDegrees(ra) / 15.0) * 15.0);
 
-        double lr = Math.toRadians(lat);
-        double alt = Math.asin( Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
+        double lr  = Math.toRadians(lat);
+        double alt = Math.asin(Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
         double az  = Math.atan2(-Math.cos(dec)*Math.sin(ha),
                                  Math.sin(lr)*Math.cos(dec)*Math.cos(ha) - Math.cos(lr)*Math.sin(dec));
         return new double[]{ Math.toDegrees(alt), normDeg(Math.toDegrees(az) + 180) };
@@ -614,20 +1259,20 @@ public final class SkyBitmapRenderer {
         double bet = Math.toRadians(5.128 * Math.sin(F));
 
         double ra  = Math.atan2(Math.sin(lam)*Math.cos(eps) - Math.tan(bet)*Math.sin(eps), Math.cos(lam));
-        double dec = Math.asin( Math.sin(bet)*Math.cos(eps) + Math.cos(bet)*Math.sin(eps)*Math.sin(lam));
+        double dec = Math.asin(Math.sin(bet)*Math.cos(eps) + Math.cos(bet)*Math.sin(eps)*Math.sin(lam));
 
         double gmst = greenwichSiderealTime(jd);
         double lst  = normH(gmst + lng / 15.0);
         double ha   = Math.toRadians((lst - Math.toDegrees(ra) / 15.0) * 15.0);
 
         double lr  = Math.toRadians(lat);
-        double alt = Math.asin( Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
+        double alt = Math.asin(Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
         double az  = Math.atan2(-Math.cos(dec)*Math.sin(ha),
                                  Math.sin(lr)*Math.cos(dec)*Math.cos(ha) - Math.cos(lr)*Math.sin(dec));
         return new double[]{ Math.toDegrees(alt), normDeg(Math.toDegrees(az) + 180) };
     }
 
-    /** طور القمر [0=جديد .. 0.5=بدر .. 1=جديد] */
+    /** طور القمر [0=جديد .. 0.5=بدر] */
     static double moonPhase(double jd) {
         double d = (jd - 2451550.26) % 29.530588853;
         return d < 0 ? (d + 29.530588853) / 29.530588853 : d / 29.530588853;
@@ -637,24 +1282,35 @@ public final class SkyBitmapRenderer {
         return (1.0 - Math.cos(phase * 2 * Math.PI)) / 2.0;
     }
 
-    /** موقع كوكب تقريبي [altitude, azimuth] من عناصره المدارية المبسّطة */
+    /**
+     * موقع كوكب بالعناصر المدارية المبسّطة
+     * @param L0   طول الكوكب الوسطى J2000.0 (درجة)
+     * @param rate معدل الحركة اليومية (درجة/يوم)
+     * @param Ma   نصف المحور الأكبر (AU) للتصحيح
+     * @param sma  نصف المحور الأكبر (للإشارة)
+     */
     static double[] planetPosition(double jd, double lat, double lng,
-                                   double L0, double rate, double sma) {
+                                   double L0, double rate, double Ma, double sma) {
         double n   = jd - 2451545.0;
         double Lp  = Math.toRadians(normDeg(L0 + rate * n));
-        double Ls  = Math.toRadians(normDeg(280.46 + 0.9856474 * n));
+        double Ls  = Math.toRadians(normDeg(280.46 + 0.9856474 * n)); // الشمس
         double eps = Math.toRadians(23.439 - 0.0000004 * n);
 
-        double lam = Lp + Math.sin(Lp - Ls) * 0.5 / sma;
-        double ra  = Math.atan2(Math.sin(lam) * Math.cos(eps), Math.cos(lam));
-        double dec = Math.asin(Math.sin(eps) * Math.sin(lam));
+        // تصحيح بسيط بحساب زاوية المرحلة
+        double correction = sma < 1.0
+            ? Math.sin(Lp - Ls) * 0.38 / sma
+            : Math.sin(Lp - Ls) * 0.55 / sma;
+        double lam = Lp + correction;
+
+        double ra  = Math.atan2(Math.sin(lam)*Math.cos(eps), Math.cos(lam));
+        double dec = Math.asin(Math.sin(eps)*Math.sin(lam));
 
         double gmst = greenwichSiderealTime(jd);
         double lst  = normH(gmst + lng / 15.0);
         double ha   = Math.toRadians((lst - Math.toDegrees(ra) / 15.0) * 15.0);
 
         double lr  = Math.toRadians(lat);
-        double alt = Math.asin( Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
+        double alt = Math.asin(Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
         double az  = Math.atan2(-Math.cos(dec)*Math.sin(ha),
                                  Math.sin(lr)*Math.cos(dec)*Math.cos(ha) - Math.cos(lr)*Math.sin(dec));
         return new double[]{ Math.toDegrees(alt), normDeg(Math.toDegrees(az) + 180) };
@@ -667,68 +1323,63 @@ public final class SkyBitmapRenderer {
         double dec = Math.toRadians(decDeg);
         double lr  = Math.toRadians(lat);
 
-        double alt = Math.asin( Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
+        double alt = Math.asin(Math.sin(lr)*Math.sin(dec) + Math.cos(lr)*Math.cos(dec)*Math.cos(ha));
         double az  = Math.atan2(-Math.cos(dec)*Math.sin(ha),
                                  Math.sin(lr)*Math.cos(dec)*Math.cos(ha) - Math.cos(lr)*Math.sin(dec));
         return new double[]{ Math.toDegrees(alt), normDeg(Math.toDegrees(az) + 180) };
     }
 
-    /** وقت رصد غرينتش النجمي بالساعات — USNO IAU 1982 */
+    /** وقت رصد غرينتش النجمي بالساعات — IAU 1982 */
     static double greenwichSiderealTime(double jd) {
-        double T    = (jd - 2451545.0) / 36525.0;
-        // ساعات UT منذ منتصف الليل: (jd + 0.5) mod 1.0 يعطي كسر اليوم من منتصف الليل
-        // (jd % 1) كان خاطئاً — يحسب من ظهر JD أي خطأ بـ 12 ساعة
-        double ut   = ((jd + 0.5) % 1.0) * 24.0;
-        double gmst = 6.697374558 + 2400.0513369 * T + 0.0000258622 * T * T + ut * 1.00273791;
+        double T  = (jd - 2451545.0) / 36525.0;
+        double ut = ((jd + 0.5) % 1.0) * 24.0 * 1.00273791;
+        double gmst = 6.697374558 + 2400.0513369 * T + 0.0000258622 * T * T + ut;
         return normH(gmst);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
     // تحويل إحداثيات السماء ← الشاشة
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
 
-    /** الاتجاه (0°=N..360°) → X على عرض الشاشة (يعرض 240° حول الجنوب) */
+    /** الاتجاه → X (يعرض 240° حول الجنوب) */
     static float azToX(double az, int w) {
         double rel = az - 60;
-        if (rel < 0) rel += 360;
-        if (rel > 300) rel = 300;
+        if (rel < 0)   rel += 360;
+        if (rel > 300) rel  = 300;
         return (float)(rel / 300.0 * w);
     }
 
-    /** الارتفاع (0°=أفق .. 90°=سمت) → Y على ارتفاع الشاشة */
+    /** الارتفاع → Y */
     static float altToY(double alt, int h) {
-        return h * (1f - (float)(alt / 90.0) * 0.88f);
+        return h * (1f - (float)(alt / 90.0) * 0.87f);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // فولباك: موقع شمس تقريبي من أوقات الصلاة (عند غياب GPS)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    // Fallback عند غياب GPS
+    // ═══════════════════════════════════════════════════════════════════════
     private static double fallbackSunAlt(long now, long fajrMs, long sunriseMs,
                                          long dhuhrMs, long asrMs, long maghribMs, long ishaMs) {
-        // لو أي وقتين متساويان أو أوقات الصلاة غير متاحة — نعود لليل
         if (fajrMs <= 0 || sunriseMs <= fajrMs || dhuhrMs <= sunriseMs
                 || asrMs <= dhuhrMs || maghribMs <= asrMs || ishaMs <= maghribMs)
             return -18;
-        long n = now;
-        if (n < fajrMs)    return -20;
-        if (n < sunriseMs) return -8  + 8  * (n - fajrMs)    / (double)(sunriseMs - fajrMs);
-        if (n < dhuhrMs)   return  0  + 60 * (n - sunriseMs) / (double)(dhuhrMs   - sunriseMs);
-        if (n < asrMs)     return 60  - 20 * (n - dhuhrMs)   / (double)(asrMs     - dhuhrMs);
-        if (n < maghribMs) return 40  - 40 * (n - asrMs)     / (double)(maghribMs - asrMs);
-        if (n < ishaMs)    return  0  - 12 * (n - maghribMs) / (double)(ishaMs    - maghribMs);
+        if (now < fajrMs)    return -20;
+        if (now < sunriseMs) return -8   + 8  * (now - fajrMs)    / (double)(sunriseMs - fajrMs);
+        if (now < dhuhrMs)   return  0   + 60 * (now - sunriseMs) / (double)(dhuhrMs   - sunriseMs);
+        if (now < asrMs)     return  60  - 20 * (now - dhuhrMs)   / (double)(asrMs     - dhuhrMs);
+        if (now < maghribMs) return  40  - 40 * (now - asrMs)     / (double)(maghribMs - asrMs);
+        if (now < ishaMs)    return   0  - 12 * (now - maghribMs) / (double)(ishaMs    - maghribMs);
         return -18;
     }
 
     private static double fallbackSunAz(long now, long sunriseMs, long maghribMs) {
         if (now <= sunriseMs) return 90;
         if (now >= maghribMs) return 270;
-        double t = (now - sunriseMs) / (double)(maghribMs - sunriseMs);
-        return 90 + 180 * t;
+        return 90 + 180 * (now - sunriseMs) / (double)(maghribMs - sunriseMs);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
     // دوال مساعدة
-    // ─────────────────────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
     static double normDeg(double d) { d %= 360; return d < 0 ? d + 360 : d; }
     static double normH  (double h) { h %=  24; return h < 0 ? h +  24 : h; }
 
