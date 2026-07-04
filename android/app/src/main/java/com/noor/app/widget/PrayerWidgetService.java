@@ -257,8 +257,10 @@ public class PrayerWidgetService extends Service {
 
                 /* ── سماء حية: حسابات فلكية حقيقية بناءً على GPS ── */
                 {
-                    int bmpW = Math.min((int)(minW * density), 600);
-                    int bmpH = Math.min((int)(minH * density), 400);
+                    // أقصى دقة مرفوعة من 600×400 لتفادي التمديد الضبابي — بحد أقصى آمن
+                    // بالنسبة لحجم رسائل الـ Binder بين الخدمة والويدجت (RemoteViews)
+                    int bmpW = Math.min((int)(minW * density), 840);
+                    int bmpH = Math.min((int)(minH * density), 560);
                     try {
                         long fajrMs    = state != null ? state.allTimesMs[0] : 0;
                         long sunriseMs = state != null ? state.allTimesMs[1] : 0;

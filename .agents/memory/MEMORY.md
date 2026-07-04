@@ -8,3 +8,4 @@
 - [Sky renderer 2025 overhaul](sky-renderer-overhaul.md) — rainbow removed forever; drawMieHaze takes sunX param; skyColors returns int[6]; drawOrganicCloud uses saveLayer+flatBase+sizeFalloff; 5 new functions added.
 - [Sky renderer weather system](sky-renderer-weather.md) — seasonal weather state machine; wsCloudMult/wsFogMult/wsStormMult/wsOvercast drive all renderer multipliers; 9 building types (0-8); drawRooftopDetails+drawGlassCurtainSheen added.
 - [Widget service throttling](widget-service-throttling.md) — full sky re-render must stay throttled (~15s) separate from 1s countdown ticks; Android 14+ dataSync FGS needs onTimeout() handler or it dies silently after ~6h.
+- [Sky renderer photorealism pass](sky-renderer-photorealism-pass.md) — 2D-only widget: photorealism via layered gradient/noise-dab tricks (window grids, dome sheen, mountain ridge light, grain), not geometry rewrites.

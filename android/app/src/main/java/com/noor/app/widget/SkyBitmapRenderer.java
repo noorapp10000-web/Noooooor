@@ -1,6 +1,7 @@
 package com.noor.app.widget;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -489,6 +490,9 @@ public final class SkyBitmapRenderer {
         // 38. انعكاس المدينة في الماء
         drawWaterReflection(c, w, h, p, cSunAlt, now);
 
+        // 39.5. حبيبات فيلم ناعمة — تكسر أي "خطوط" بين ألوان التدرجات (anti-banding)
+        drawFilmGrain(c, w, h);
+
         // 39. حواف دائرية
         applyRoundedCorners(bmp, w, h);
 
@@ -602,18 +606,23 @@ public final class SkyBitmapRenderer {
         if (sunAlt < -6) return;
         float intense = (float) Math.min(1, (sunAlt + 6) / 20.0);
         int alpha = (int)(60 * intense);
-        p.setShader(new LinearGradient(0, h * 0.65f, 0, h,
-            new int[]{ Color.argb(0, 180, 200, 220), Color.argb(alpha, 180, 200, 220) },
-            null, Shader.TileMode.CLAMP));
-        c.drawRect(0, h * 0.65f, w, h, p);
+        // تدرّج ناعم متعدد المراحل بدل مرحلتين فقط — يقلل التبنيد (banding) قرب الأفق
+        p.setShader(new LinearGradient(0, h * 0.55f, 0, h,
+            new int[]{ Color.argb(0, 180, 200, 220),
+                       Color.argb(alpha / 6, 182, 200, 218),
+                       Color.argb(alpha / 2, 184, 199, 216),
+                       Color.argb(alpha, 186, 198, 214) },
+            new float[]{ 0f, 0.35f, 0.68f, 1f }, Shader.TileMode.CLAMP));
+        c.drawRect(0, h * 0.55f, w, h, p);
         p.setShader(null);
         int sunAlpha = (int)(alpha * 0.75f);
         if (sunAlpha > 4) {
             p.setShader(new RadialGradient(sunX, h, w * 0.72f,
                 new int[]{ Color.argb(sunAlpha, 225, 210, 185),
-                           Color.argb(sunAlpha / 2, 205, 198, 180),
+                           Color.argb((int)(sunAlpha * 0.55f), 210, 200, 182),
+                           Color.argb(sunAlpha / 4, 195, 188, 172),
                            Color.argb(0, 180, 176, 165) },
-                null, Shader.TileMode.CLAMP));
+                new float[]{ 0f, 0.4f, 0.72f, 1f }, Shader.TileMode.CLAMP));
             c.drawRect(0, h * 0.50f, w, h, p);
             p.setShader(null);
         }
@@ -1636,10 +1645,26 @@ public final class SkyBitmapRenderer {
             { 0.18f, -0.52f, 0.020f, 0 }, // Moretus
             {-0.45f, -0.38f, 0.022f, 0 }, // Schickard
             { 0.55f, -0.15f, 0.018f, 0 }, // Petavius
+            // ══ فوهات إضافية دقيقة — لكثافة سطحية واقعية أعلى ══
+            { 0.62f,  0.20f, 0.016f, 0 }, // Furnerius
+            {-0.62f, -0.05f, 0.019f, 0 }, // Grimaldi-west
+            { 0.02f,  0.08f, 0.014f, 0 }, // Sinus Medii micro
+            {-0.22f,  0.55f, 0.017f, 0 }, // Byrgius
+            { 0.48f,  0.05f, 0.013f, 0 }, // Taruntius
+            {-0.05f, -0.20f, 0.011f, 0 }, // Manilius
+            { 0.28f, -0.48f, 0.015f, 1 }, // Bailly-ish rayed
+            {-0.38f,  0.42f, 0.013f, 0 }, // Wichmann
+            { 0.15f,  0.20f, 0.012f, 0 }, // Sabine
+            {-0.55f, -0.25f, 0.010f, 0 }, // Cavalerius
+            { 0.58f, -0.32f, 0.012f, 0 }, // Furnerius-B
+            {-0.02f,  0.62f, 0.014f, 0 }, // Vitello
+            { 0.42f,  0.42f, 0.011f, 0 }, // Colombo
+            {-0.28f, -0.05f, 0.013f, 0 }, // Reinhold
+            { 0.08f, -0.60f, 0.010f, 0 }, // Casatus
         };
         Paint cp = new Paint(Paint.ANTI_ALIAS_FLAG);
         cp.setStyle(Paint.Style.FILL);
-        int alpha = (int)(48 * ill);
+        int alpha = (int)(58 * ill);
         if (alpha < 4) return;
 
         float shadowDX = -(float)Math.cos(sunAngle) * 0.32f;
@@ -1867,6 +1892,9 @@ public final class SkyBitmapRenderer {
         c.drawOval(new RectF(x - r, yy - ry, x + r, yy + ry), p);
         p.setShader(null);
 
+        // نسيج الحبيبات الشمسية Granulation — خلايا حمل حراري صغيرة على السطح
+        if (r > 6) drawSunGranulation(c, x, yy, r, ry, now);
+
         // بقع شمسية Sunspots — تظهر دائماً (عددها يتغير ببطء)
         if (sunAlt > 5) {
             long sunspotSeed = now / (86400000L * 11L); // دورة 11 يوم
@@ -2051,6 +2079,35 @@ public final class SkyBitmapRenderer {
             c.drawPath(flarePath, flarePaint);
         }
         flarePaint.setShader(null);
+    }
+
+    /** نسيج حبيبات الحمل الحراري على سطح الشمس — خلايا صغيرة متفاوتة السطوع */
+    private static void drawSunGranulation(Canvas c, float x, float y, float r, float ry, long now) {
+        long seed = now / 4000L; // تحديث بطيء لملمس حي
+        Random rnd = new Random(seed);
+        int saved = c.saveLayer(new RectF(x - r, y - ry, x + r, y + ry), null);
+        Path clip = new Path();
+        clip.addOval(new RectF(x - r, y - ry, x + r, y + ry), Path.Direction.CW);
+        c.clipPath(clip);
+        Paint gp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        gp.setStyle(Paint.Style.FILL);
+        int cellCount = 46;
+        for (int i = 0; i < cellCount; i++) {
+            double ang = rnd.nextDouble() * 2 * Math.PI;
+            double dist = Math.sqrt(rnd.nextDouble()) * 0.88;
+            float cx = x + (float)(Math.cos(ang) * dist * r);
+            float cy = y + (float)(Math.sin(ang) * dist * ry);
+            float cr = r * (0.055f + rnd.nextFloat() * 0.05f);
+            boolean bright = rnd.nextBoolean();
+            int a = 22 + rnd.nextInt(26);
+            int col = bright ? Color.argb(a, 255, 244, 190) : Color.argb(a, 200, 90, 20);
+            gp.setShader(new RadialGradient(cx, cy, cr,
+                new int[]{ col, Color.argb(0, 255, 200, 100) },
+                null, Shader.TileMode.CLAMP));
+            c.drawCircle(cx, cy, cr, gp);
+        }
+        gp.setShader(null);
+        c.restoreToCount(saved);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2626,6 +2683,42 @@ public final class SkyBitmapRenderer {
     // ═══════════════════════════════════════════════════════════════════════
     // حواف دائرية
     // ═══════════════════════════════════════════════════════════════════════
+    private static Bitmap sGrainLight;
+    private static Bitmap sGrainDark;
+
+    /**
+     * حبيبات فيلم دقيقة جداً (Photographic Film Grain) — نمط عشوائي ثابت
+     * يُطبَّق بشفافية منخفضة جداً فوق كل شيء لتفكيك أي تدرّج لوني حاد (banding)
+     * وإعطاء ملمس واقعي شبيه بالصور الفوتوغرافية بدل السطوح المسطحة الرقمية.
+     */
+    private static void drawFilmGrain(Canvas c, int w, int h) {
+        int nSize = 96;
+        if (sGrainLight == null || sGrainDark == null) {
+            sGrainLight = Bitmap.createBitmap(nSize, nSize, Bitmap.Config.ALPHA_8);
+            sGrainDark  = Bitmap.createBitmap(nSize, nSize, Bitmap.Config.ALPHA_8);
+            Random rndL = new Random(90210L);
+            Random rndD = new Random(13579L);
+            int[] pxL = new int[nSize * nSize];
+            int[] pxD = new int[nSize * nSize];
+            for (int i = 0; i < pxL.length; i++) {
+                pxL[i] = rndL.nextInt(46) << 24;
+                pxD[i] = rndD.nextInt(46) << 24;
+            }
+            sGrainLight.setPixels(pxL, 0, nSize, 0, 0, nSize, nSize);
+            sGrainDark.setPixels(pxD, 0, nSize, 0, 0, nSize, nSize);
+        }
+        Paint gp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        BitmapShader lightShader = new BitmapShader(sGrainLight, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        gp.setShader(lightShader);
+        gp.setColor(0xFFFFFFFF);
+        c.drawRect(0, 0, w, h, gp);
+        BitmapShader darkShader = new BitmapShader(sGrainDark, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        gp.setShader(darkShader);
+        gp.setColor(0xFF000000);
+        c.drawRect(0, 0, w, h, gp);
+        gp.setShader(null);
+    }
+
     private static void applyRoundedCorners(Bitmap bmp, int w, int h) {
         Bitmap mask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas mc   = new Canvas(mask);
@@ -3408,6 +3501,23 @@ public final class SkyBitmapRenderer {
                 new float[]{ 0f, 0.5f, 1f }, Shader.TileMode.CLAMP));
             c.drawPath(tPath, towerPaint);
             towerPaint.setShader(null);
+
+            // بريق القبة الذهبي — يعطي إحساس معدني/خزفي حقيقي بدل السطح المسطح
+            if (typ == 10 && sunAlt > -6) {
+                float domeCx = tx + tw * 0.5f;
+                float domeCy = tTop + th * 0.16f;
+                float domeR = tw * 0.22f;
+                float domeLight = (float) Math.min(1.0, (sunAlt + 6) / 20.0);
+                Paint domeP = new Paint(Paint.ANTI_ALIAS_FLAG);
+                domeP.setShader(new RadialGradient(
+                    domeCx - domeR * 0.35f, domeCy - domeR * 0.4f, domeR * 1.4f,
+                    new int[]{ Color.argb((int)(150 * domeLight), 255, 235, 180),
+                               Color.argb((int)(60 * domeLight), 220, 170, 90),
+                               Color.argb(0, 180, 130, 60) },
+                    null, Shader.TileMode.CLAMP));
+                c.drawCircle(domeCx, domeCy, domeR, domeP);
+                domeP.setShader(null);
+            }
         }
 
         // أشجار موسمية
@@ -3494,6 +3604,11 @@ public final class SkyBitmapRenderer {
                 }
                 flPaint.setShader(null);
             }
+            // شبكة نوافذ نهارية حقيقية بأعمدة وصفوف وانعكاسات زجاجية متفاوتة
+            int[] skyC = skyColors(sunAlt);
+            int skyTopColor = skyC[skyC.length - 1];
+            int[] skyTopRgb = { Color.red(skyTopColor), Color.green(skyTopColor), Color.blue(skyTopColor) };
+            drawDaytimeWindowGrid(c, w, h, baseY, towers, sunAlt, skyTopRgb);
         }
 
         // ══ انعكاس شمسي على الجانب المواجه للشمس (glass buildings) ══
@@ -4161,6 +4276,59 @@ public final class SkyBitmapRenderer {
         }
     }
 
+    /**
+     * شبكة نوافذ نهارية حقيقية — أعمدة وصفوف فعلية بدل خطوط الطوابق فقط.
+     * كل نافذة لها انعكاس زجاجي مختلف قليلاً (Sky reflection) يعطي ملمس معماري حقيقي
+     * بدل السطح المسطح، بالإضافة لإطارات (mullions) داكنة تفصل بين الوحدات.
+     */
+    private static void drawDaytimeWindowGrid(Canvas c, int w, int h, float baseY,
+                                              float[][] towers, double sunAlt, int[] skyTop) {
+        if (sunAlt < -2) return;
+        float dayT = (float) Math.min(1.0, (sunAlt + 2) / 12.0);
+        Random rnd = new Random(24680L);
+        Paint wp = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Paint mullion = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mullion.setStyle(Paint.Style.STROKE);
+        mullion.setStrokeWidth(0.6f);
+
+        for (float[] t : towers) {
+            int typ = (int) t[3];
+            if (typ == 9 || typ == 10 || t[2] < 0.05f) continue;
+            float tx = t[0] * w, tw = t[1] * w, th = t[2] * h;
+            float top = baseY - th;
+            boolean isGlass = (typ == 1 || typ == 6 || typ == 7);
+
+            float wW = Math.max(2.4f, tw * (isGlass ? 0.16f : 0.11f));
+            float wH = Math.max(2.0f, h * (isGlass ? 0.024f : 0.018f));
+            float gapX = tw * (isGlass ? 0.045f : 0.07f);
+            float gapY = h * 0.010f;
+            int cols = Math.max(1, (int)(tw / (wW + gapX)));
+            int rows = Math.max(1, (int)(th * 0.85f / (wH + gapY)));
+            float startX = tx + (tw - cols * (wW + gapX) + gapX) / 2f;
+            float startY = baseY - h * 0.028f;
+
+            mullion.setColor(Color.argb((int)(dayT * (isGlass ? 55 : 35)), skyTop[0]/3, skyTop[1]/3, skyTop[2]/3));
+
+            for (int row = 0; row < rows; row++) {
+                float wy = startY - row * (wH + gapY);
+                if (wy < top + th * 0.06f) break;
+                for (int col = 0; col < cols; col++) {
+                    float wx = startX + col * (wW + gapX);
+                    float pane = rnd.nextFloat();
+                    // انعكاس السماء يختلف من نافذة لأخرى — يعطي ملمس زجاجي واقعي
+                    int rR = (int)(skyTop[0] * (0.55f + pane * 0.5f));
+                    int rG = (int)(skyTop[1] * (0.55f + pane * 0.5f));
+                    int rB = (int)(skyTop[2] * (0.55f + pane * 0.5f));
+                    int baseAlpha = isGlass ? (int)(dayT * (60 + pane * 70)) : (int)(dayT * (18 + pane * 20));
+                    if (!isGlass) { rR = 40 + (int)(pane*20); rG = 42 + (int)(pane*20); rB = 48 + (int)(pane*22); }
+                    wp.setColor(Color.argb(baseAlpha, Math.min(255,rR), Math.min(255,rG), Math.min(255,rB)));
+                    c.drawRect(wx, wy - wH, wx + wW, wy, wp);
+                    if (isGlass) c.drawRect(wx, wy - wH, wx + wW, wy, mullion);
+                }
+            }
+        }
+    }
+
     /** أضواء الشوارع — صوديوم (أصفر/برتقالي) مقابل LED (أبيض/بارد) مقابل هاليد */
     private static void drawCityLights(Canvas c, int w, int h, Paint p,
                                        float baseY, double sunAlt, long now) {
@@ -4537,8 +4705,40 @@ public final class SkyBitmapRenderer {
             mPath.lineTo(0, h);
             mPath.close();
 
-            mp.setColor(Color.argb(220, col[0], col[1], col[2]));
+            mp.setShader(new LinearGradient(0, yBase - amp, 0, yBase + h * 0.02f,
+                new int[]{ Color.argb(220, Math.min(255, col[0] + 18), Math.min(255, col[1] + 14), Math.min(255, col[2] + 10)),
+                           Color.argb(220, col[0], col[1], col[2]) },
+                new float[]{ 0f, 1f }, Shader.TileMode.CLAMP));
             c.drawPath(mPath, mp);
+            mp.setShader(null);
+
+            // إضاءة حافة القمم المواجهة للشمس — تعطي إحساس ارتفاع حقيقي
+            if (sunAlt > -4) {
+                float ridgeLight = (float) Math.min(1.0, (sunAlt + 4) / 30.0);
+                Paint ridgeP = new Paint(Paint.ANTI_ALIAS_FLAG);
+                ridgeP.setStyle(Paint.Style.STROKE);
+                ridgeP.setStrokeWidth(layer == 2 ? 1.4f : 1.0f);
+                ridgeP.setColor(Color.argb((int)(90 * ridgeLight), 255, 235, 200));
+                c.drawPath(mPath, ridgeP);
+            }
+
+            // نسيج رملي/صخري خفيف على الطبقة القريبة فقط
+            if (layer == layerCount - 1) {
+                Random txRnd = new Random(seed + 5);
+                Paint txP = new Paint(Paint.ANTI_ALIAS_FLAG);
+                int grainCount = (cQuality == 0) ? 20 : 40;
+                for (int i = 0; i < grainCount; i++) {
+                    float gx = txRnd.nextFloat() * w;
+                    float gy = yBase + txRnd.nextFloat() * (h - yBase) * 0.7f;
+                    float gr = 0.8f + txRnd.nextFloat() * 1.6f;
+                    boolean lightSpeck = txRnd.nextBoolean();
+                    int ga = 18 + txRnd.nextInt(20);
+                    txP.setColor(lightSpeck
+                        ? Color.argb(ga, Math.min(255, col[0] + 40), Math.min(255, col[1] + 35), Math.min(255, col[2] + 30))
+                        : Color.argb(ga, Math.max(0, col[0] - 20), Math.max(0, col[1] - 20), Math.max(0, col[2] - 18)));
+                    c.drawCircle(gx, gy, gr, txP);
+                }
+            }
         }
     }
 
