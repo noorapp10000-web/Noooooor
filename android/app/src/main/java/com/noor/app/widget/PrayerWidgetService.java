@@ -39,6 +39,48 @@ import java.util.Date;
 
 public class PrayerWidgetService extends Service {
 
+    public static final String ACTION_SIMULATE_DAY = "com.noor.app.widget.ACTION_SIMULATE_DAY";
+
+    /* وضع "معاينة اليوم كامل": يعرض شكل الويدجت من ١٢ص لـ ١١:٥٩م خلال دقيقتين فقط */
+    private static final long SIM_DURATION_MS = 120_000L;      // مدة المعاينة الحقيقية
+    private static final long SIM_DAY_MS      = 24 * 60 * 60_000L; // يوم كامل (٢٤ ساعة) بالميلي ثانية
+    private static final long SIM_TICK_MS     = 200L;          // معدل تحديث الإطارات أثناء المعاينة
+
+    private volatile boolean simulating       = false;
+    private long             simStartRealMs   = 0L;
+    private long             simDayStartMs    = 0L;
+
+    private final Runnable simTickRunnable = new Runnable() {
+        @Override public void run() {
+            if (!simulating) return;
+            long elapsed = System.currentTimeMillis() - simStartRealMs;
+            if (elapsed >= SIM_DURATION_MS) {
+                simulating = false;
+                lastFullUpdateMs = 0L;
+                performUpdate();
+                handler.post(tickRunnable);
+                return;
+            }
+            long simNow = simDayStartMs + (elapsed * SIM_DAY_MS) / SIM_DURATION_MS;
+            performUpdate(simNow);
+            handler.postDelayed(this, SIM_TICK_MS);
+        }
+    };
+
+    private void startDaySimulation() {
+        handler.removeCallbacks(tickRunnable);
+        handler.removeCallbacks(simTickRunnable);
+        simulating     = true;
+        simStartRealMs = System.currentTimeMillis();
+        Calendar midnight = Calendar.getInstance();
+        midnight.set(Calendar.HOUR_OF_DAY, 0);
+        midnight.set(Calendar.MINUTE, 0);
+        midnight.set(Calendar.SECOND, 0);
+        midnight.set(Calendar.MILLISECOND, 0);
+        simDayStartMs = midnight.getTimeInMillis();
+        handler.post(simTickRunnable);
+    }
+
     public static final String PREFS_NAME       = "NoorWidget";
     public static final String KEY_LAT          = "lat";
     public static final String KEY_LNG          = "lng";
@@ -126,10 +168,18 @@ public class PrayerWidgetService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        boolean simulateRequested = intent != null && ACTION_SIMULATE_DAY.equals(intent.getAction());
+
         if (!isRunning) {
             isRunning = true;
             startForeground(NOTIF_ID, buildNotification("نُور", "عداد الصلاة يعمل في الخلفية"));
-            handler.post(tickRunnable);
+            if (simulateRequested) {
+                startDaySimulation();
+            } else {
+                handler.post(tickRunnable);
+            }
+        } else if (simulateRequested) {
+            startDaySimulation();
         } else {
             performUpdate();
         }
@@ -202,7 +252,18 @@ public class PrayerWidgetService extends Service {
     }
 
     private void performUpdate() {
-        lastFullUpdateMs = System.currentTimeMillis();
+        performUpdate(0L);
+    }
+
+    /**
+     * @param simNowMs لو أكبر من صفر، بيتم استخدامه كوقت "مُحاكى" بدل الوقت الحقيقي —
+     *                 يُستخدم في وضع "معاينة اليوم كامل" فقط.
+     */
+    private void performUpdate(long simNowMs) {
+        boolean isSim = simNowMs > 0L;
+        long    now   = isSim ? simNowMs : System.currentTimeMillis();
+
+        if (!isSim) lastFullUpdateMs = now;
 
         AppWidgetManager awm = AppWidgetManager.getInstance(this);
         int[] ids = awm.getAppWidgetIds(new ComponentName(this, PrayerWidget.class));
@@ -216,12 +277,14 @@ public class PrayerWidgetService extends Service {
 
         String storedHijri = prefs.getString(KEY_HIJRI_DATE, "");
         String hijri = !storedHijri.isEmpty() ? storedHijri : getHijriDate();
-        int dayPct   = getDayPercent();
+        int dayPct   = isSim
+            ? (int)(((now - simDayStartMs) * 100L) / SIM_DAY_MS)
+            : getDayPercent();
 
-        PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng) : null;
-        cachedState = state;
+        PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng, now) : null;
+        if (!isSim) cachedState = state;
 
-        if (state != null) {
+        if (state != null && !isSim) {
             String prevCached = prefs.getString(KEY_CACHE_NEXT, "");
             if (!state.nextName.equals(prevCached)) {
                 prefs.edit()
@@ -272,7 +335,8 @@ public class PrayerWidgetService extends Service {
                             lat != Float.MIN_VALUE ? lat : 0.0,
                             lng != Float.MIN_VALUE ? lng : 0.0,
                             fajrMs, sunriseMs, dhuhrMs,
-                            asrMs,  maghribMs, ishaMs
+                            asrMs,  maghribMs, ishaMs,
+                            now
                         );
                         if (sky != null) rv.setImageViewBitmap(R.id.wg_sky_bg, sky);
                     } catch (Exception ignored) {}
@@ -346,7 +410,7 @@ public class PrayerWidgetService extends Service {
                 rv.setViewVisibility(R.id.wg_isha_icon,        View.GONE);
 
                 if (state != null) {
-                    long remaining = state.nextTimeMs - System.currentTimeMillis();
+                    long remaining = state.nextTimeMs - now;
                     if (remaining < 0) remaining = 0;
 
                     int h = (int)(remaining / 3_600_000L);
@@ -444,11 +508,10 @@ public class PrayerWidgetService extends Service {
         rv.setViewVisibility(R.id.wg_hijri_label,        isLarge ? View.VISIBLE : View.GONE);
     }
 
-    private PrayerState getPrayerState(float lat, float lng) {
+    private PrayerState getPrayerState(float lat, float lng, long now) {
         try {
             Coordinates coords = new Coordinates(lat, lng);
             CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
-            long now = System.currentTimeMillis();
 
             DateComponents dc = DateComponents.from(new Date());
             PrayerTimes pt = new PrayerTimes(coords, dc, params);

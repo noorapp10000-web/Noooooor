@@ -253,9 +253,22 @@ public final class SkyBitmapRenderer {
                                 double lat, double lng,
                                 long fajrMs, long sunriseMs, long dhuhrMs,
                                 long asrMs,  long maghribMs, long ishaMs) {
+        return render(w, h, lat, lng, fajrMs, sunriseMs, dhuhrMs, asrMs, maghribMs, ishaMs, 0L);
+    }
+
+    /**
+     * نفس render() لكن مع إمكانية فرض وقت مُحاكى (simulatedNowMs) بدلاً من الوقت الحقيقي —
+     * تُستخدم في وضع "معاينة اليوم كامل" اللي بيعرض شكل الويدجت على مدار الـ 24 ساعة
+     * خلال دقيقتين فقط. لو simulatedNowMs <= 0 بيتم استخدام الوقت الحقيقي كالمعتاد.
+     */
+    public static Bitmap render(int w, int h,
+                                double lat, double lng,
+                                long fajrMs, long sunriseMs, long dhuhrMs,
+                                long asrMs,  long maghribMs, long ishaMs,
+                                long simulatedNowMs) {
         if (w <= 0 || h <= 0) return null;
 
-        long now    = System.currentTimeMillis();
+        long now    = simulatedNowMs > 0 ? simulatedNowMs : System.currentTimeMillis();
         long nowMin = now / 60_000L;
         boolean hasGps = (lat != 0.0 || lng != 0.0);
 

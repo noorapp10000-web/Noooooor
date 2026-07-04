@@ -17,6 +17,7 @@ export interface NoorWidgetPlugin {
   }): Promise<void>;
   setTheme(data: { theme: 'light' | 'dark' }): Promise<void>;
   setUsername(data: { username: string }): Promise<void>;
+  simulateDayPreview(): Promise<void>;
 }
 
 const NoorWidget = registerPlugin<NoorWidgetPlugin>('NoorWidget', {
@@ -24,6 +25,7 @@ const NoorWidget = registerPlugin<NoorWidgetPlugin>('NoorWidget', {
     async setPrayerTimes() {},
     async setTheme() {},
     async setUsername() {},
+    async simulateDayPreview() {},
   } as NoorWidgetPlugin,
 });
 

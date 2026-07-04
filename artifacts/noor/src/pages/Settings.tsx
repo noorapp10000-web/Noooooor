@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, Image, Upload, X, Type, Layers, CheckCircle, RefreshCw, Download, FolderOpen, HardDrive, Bell, BellOff, ShieldCheck, Timer } from 'lucide-react';
 import NoorGuard from '@/lib/guard-bridge';
+import NoorWidget from '@/lib/widget-bridge';
 
 import { motion } from 'framer-motion';
 import { useAppSettings, PRESET_BACKGROUNDS } from '@/contexts/AppSettingsContext';
@@ -573,6 +574,94 @@ function PrayerGuardSection({
   );
 }
 
+function WidgetPreviewSection({
+  sectionBg, borderColor, textColor, subText,
+}: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
+  const isNative = Capacitor.isNativePlatform();
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleStart() {
+    setError(null);
+    setRunning(true);
+    try {
+      await NoorWidget.simulateDayPreview();
+      setTimeout(() => setRunning(false), 120_000);
+    } catch {
+      setRunning(false);
+      setError('تأكد من إضافة الويدجت على الشاشة الرئيسية أولاً');
+    }
+  }
+
+  if (!isNative) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
+        className="rounded-2xl p-4"
+        style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(145deg, #4a6fa5, #2d4a7a)' }}>
+            <Timer className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>معاينة الويدجت</p>
+            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>متاحة على تطبيق الاندرويد فقط</p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
+      className="rounded-2xl p-4 space-y-3"
+      style={{ background: sectionBg, border: `1px solid ${borderColor}` }}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'linear-gradient(145deg, #4a6fa5, #2d4a7a)' }}>
+          <Timer className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>معاينة الويدجت على مدار اليوم</p>
+          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            شاهد شكل الويدجت من ١٢ صباحاً حتى ١١:٥٩ مساءً خلال دقيقتين فقط
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={handleStart}
+        disabled={running}
+        className="w-full flex items-center gap-3 p-3 rounded-xl transition-all active:scale-[0.97] disabled:opacity-70"
+        style={{ background: running ? 'rgba(74,111,165,0.12)' : 'rgba(74,111,165,0.08)', border: `1.5px solid ${running ? '#4a6fa5' : borderColor}` }}
+      >
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'rgba(74,111,165,0.15)' }}>
+          {running
+            ? <RefreshCw className="w-4 h-4 animate-spin" style={{ color: '#4a6fa5' }} />
+            : <Timer className="w-4 h-4" style={{ color: '#4a6fa5' }} />}
+        </div>
+        <div className="text-right flex-1">
+          <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#4a6fa5' }}>
+            {running ? 'جارِ عرض اليوم كامل على الويدجت...' : 'ابدأ معاينة اليوم كامل'}
+          </p>
+          <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            {running ? 'افتح الشاشة الرئيسية لمشاهدة الويدجت' : 'يعرض السماء والعداد لكل ساعات اليوم بالترتيب'}
+          </p>
+        </div>
+      </button>
+
+      {error && (
+        <p className="text-xs text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>{error}</p>
+      )}
+    </motion.div>
+  );
+}
+
 export function Settings() {
   const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
   const dark = theme === 'dark';
@@ -618,6 +707,9 @@ export function Settings() {
 
         {/* Prayer Guard Section */}
         <PrayerGuardSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
+
+        {/* Widget Day Preview */}
+        <WidgetPreviewSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
 
         {/* Font Size */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}

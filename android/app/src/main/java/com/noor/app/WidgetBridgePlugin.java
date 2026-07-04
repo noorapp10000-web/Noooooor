@@ -63,6 +63,35 @@ public class WidgetBridgePlugin extends Plugin {
         call.resolve();
     }
 
+    /**
+     * يبدأ وضع "معاينة اليوم كامل": يعرض شكل الويدجت من ١٢ص لـ ١١:٥٩م خلال دقيقتين فقط.
+     */
+    @PluginMethod
+    public void simulateDayPreview(PluginCall call) {
+        AppWidgetManager awm = AppWidgetManager.getInstance(getContext());
+        int[] ids = awm.getAppWidgetIds(
+            new ComponentName(getContext(), PrayerWidget.class)
+        );
+        if (ids.length == 0) {
+            call.reject("لا يوجد ويدجت مضاف على الشاشة الرئيسية");
+            return;
+        }
+        android.content.Intent intent = new android.content.Intent(
+            getContext(), PrayerWidgetService.class);
+        intent.setAction(PrayerWidgetService.ACTION_SIMULATE_DAY);
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                getContext().startForegroundService(intent);
+            } else {
+                getContext().startService(intent);
+            }
+        } catch (Exception e) {
+            call.reject("تعذّر بدء المعاينة: " + e.getMessage());
+            return;
+        }
+        call.resolve();
+    }
+
     private void triggerWidgetUpdate() {
         AppWidgetManager awm = AppWidgetManager.getInstance(getContext());
         int[] ids = awm.getAppWidgetIds(
