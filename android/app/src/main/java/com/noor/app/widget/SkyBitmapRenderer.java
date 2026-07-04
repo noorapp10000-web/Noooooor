@@ -368,6 +368,9 @@ public final class SkyBitmapRenderer {
         // 01. تدرج السماء (Rayleigh Scattering — 6 stops)
         drawSkyGradient(c, w, h, p, cSunAlt);
 
+        // 01.5. نطاقات الشفق الجوي — مدني/بحري/فلكي (Earth's shadow bands)
+        drawTwilightAtmosphericBands(c, w, h, p, cSunAlt);
+
         // 02. ضباب Mie اتجاهي حول الشمس
         drawMieHaze(c, w, h, p, cSunAlt, sunX);
 
@@ -407,8 +410,8 @@ public final class SkyBitmapRenderer {
         // 14. الثريا كعنقود مميز
         drawPleiades(c, w, h, p, cSunAlt, now);
 
-        // 15. كوكب الزهرة (يظهر في النهار أحياناً)
-        if (cVenusAlt > 0.5) drawPlanet(c, p, cVenusAlt, cVenusAz, w, h, 0xFFDDF4FF, 3.8f, false);
+        // 15. كوكب الزهرة — طور حقيقي (هلال/ربع/محدب) حسب موقعها من الشمس
+        if (cVenusAlt > 0.5) drawVenusWithPhase(c, p, cVenusAlt, cVenusAz, cSunAlt, cSunAz, w, h);
         // 16. كوكب المشتري — مع أحزمة وأقمار
         if (cJupAlt   > 1.5) drawJupiter(c, p, cJupAlt, cJupAz, w, h, now);
         // 17. كوكب المريخ (أحمر مميز)
@@ -603,6 +606,76 @@ public final class SkyBitmapRenderer {
                 lerpColor(0xFF030104, 0xFF070106, t) };
         }
         return new int[]{ 0xFF010105, 0xFF010106, 0xFF020112, 0xFF060110, 0xFF030108, 0xFF020106 };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 01.5. نطاقات الشفق الجوي: مدني / بحري / فلكي
+    // تُبرز الفصل المرئي بين مراحل الشفق الثلاثة — كل نطاق له لونه الجوي المميز
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawTwilightAtmosphericBands(Canvas c, int w, int h, Paint p, double sunAlt) {
+        if (sunAlt > 2 || sunAlt < -20) return;
+
+        // ── نطاق الشفق المدني (Sun: -6° .. 0°) ──
+        // وهج وردي/برتقالي فاتح يمتد من الأفق حتى ~7° ارتفاعاً
+        if (sunAlt > -7 && sunAlt <= 0.5) {
+            float t = (float) Math.max(0, Math.min(1, (sunAlt + 7) / 7.0));
+            float peak = t * (1 - t) * 4;          // أعلى قيمة عند t=0.5
+            int a = (int)(90 * peak);
+            if (a > 5) {
+                float horizY = altToY(0, h);
+                float topY   = altToY(7, h);
+                p.setShader(new LinearGradient(0, topY, 0, horizY,
+                    new int[]{ Color.argb(0,         255, 200, 155),
+                               Color.argb(a * 2 / 3, 255, 170, 115),
+                               Color.argb(a,         255, 145,  85),
+                               Color.argb(a / 2,     230, 100,  45),
+                               Color.argb(0,         180,  55,  10) },
+                    new float[]{ 0f, 0.25f, 0.55f, 0.80f, 1f }, Shader.TileMode.CLAMP));
+                c.drawRect(0, topY, w, horizY + h * 0.012f, p);
+                p.setShader(null);
+            }
+        }
+
+        // ── نطاق الشفق البحري (Sun: -12° .. -4°) ──
+        // نطاق أزرق-بنفسجي بارد يظهر أعلى الأفق — الجو يتدرج من الزرقة للظلام
+        if (sunAlt <= -3 && sunAlt > -13) {
+            float t = (float) Math.max(0, Math.min(1, (sunAlt + 13) / 10.0));
+            float peak = t * (1 - t) * 4;
+            int a = (int)(52 * peak);
+            if (a > 4) {
+                float topY = altToY(10, h);
+                float botY = altToY(-1, h);
+                p.setShader(new LinearGradient(0, topY, 0, botY,
+                    new int[]{ Color.argb(0,         70,  55, 155),
+                               Color.argb(a * 2 / 3, 88,  65, 185),
+                               Color.argb(a,         65,  48, 155),
+                               Color.argb(a / 3,     40,  28, 105),
+                               Color.argb(0,         20,  12,  60) },
+                    new float[]{ 0f, 0.30f, 0.58f, 0.80f, 1f }, Shader.TileMode.CLAMP));
+                c.drawRect(0, topY, w, botY + h * 0.01f, p);
+                p.setShader(null);
+            }
+        }
+
+        // ── نطاق الشفق الفلكي (Sun: -18° .. -10°) ──
+        // رمادي-أزرق خافت جداً يميز الانتقال لليل الكامل
+        if (sunAlt <= -9 && sunAlt > -19) {
+            float t = (float) Math.max(0, Math.min(1, (sunAlt + 19) / 10.0));
+            float peak = t * (1 - t) * 4;
+            int a = (int)(28 * peak);
+            if (a > 3) {
+                float topY = altToY(14, h);
+                float botY = altToY(2, h);
+                p.setShader(new LinearGradient(0, topY, 0, botY,
+                    new int[]{ Color.argb(0,     38,  48, 108),
+                               Color.argb(a,     46,  60, 130),
+                               Color.argb(a / 2, 32,  42,  95),
+                               Color.argb(0,     18,  24,  58) },
+                    new float[]{ 0f, 0.40f, 0.72f, 1f }, Shader.TileMode.CLAMP));
+                c.drawRect(0, topY, w, botY, p);
+                p.setShader(null);
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -826,6 +899,13 @@ public final class SkyBitmapRenderer {
             if (i == 43 && algolMag > 2.8) specClass = 4;
             int starColor = SPECTRAL_COLORS[specClass];
             int sr = Color.red(starColor), sg = Color.green(starColor), sb = Color.blue(starColor);
+            // انزياح طيفي نحو الأحمر قرب الأفق — الغلاف الجوي يمتص الأزرق أكثر (Rayleigh)
+            if (alt < 15.0) {
+                double redT = Math.max(0.0, (15.0 - alt) / 17.0);
+                sr = Math.min(255, sr + (int)(redT * 22));
+                sg = Math.max(0,   sg - (int)(redT *  6));
+                sb = Math.max(0,   sb - (int)(redT * 28));
+            }
 
             int a = (int)(255 * bright);
             float r = isPolaris ? (1.2f + bright * 3.0f) : (0.55f + bright * 2.2f);
@@ -1036,6 +1116,90 @@ public final class SkyBitmapRenderer {
             null, Shader.TileMode.CLAMP));
         c.drawOval(new RectF(x - r * 2.4f, y - r * 0.7f, x + r * 2.4f, y + r * 0.7f), ringPaint);
         ringPaint.setShader(null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // الزهرة — طور حقيقي: هلال / ربع / محدب حسب الاستطالة من الشمس
+    // يُستخدم saveLayer + clipPath لعزل الطور بدقة رياضية
+    // ═══════════════════════════════════════════════════════════════════════
+    private static void drawVenusWithPhase(Canvas c, Paint p,
+                                           double alt, double az,
+                                           double sunAlt, double sunAz,
+                                           int w, int h) {
+        double appAlt = alt + refractionCorrection(alt);
+        float x = azToX(az, w), y = altToY(appAlt, h);
+        if (x < -15 || x > w + 15 || y < -15 || y > h + 15) return;
+        float r = 4.2f;
+
+        // ── زاوية الاستطالة من الشمس (Angular Elongation) ──
+        double cosElong = Math.sin(Math.toRadians(alt)) * Math.sin(Math.toRadians(sunAlt))
+                        + Math.cos(Math.toRadians(alt)) * Math.cos(Math.toRadians(sunAlt))
+                        * Math.cos(Math.toRadians(az - sunAz));
+        cosElong = Math.max(-1.0, Math.min(1.0, cosElong));
+        double elongRad = Math.acos(cosElong);
+        // k = cos(elongation): +1 محاق كامل (full) .. -1 هلال رقيق (new crescent)
+        double k = Math.cos(elongRad);
+
+        // ── زاوية الموضع (Position Angle): اتجاه الشمس على الشاشة ──
+        float sunX = azToX(sunAz, w);
+        float sunY = altToY(Math.max(-12.0, sunAlt), h);
+        double paAngle = Math.atan2(sunY - y, sunX - x);
+        float cosPA = (float) Math.cos(paAngle);
+        float sinPA = (float) Math.sin(paAngle);
+
+        // ── هالة الزهرة ──
+        p.setShader(new RadialGradient(x, y, r * 7f,
+            new int[]{ Color.argb(55, 210, 235, 255), Color.argb(0, 185, 218, 255) },
+            null, Shader.TileMode.CLAMP));
+        c.drawCircle(x, y, r * 7f, p);
+        p.setShader(null);
+
+        // ── رسم القرص بطوره الصحيح ──
+        int saved = c.saveLayer(new RectF(x - r - 1, y - r - 1, x + r + 1, y + r + 1), null);
+        Paint diskP = new Paint(Paint.ANTI_ALIAS_FLAG);
+        diskP.setStyle(Paint.Style.FILL);
+
+        // الجانب المظلم
+        diskP.setColor(Color.argb(215, 5, 8, 22));
+        c.drawCircle(x, y, r, diskP);
+
+        // Clip إلى القرص حتى لا يتجاوز المسار حدوده
+        Path clip = new Path();
+        clip.addCircle(x, y, r, Path.Direction.CW);
+        c.clipPath(clip);
+
+        // مسار الجانب المضيء:
+        //   arc: نصف دائرة الجانب المضيء (باتجاه الشمس)  — theta: -PI/2 .. +PI/2
+        //   terminator: إهليج بمحور x = k*r          — theta: +PI/2 .. -PI/2
+        int npts = 42;
+        Path litPath = new Path();
+        float[] ax = new float[npts], ay = new float[npts];
+        float[] tx = new float[npts], ty = new float[npts];
+        for (int i = 0; i < npts; i++) {
+            double ta = -Math.PI / 2 + Math.PI * i / (npts - 1);
+            double lx = Math.cos(ta), ly = Math.sin(ta);
+            ax[i] = x + (float)((lx * cosPA - ly * sinPA) * r);
+            ay[i] = y + (float)((lx * sinPA + ly * cosPA) * r);
+        }
+        for (int i = 0; i < npts; i++) {
+            double ta = Math.PI / 2 - Math.PI * i / (npts - 1);
+            double lx = k * Math.cos(ta), ly = Math.sin(ta);
+            tx[i] = x + (float)((lx * cosPA - ly * sinPA) * r);
+            ty[i] = y + (float)((lx * sinPA + ly * cosPA) * r);
+        }
+        litPath.moveTo(ax[0], ay[0]);
+        for (int i = 1; i < npts; i++) litPath.lineTo(ax[i], ay[i]);
+        for (int i = 0; i < npts; i++) litPath.lineTo(tx[i], ty[i]);
+        litPath.close();
+
+        // تدرج الجانب المضيء: أبيض-مزرق فاتح (كيمياء الزهرة: سحب H₂SO₄ عاكسة)
+        diskP.setShader(new RadialGradient(
+            x + cosPA * r * 0.22f, y + sinPA * r * 0.22f, r * 1.4f,
+            new int[]{ Color.argb(255, 250, 254, 255), Color.argb(255, 205, 235, 255) },
+            null, Shader.TileMode.CLAMP));
+        c.drawPath(litPath, diskP);
+        diskP.setShader(null);
+        c.restoreToCount(saved);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -3700,6 +3864,26 @@ public final class SkyBitmapRenderer {
                     p.setColor(Color.argb(bA, 255, 80, 80));
                     c.drawCircle(tx, ty, lightR, p);
                 }
+            }
+        }
+
+        // ── ساعة الذهب — مدى ذهبي/برتقالي دافئ يغمر واجهات المباني عند الشروق/الغروب ──
+        if (sunAlt > -5 && sunAlt < 15) {
+            float goldenT = (float) Math.max(0.0, 1.0 - Math.abs(sunAlt - 5.0) / 11.0);
+            int goldenA = (int)(115 * goldenT * (1.0f - wsOvercast * 0.60f));
+            if (goldenA > 7) {
+                float sunScrX = azToX(cSunAz, w);
+                Paint goPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                goPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SCREEN));
+                goPaint.setShader(new RadialGradient(sunScrX, baseY, w * 0.88f,
+                    new int[]{ Color.argb(goldenA,       255, 178, 42),
+                               Color.argb(goldenA * 2/3, 255, 142, 18),
+                               Color.argb(goldenA / 4,   255,  92,  0),
+                               Color.argb(0,             200,  58,  0) },
+                    new float[]{ 0f, 0.30f, 0.62f, 1f }, Shader.TileMode.CLAMP));
+                c.drawPath(fgPath, goPaint);
+                goPaint.setXfermode(null);
+                goPaint.setShader(null);
             }
         }
 
