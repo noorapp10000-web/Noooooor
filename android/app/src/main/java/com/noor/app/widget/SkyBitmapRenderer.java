@@ -2648,9 +2648,10 @@ public final class SkyBitmapRenderer {
 
     static double refractionCorrection(double altDeg) {
         if (altDeg > 85) return 0;
-        if (altDeg < 0.5) return 0.57;
-        double tanA = Math.tan(Math.toRadians(altDeg));
-        return (1.02 / (60.0 * tanA));
+        // معادلة Bennett — انكسار جوي بدون قفزة عند الأفق (تجنب تفرّع tan(0))
+        double denom = altDeg + 7.31 / (altDeg + 4.4);
+        double R = 1.0 / Math.tan(Math.toRadians(denom));
+        return R / 60.0;
     }
 
     static double[] solarPosition(double jd, double lat, double lng) {

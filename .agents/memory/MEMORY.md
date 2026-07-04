@@ -7,3 +7,4 @@
 - [Sky renderer draw signatures](sky-renderer-signatures.md) — drawMoon takes (c,p,x,y,h,w,phase,moonAlt,sunAlt,now); drawClouds takes (c,w,h,p,sunAlt,sunX,sunY,now); drawOrganicCloud takes (...,lightX,lightY,sunAlt,rnd).
 - [Sky renderer 2025 overhaul](sky-renderer-overhaul.md) — rainbow removed forever; drawMieHaze takes sunX param; skyColors returns int[6]; drawOrganicCloud uses saveLayer+flatBase+sizeFalloff; 5 new functions added.
 - [Sky renderer weather system](sky-renderer-weather.md) — seasonal weather state machine; wsCloudMult/wsFogMult/wsStormMult/wsOvercast drive all renderer multipliers; 9 building types (0-8); drawRooftopDetails+drawGlassCurtainSheen added.
+- [Widget service throttling](widget-service-throttling.md) — full sky re-render must stay throttled (~15s) separate from 1s countdown ticks; Android 14+ dataSync FGS needs onTimeout() handler or it dies silently after ~6h.

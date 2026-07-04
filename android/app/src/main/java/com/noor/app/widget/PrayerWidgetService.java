@@ -23,6 +23,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
 import com.batoulapps.adhan.CalculationMethod;
@@ -75,11 +76,23 @@ public class PrayerWidgetService extends Service {
     private boolean        isScreenOn = true;
     private boolean        isRunning  = false;
 
-    private int tickCount = 0;
+    private int  tickCount        = 0;
+    private long lastFullUpdateMs = 0L;
+    /* تحديث كامل (بما فيه رسم السماء) كل 15 ثانية فقط — العدّاد نفسه يتحدّث كل ثانية بدون
+       إعادة رسم السماء أو حساب أوقات الصلاة من جديد، لتقليل استهلاك المعالج والبطارية. */
+    private static final long FULL_UPDATE_INTERVAL_MS = 15_000L;
 
     private final Runnable tickRunnable = new Runnable() {
         @Override public void run() {
-            if (isScreenOn) performUpdate();
+            if (isScreenOn) {
+                long now = System.currentTimeMillis();
+                if (now - lastFullUpdateMs >= FULL_UPDATE_INTERVAL_MS) {
+                    lastFullUpdateMs = now;
+                    performUpdate();
+                } else {
+                    performLightTick();
+                }
+            }
             tickCount++;
             // كل 20 ثانية نجدد الـ alarm الاحتياطي — يضمن وجود alarm حتى لو اتقتلنا
             if (tickCount % 20 == 0) {
@@ -131,9 +144,67 @@ public class PrayerWidgetService extends Service {
         super.onDestroy();
     }
 
+    /*
+     * أندرويد 14+ (API 34) يفرض حدّاً زمنياً (~6 ساعات) على خدمات foreground من نوع
+     * dataSync، وبعده يستدعي onTimeout() بدل ما يقتل الخدمة فجأة بدون تنبيه.
+     * لو ما تعاملناش مع الحدث ده، الويدجت هيتوقف عن التحديث بصمت لحد ما المستخدم
+     * يفتح التطبيق تاني. هنا بنوقف الخدمة بأمان ونسيب WidgetRefreshReceiver (الـ
+     * AlarmManager الاحتياطي) يعيد تشغيلها تلقائياً خلال 30 ثانية.
+     */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Override
+    public void onTimeout(int startId, int fgsType) {
+        WidgetRefreshReceiver.schedule(this);
+        stopSelf();
+    }
+
     @Override public IBinder onBind(Intent i) { return null; }
 
+    /** آخر حالة صلاة محسوبة — تُستخدم في التحديث الخفيف كل ثانية بدون إعادة حساب. */
+    private volatile PrayerState cachedState = null;
+
+    /**
+     * تحديث خفيف يعمل كل ثانية: يحدّث العدّاد فقط (ساعات/دقائق/ثواني) بدون إعادة رسم
+     * السماء أو إعادة حساب أوقات الصلاة — يوفّر المعالج والبطارية بشكل كبير.
+     * لو الوقت المتبقي خلص (وصلنا لصلاة جديدة)، نعمل تحديث كامل فوراً.
+     */
+    private void performLightTick() {
+        AppWidgetManager awm = AppWidgetManager.getInstance(this);
+        int[] ids = awm.getAppWidgetIds(new ComponentName(this, PrayerWidget.class));
+        if (ids.length == 0) { stopSelf(); return; }
+
+        PrayerState state = cachedState;
+        if (state == null) { performUpdate(); return; }
+
+        long remaining = state.nextTimeMs - System.currentTimeMillis();
+        if (remaining <= 0) {
+            // الصلاة القادمة بقت هي الحالية — نحتاج تحديث كامل عشان نحسب الصلاة الجديدة
+            lastFullUpdateMs = 0L;
+            performUpdate();
+            return;
+        }
+
+        int h = (int)(remaining / 3_600_000L);
+        int m = (int)((remaining % 3_600_000L) / 60_000L);
+        int s = (int)((remaining % 60_000L) / 1_000L);
+        String cd = pad2(h) + ":" + pad2(m) + ":" + pad2(s);
+
+        try {
+            for (int widgetId : ids) {
+                RemoteViews rv = new RemoteViews(getPackageName(), R.layout.widget_unified);
+                rv.setTextViewText(R.id.wg_hours,   pad2(h));
+                rv.setTextViewText(R.id.wg_minutes, pad2(m));
+                rv.setTextViewText(R.id.wg_seconds, pad2(s));
+                awm.partiallyUpdateAppWidget(widgetId, rv);
+            }
+            getSystemService(NotificationManager.class)
+                .notify(NOTIF_ID, buildNotification(state.nextName, cd));
+        } catch (Exception ignored) {}
+    }
+
     private void performUpdate() {
+        lastFullUpdateMs = System.currentTimeMillis();
+
         AppWidgetManager awm = AppWidgetManager.getInstance(this);
         int[] ids = awm.getAppWidgetIds(new ComponentName(this, PrayerWidget.class));
         if (ids.length == 0) { stopSelf(); return; }
@@ -149,6 +220,7 @@ public class PrayerWidgetService extends Service {
         int dayPct   = getDayPercent();
 
         PrayerState state = (lat != Float.MIN_VALUE) ? getPrayerState(lat, lng) : null;
+        cachedState = state;
 
         if (state != null) {
             String prevCached = prefs.getString(KEY_CACHE_NEXT, "");
