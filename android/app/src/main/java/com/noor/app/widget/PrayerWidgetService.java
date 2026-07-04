@@ -513,7 +513,7 @@ public class PrayerWidgetService extends Service {
             Coordinates coords = new Coordinates(lat, lng);
             CalculationParameters params = CalculationMethod.EGYPTIAN.getParameters();
 
-            DateComponents dc = DateComponents.from(new Date());
+            DateComponents dc = DateComponents.from(new Date(now));
             PrayerTimes pt = new PrayerTimes(coords, dc, params);
 
             /* أوقات الصلاة الخمس + الشروق */
@@ -550,6 +550,7 @@ public class PrayerWidgetService extends Service {
                     prevName = PRAYER_NAMES[nextIdx - 1];
                 } else {
                     Calendar yesterday = Calendar.getInstance();
+                    yesterday.setTimeInMillis(now);
                     yesterday.add(Calendar.DAY_OF_YEAR, -1);
                     PrayerTimes ptY = new PrayerTimes(coords,
                         DateComponents.from(yesterday.getTime()), params);
@@ -561,6 +562,7 @@ public class PrayerWidgetService extends Service {
                 prevMs   = times[4];
                 prevName = PRAYER_NAMES[4];
                 Calendar tomorrow = Calendar.getInstance();
+                tomorrow.setTimeInMillis(now);
                 tomorrow.add(Calendar.DAY_OF_YEAR, 1);
                 PrayerTimes ptT = new PrayerTimes(coords,
                     DateComponents.from(tomorrow.getTime()), params);
