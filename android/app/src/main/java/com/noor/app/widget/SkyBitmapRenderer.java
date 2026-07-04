@@ -2788,7 +2788,7 @@ public final class SkyBitmapRenderer {
             + Math.toRadians(0.658 * Math.sin(2*D))       // Variation
             + Math.toRadians(-0.186 * Math.sin(Math.toRadians(normDeg(357.528 + 0.9856003 * n)))) // Annual equation
             + Math.toRadians(-0.059 * Math.sin(2*D - 2*Mm))
-            + Math.toRadians(-0.057 * Math.sin(2*D - Mm - Math.toRadians(normDeg(134.963 + 13.064993 * n))));
+            + Math.toRadians(-0.057 * Math.sin(2*D - Mm - Math.toRadians(normDeg(357.528 + 0.9856003 * n))));
         double bet = Math.toRadians(5.128 * Math.sin(F))
             + Math.toRadians(0.280 * Math.sin(Mm + F))
             + Math.toRadians(0.277 * Math.sin(Mm - F));
