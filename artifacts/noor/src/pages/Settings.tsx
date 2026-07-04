@@ -606,7 +606,7 @@ function WidgetPreviewSection({
             <Timer className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>معاينة الويدجت</p>
+            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>تشغيل الويدجت لليوم كامل</p>
             <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>متاحة على تطبيق الاندرويد فقط</p>
           </div>
         </div>
@@ -626,9 +626,9 @@ function WidgetPreviewSection({
           <Timer className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>معاينة الويدجت على مدار اليوم</p>
+          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>تشغيل الويدجت لليوم كامل</p>
           <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-            شاهد شكل الويدجت من ١٢ صباحاً حتى ١١:٥٩ مساءً خلال دقيقتين فقط
+            اضغط ليشتغل الويدجت الفعلي على الشاشة الرئيسية من ١٢ صباحاً حتى ١١:٥٩ مساءً، كل ذلك خلال دقيقتين فقط
           </p>
         </div>
       </div>
@@ -647,10 +647,10 @@ function WidgetPreviewSection({
         </div>
         <div className="text-right flex-1">
           <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#4a6fa5' }}>
-            {running ? 'جارِ عرض اليوم كامل على الويدجت...' : 'ابدأ معاينة اليوم كامل'}
+            {running ? 'الويدجت يعرض اليوم كامل الآن...' : 'شغّل اليوم كامل على الويدجت'}
           </p>
           <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
-            {running ? 'افتح الشاشة الرئيسية لمشاهدة الويدجت' : 'يعرض السماء والعداد لكل ساعات اليوم بالترتيب'}
+            {running ? 'افتح الشاشة الرئيسية لمشاهدة الويدجت' : 'اضغط ثم افتح الشاشة الرئيسية لمشاهدة الويدجت'}
           </p>
         </div>
       </button>
