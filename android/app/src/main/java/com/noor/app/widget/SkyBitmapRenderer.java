@@ -337,7 +337,13 @@ public final class SkyBitmapRenderer {
             }
 
             cMoonPhase  = moonPhase(jd);
-            cHijriMonth = hijriMonth(jd);
+            // نطابق حد اليوم الهجري مع المنطقة الزمنية المحلية للجهاز — نفس أساس
+            // android.icu.util.IslamicCalendar المستخدم في PrayerWidgetService.getHijriDate()،
+            // لأن jd الخام مبني على UTC وكان يسبب اختلاف يوم كامل أحياناً بين نص
+            // التاريخ الهجري الظاهر وتأثيرات الشهر (مثل تمييز رمضان) في هذا الرسم.
+            long tzOffsetMs = java.util.TimeZone.getDefault().getOffset(now);
+            double localJd  = jd + tzOffsetMs / 86400000.0;
+            cHijriMonth = hijriMonth(localJd);
         }
 
         // ── الرسم ──────────────────────────────────────────────────────────
@@ -2799,16 +2805,46 @@ public final class SkyBitmapRenderer {
         return new double[]{ Math.toDegrees(alt), normDeg(Math.toDegrees(az) + 180) };
     }
 
+    /** خط الطول الفلكي (Ecliptic Longitude) للشمس بالدرجات — مطابق لحساب solarPosition */
+    static double sunEclipticLongitude(double jd) {
+        double n = jd - 2451545.0;
+        double g = Math.toRadians(normDeg(357.528 + 0.9856003 * n));
+        double L = normDeg(280.46 + 0.9856474 * n);
+        return normDeg(L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
+    }
+
+    /** خط الطول الفلكي للقمر بالدرجات — نفس تصحيحات Meeus المستخدمة في moonPosition */
+    static double moonEclipticLongitude(double jd) {
+        double n  = jd - 2451545.0;
+        double Lm = normDeg(218.316 + 13.176396 * n);
+        double Mm = Math.toRadians(normDeg(134.963 + 13.064993 * n));
+        double D  = Math.toRadians(normDeg(297.850 + 12.190749 * n));
+        double Msun = Math.toRadians(normDeg(357.528 + 0.9856003 * n));
+        double corr =
+              6.289 * Math.sin(Mm)
+            + 1.274 * Math.sin(2 * D - Mm)
+            + 0.658 * Math.sin(2 * D)
+            - 0.186 * Math.sin(Msun)
+            - 0.059 * Math.sin(2 * D - 2 * Mm)
+            - 0.057 * Math.sin(2 * D - Mm - Msun);
+        return normDeg(Lm + corr);
+    }
+
     /**
-     * طور القمر [0=جديد .. 0.5=بدر] — مُصحَّح بمرجع JDE دقيق
-     * مرجع: New Moon 2000 Jan 6.18 UT = JD 2451549.72
+     * طور القمر [0=محاق/جديد .. 0.5=بدر .. 1=محاق] — يُحسب من الاستطالة الفعلية
+     * (الفرق بين خطي الطول الفلكيين للقمر والشمس) بدل الاعتماد على متوسط طول
+     * الشهر الاقتراني الثابت (29.530588853 يوم)، لأن طول الشهر الفعلي يتغير
+     * بضع ساعات بسبب لا مركزية مدار القمر — الطريقة الثابتة كانت تنحرف عن
+     * الطور الفلكي الحقيقي مع الوقت، وأيضاً كانت منفصلة تماماً عن حساب موقع
+     * القمر الفعلي (moonPosition) مما يسبب عدم تطابق بين شكل الإنارة والموضع
+     * المرسومين على الشاشة. الطريقة الجديدة مبنية على نفس فيزياء moonPosition
+     * فتبقى متطابقة معه دائماً وبلا انحراف تراكمي.
      */
     static double moonPhase(double jd) {
-        double synodicMonth = 29.530588853;
-        double jd0 = 2451549.72; // مرجع هلال يناير 2000
-        double d = (jd - jd0) % synodicMonth;
-        if (d < 0) d += synodicMonth;
-        return d / synodicMonth;
+        double sunLon  = sunEclipticLongitude(jd);
+        double moonLon = moonEclipticLongitude(jd);
+        double elong   = normDeg(moonLon - sunLon);
+        return elong / 360.0;
     }
 
     static double moonIllumination(double phase) {
