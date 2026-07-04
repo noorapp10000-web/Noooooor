@@ -152,7 +152,6 @@ public class PrayerWidgetService extends Service {
      * AlarmManager الاحتياطي) يعيد تشغيلها تلقائياً خلال 30 ثانية.
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    @Override
     public void onTimeout(int startId, int fgsType) {
         WidgetRefreshReceiver.schedule(this);
         stopSelf();
