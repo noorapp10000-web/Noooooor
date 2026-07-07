@@ -1554,8 +1554,13 @@ public final class SkyBitmapRenderer {
         // ══ تلوين القمر حسب ارتفاعه ══
         // الأفق: يبدأ أصفر خفيف فقط تحت 5°، يتعمق قليلاً تحت 2°
         float horizonT = (float) Math.max(0, Math.min(0.65, (5.0 - moonAlt) / 7.0));
-        // دم القمر: فقط عند قمر شبه كامل (>82%) قريب جداً من الأفق (<1.5°)
-        boolean bloodMoon = (moonAlt < 1.5 && ill > 0.82);
+        // دم القمر: مرتبط بالخسوف الحقيقي فقط — الاحمرار الجوي يعالجه horizonT بالفعل
+        boolean bloodMoon = false;
+
+        // زاوية الشمس من القمر على الشاشة — تُستخدم في Earthshine والتيرميناتور
+        float dxSun = sunScreenX - x;
+        float dySun = sunScreenY - yy;
+        double sunAngleOnScreen = Math.atan2(dySun, dxSun);
         int moonBase1, moonBase2, moonBase3;
         if (bloodMoon) {
             moonBase1 = 0xFFFF5020; moonBase2 = 0xFFCC3010; moonBase3 = 0xFF991808;
@@ -1681,7 +1686,10 @@ public final class SkyBitmapRenderer {
                 c.drawCircle(x, yy, r * 1.35f, p);
                 p.setShader(null);
                 // إضاءة الجانب المظلم نفسه — رمادي-بني دافئ (ضوء أرضي منعكس)
-                p.setShader(new RadialGradient(x - r * 0.18f, yy + r * 0.08f, r,
+                // مركز الإضاءة على الجانب المظلم = عكس اتجاه الشمس تماماً
+                float esX = x - (float)(Math.cos(sunAngleOnScreen) * r * 0.18);
+                float esY = yy - (float)(Math.sin(sunAngleOnScreen) * r * 0.08);
+                p.setShader(new RadialGradient(esX, esY, r,
                     new int[]{ Color.argb(esAlpha, 75, 108, 185),
                                Color.argb((int)(esAlpha * 0.65f), 55, 88, 158),
                                Color.argb((int)(esAlpha * 0.25f), 40, 68, 128),
@@ -1694,23 +1702,16 @@ public final class SkyBitmapRenderer {
 
         // ══ الجانب المضيء بـ Terminator محسوب حسب موقع الشمس ══
         if (ill > 0.012) {
-            // حساب اتجاه الشمس من موضعها الفعلي على الشاشة
-            // هذا يعطي اتجاه الإضاءة الصحيح بصرياً
-            float dx = sunScreenX - x;
-            float dy = sunScreenY - yy;
-
-            // زاوية الشمس من القمر على الشاشة
-            double sunAngleOnScreen = Math.atan2(dy, dx);
-
+            // sunAngleOnScreen محسوب مسبقاً قبل Earthshine وهو نفس القيمة هنا
             // حساب Terminator بطريقة sun-relative
             // المحور الرأسي للتيرميناتور عمودي على اتجاه الشمس
             double phAngle = phase * 2 * Math.PI;
             float term = r * (float) Math.cos(phAngle);
             boolean waning = (phase > 0.5);
 
-            // تدوير المسار حسب اتجاه الشمس
+            // تدوير المسار حسب اتجاه الشمس — الجانب المضيء يواجه الشمس مباشرةً
             c.save();
-            c.rotate((float) Math.toDegrees(sunAngleOnScreen) + 90f, x, yy);
+            c.rotate((float) Math.toDegrees(sunAngleOnScreen), x, yy);
 
             Path mp = new Path();
             RectF oval = new RectF(x - r, yy - r, x + r, yy + r);
@@ -1727,8 +1728,10 @@ public final class SkyBitmapRenderer {
             } else {
                 // نصف الدائرة المضيء (يسار) — دائماً ثابت
                 mp.addArc(oval, 90, 180);
-                // قوس المُنهي — نفس المنطق
-                mp.arcTo(termOval, -90, term >= 0 ? 180 : -180);
+                // قوس المُنهي للطور المتناقص — منطق معكوس عن المتزايد:
+                // term >= 0 → هلال (الكشكول يسار) → نمر عبر اليسار (sweep -180)
+                // term < 0  → محدبة (الكشكول يمين) → نمر عبر اليمين (sweep +180)
+                mp.arcTo(termOval, -90, term >= 0 ? -180 : 180);
             }
             mp.close();
 
@@ -1751,8 +1754,13 @@ public final class SkyBitmapRenderer {
             // بحار القمر Mare
             if (ill > 0.25 && !bloodMoon) drawMoonMare(c, x, yy, r, phase, ill, mp);
 
-            // فوهات القمر
-            if (ill > 0.15 && r > 8) drawMoonCraters(c, x, yy, r, phase, ill, sunAngleOnScreen);
+            // فوهات القمر — محصورة بمنطقة الإضاءة + ظلال بزاوية 0° في فضاء Canvas المُدوَّر
+            if (ill > 0.15 && r > 8) {
+                c.save();
+                c.clipPath(mp);
+                drawMoonCraters(c, x, yy, r, phase, ill, 0.0);
+                c.restore();
+            }
 
             c.restore();
 
