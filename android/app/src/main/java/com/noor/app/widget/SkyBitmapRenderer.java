@@ -364,14 +364,6 @@ public final class SkyBitmapRenderer {
         Canvas c   = new Canvas(bmp);
         Paint  p   = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
-        // ── حواف دائرية مخبوزة في الـ bitmap ──────────────────────────────
-        // نسبة 24dp على عرض 270dp = نفس قيمة widget_bg.xml لكن مخبوزة في الصورة
-        // مباشرةً فتشتغل على كل الـ launchers بغض النظر عن النظام
-        float cornerR = w * 24f / 270f;
-        Path roundClip = new Path();
-        roundClip.addRoundRect(new RectF(0, 0, w, h), cornerR, cornerR, Path.Direction.CW);
-        c.clipPath(roundClip);
-
         float sunX  = azToX(cSunAz,  w);
         float sunY  = altToY(cSunAlt, h);
         float moonX = azToX(cMoonAz, w);
@@ -2919,15 +2911,23 @@ public final class SkyBitmapRenderer {
     }
 
     private static void applyRoundedCorners(Bitmap bmp, int w, int h) {
+        // الـ radius بنفس نسبة widget_root_shape.xml (24dp على عرض 270dp)
+        // فالـ bitmap والـ View-level clipToOutline بيستخدموا نفس الـ radius بالظبط
+        float rad = w * 24f / 270f;
+
+        // نرسم الـ mask (أبيض مدوّر على أسود شفاف)
         Bitmap mask = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Canvas mc   = new Canvas(mask);
         Paint  mp   = new Paint(Paint.ANTI_ALIAS_FLAG);
         mp.setColor(0xFFFFFFFF);
-        float rad = w * 0.082f;
         mc.drawRoundRect(new RectF(0, 0, w, h), rad, rad, mp);
+
+        // DST_IN: احتفظ بـ pixels الـ bitmap بس في الأماكن اللي الـ mask فيها أبيض
+        // النتيجة: الأركان خارج الـ radius = alpha 0 (شفاف تماماً) على كل الأجهزة
         Paint xfer = new Paint(Paint.ANTI_ALIAS_FLAG);
         xfer.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
         new Canvas(bmp).drawBitmap(mask, 0, 0, xfer);
+        xfer.setXfermode(null);
         mask.recycle();
     }
 
