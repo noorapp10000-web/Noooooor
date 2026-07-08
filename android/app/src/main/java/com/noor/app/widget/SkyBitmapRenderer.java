@@ -364,6 +364,14 @@ public final class SkyBitmapRenderer {
         Canvas c   = new Canvas(bmp);
         Paint  p   = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 
+        // ── حواف دائرية مخبوزة في الـ bitmap ──────────────────────────────
+        // نسبة 24dp على عرض 270dp = نفس قيمة widget_bg.xml لكن مخبوزة في الصورة
+        // مباشرةً فتشتغل على كل الـ launchers بغض النظر عن النظام
+        float cornerR = w * 24f / 270f;
+        Path roundClip = new Path();
+        roundClip.addRoundRect(new RectF(0, 0, w, h), cornerR, cornerR, Path.Direction.CW);
+        c.clipPath(roundClip);
+
         float sunX  = azToX(cSunAz,  w);
         float sunY  = altToY(cSunAlt, h);
         float moonX = azToX(cMoonAz, w);
