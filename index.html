@@ -12,12 +12,20 @@
   header p { opacity: 0.85; font-size: 0.95rem; }
   .container { max-width: 800px; margin: 0 auto; padding: 40px 20px 60px; }
   .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(139,99,64,0.08); border-right: 4px solid #c19a6b; }
+  .section.warn { border-right-color: #e07b2a; }
   h2 { color: #8b6340; font-size: 1.1rem; margin-bottom: 12px; }
+  .warn h2 { color: #c25e00; }
   p, li { color: #3d2a14; margin-bottom: 8px; }
   ul { padding-right: 20px; }
   li { list-style: disc; }
   .highlight { background: #fef3e2; border: 1px solid #e8c98a; border-radius: 8px; padding: 14px 18px; margin-top: 10px; font-weight: 600; color: #7a4f28; text-align: center; }
-  .badge { display: inline-block; background: #fef3e2; border: 1px solid #c19a6b; border-radius: 6px; padding: 2px 10px; font-size: 0.85rem; color: #8b6340; margin-right: 4px; }
+  .warn-box { background: #fff8f0; border: 1.5px solid #e07b2a; border-radius: 8px; padding: 14px 18px; margin-top: 10px; color: #7a3800; }
+  .badge { display: inline-block; background: #fef3e2; border: 1px solid #c19a6b; border-radius: 6px; padding: 2px 10px; font-size: 0.82rem; color: #8b6340; margin-right: 4px; font-weight: 600; }
+  .perm-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.9rem; }
+  .perm-table th { background: #fef3e2; color: #7a4f28; padding: 8px 12px; text-align: right; border-bottom: 2px solid #e8c98a; }
+  .perm-table td { padding: 8px 12px; border-bottom: 1px solid #f0e4cc; vertical-align: top; }
+  .perm-table tr:last-child td { border-bottom: none; }
+  code { background: #f5ede0; color: #8b4513; padding: 1px 6px; border-radius: 4px; font-size: 0.82rem; font-family: monospace; }
   .contact-box { background: #fef3e2; border: 1.5px solid #c19a6b; border-radius: 12px; padding: 24px; text-align: center; margin-top: 10px; }
   .contact-box a { color: #8b6340; font-weight: bold; text-decoration: none; }
   footer { text-align: center; padding: 24px; color: #9a7a55; font-size: 0.85rem; border-top: 1px solid #e8d5b8; margin-top: 20px; }
@@ -38,17 +46,18 @@
 
   <div class="section">
     <h2>&#128241; عن التطبيق</h2>
-    <p>تطبيق <strong>نور</strong> هو تطبيق إسلامي شامل يوفر مواقيت الصلاة، القرآن الكريم، الأذكار، التسبيح، الأحاديث الشريفة. التطبيق مجاني ولا يحتوي على إعلانات.</p>
+    <p>تطبيق <strong>نور</strong> هو تطبيق إسلامي شامل يوفر مواقيت الصلاة، القرآن الكريم، الأذكار، التسبيح، الأحاديث الشريفة. التطبيق مجاني تماماً ولا يحتوي على إعلانات.</p>
+    <p><strong>Package:</strong> <code>com.noor.app</code> &nbsp;|&nbsp; <strong>Min Android:</strong> 5.1 (API 22)</p>
   </div>
 
   <div class="section">
-    <h2>&#128274; البيانات التي نجمعها</h2>
-    <p><strong>لا نجمع أي بيانات على خوادم خارجية.</strong> جميع البيانات محفوظة محلياً على جهازك فقط وتشمل:</p>
+    <h2>&#128274; البيانات المحفوظة على جهازك</h2>
+    <p><strong>لا نجمع أي بيانات على خوادم خارجية.</strong> جميع البيانات مخزّنة محلياً على جهازك فقط وتشمل:</p>
     <ul>
       <li>الاسم الأول</li>
       <li>المحافظة / المدينة</li>
-      <li><strong>الجنس (ذكر / أنثى)</strong> — يُستخدم لتخصيص تجربة المستخدم داخل التطبيق فقط <span class="badge">على الجهاز فقط</span></li>
-      <li>الموقع الجغرافي — لحساب مواقيت الصلاة واتجاه القبلة</li>
+      <li><strong>الجنس (ذكر / أنثى)</strong> — لتخصيص الواجهة والمحتوى الديني <span class="badge">جهازك فقط</span></li>
+      <li>الموقع الجغرافي — لمواقيت الصلاة واتجاه القبلة <span class="badge">جهازك فقط</span></li>
       <li>إعدادات التطبيق وتفضيلاتك</li>
       <li>تقدمك في القراءة والأذكار والتسبيح</li>
     </ul>
@@ -57,13 +66,12 @@
 
   <div class="section">
     <h2>&#128104;&#8205;&#128105; لماذا نطلب الجنس؟</h2>
-    <p>يطلب التطبيق اختيار الجنس (ذكر / أنثى) عند إعداد الحساب لأغراض دينية وشخصية بحتة:</p>
+    <p>يطلب التطبيق اختيار الجنس عند الإعداد لأغراض دينية فقط:</p>
     <ul>
-      <li>عرض اسم المستخدم بالصيغة المناسبة (مرحباً / مرحبةً)</li>
-      <li>تخصيص المحتوى الديني المناسب (أذكار، أدعية)</li>
-      <li>تحديد واجهة المستخدم المناسبة للجنس</li>
+      <li>عرض التحية بالصيغة المناسبة (مرحباً / مرحبةً)</li>
+      <li>تخصيص الأذكار والمحتوى الديني المناسب</li>
     </ul>
-    <p>هذه المعلومة <strong>مخزّنة على جهازك فقط</strong> ولا تُرسل لأي خادم أو طرف ثالث.</p>
+    <p>هذه المعلومة <strong>مخزّنة على جهازك فقط</strong> ولا تُرسل لأي جهة.</p>
   </div>
 
   <div class="section">
@@ -77,24 +85,85 @@
   </div>
 
   <div class="section">
-    <h2>&#128266; الإشعارات</h2>
-    <p>يستخدم التطبيق إشعارات محلية (Local Notifications) لتذكيرك بمواقيت الصلاة. تعمل محلياً بالكامل دون خوادم خارجية.</p>
+    <h2>&#128266; الإشعارات والتنبيهات</h2>
+    <p>يستخدم التطبيق الأذونات التالية لضمان وصول تنبيهات الصلاة في وقتها:</p>
+    <ul>
+      <li><code>POST_NOTIFICATIONS</code> — إرسال إشعارات مواقيت الصلاة</li>
+      <li><code>SCHEDULE_EXACT_ALARM</code> / <code>USE_EXACT_ALARM</code> — جدولة دقيقة للأذان (Android 12+)</li>
+      <li><code>RECEIVE_BOOT_COMPLETED</code> — إعادة جدولة الإشعارات تلقائياً بعد إعادة تشغيل الجهاز</li>
+      <li><code>VIBRATE</code> — الاهتزاز عند وقت الصلاة</li>
+      <li><code>WAKE_LOCK</code> — إيقاظ الجهاز لحظة الأذان فقط</li>
+      <li><code>FOREGROUND_SERVICE</code> — تشغيل صوت الأذان حتى مع إغلاق التطبيق</li>
+    </ul>
+    <p>جميع هذه التنبيهات محلية بالكامل، لا تمر عبر أي خادم خارجي.</p>
+  </div>
+
+  <div class="section warn">
+    <h2>&#128264; ميزة Prayer Guard (شاشة الصلاة)</h2>
+    <p>
+      التطبيق يحتوي على ميزة اختيارية تُسمى <strong>Prayer Guard</strong> تُذكّرك بالصلاة عن طريق
+      عرض شاشة تذكير فوق التطبيقات الأخرى عند دخول وقت الصلاة.
+    </p>
+    <div class="warn-box">
+      <p><strong>&#9888; هذه الميزة تستخدم إذنين خاصين:</strong></p>
+      <ul style="margin-top:8px;">
+        <li>
+          <code>SYSTEM_ALERT_WINDOW</code> — الظهور فوق التطبيقات الأخرى<br>
+          <em>الغرض الوحيد: عرض شاشة تذكير بالصلاة عند دخول الوقت</em>
+        </li>
+        <li style="margin-top:8px;">
+          <code>BIND_ACCESSIBILITY_SERVICE</code> — خدمة إمكانية الوصول<br>
+          <em>الغرض الوحيد: اكتشاف دخول وقت الصلاة لعرض التذكير في الوقت المناسب</em>
+        </li>
+      </ul>
+    </div>
+    <p style="margin-top:12px;">
+      هذه الميزة <strong>اختيارية تماماً</strong> — يمكنك استخدام التطبيق بالكامل بدونها.
+      لا يتم جمع أي بيانات عن التطبيقات التي تستخدمها من خلال خدمة إمكانية الوصول.
+    </p>
   </div>
 
   <div class="section">
     <h2>&#127760; الاتصال بالإنترنت</h2>
     <p>التطبيق يعمل بدون إنترنت (Offline-First). الإنترنت يُستخدم فقط لـ:</p>
     <ul>
-      <li>تشغيل صوت القراء</li>
+      <li>تشغيل تلاوات القراء (صوت فقط، لا بيانات شخصية)</li>
       <li>بث الإذاعات الإسلامية</li>
       <li>مشاهدة القنوات الإسلامية</li>
     </ul>
-    <p>هذه الطلبات لا تحمل أي معرّف شخصي.</p>
+    <p>هذه الطلبات لا تحمل أي معرّف شخصي خاص بك.</p>
+  </div>
+
+  <div class="section">
+    <h2>&#128190; التخزين (Storage)</h2>
+    <p>يطلب التطبيق إذن التخزين على الأجهزة القديمة (Android 9 وأقل) لـ:</p>
+    <ul>
+      <li>حفظ ملفات الصوت (تلاوات، أذان) للاستماع بدون إنترنت</li>
+    </ul>
+    <p>على Android 10 والأحدث لا يطلب التطبيق أذون التخزين. لا يتم الوصول لملفاتك الشخصية أو صورك.</p>
+  </div>
+
+  <div class="section">
+    <h2>&#128267; ويدجيت مواقيت الصلاة</h2>
+    <p>
+      يوفر التطبيق ويدجيت (Widget) لشاشة الرئيسية يعرض مواقيت الصلاة القادمة والعداد التنازلي.
+      الويدجيت يعمل محلياً بالكامل باستخدام <code>FOREGROUND_SERVICE_DATA_SYNC</code>
+      ولا يرسل أي بيانات خارج الجهاز.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>&#128268; تجاهل تحسين البطارية</h2>
+    <p>
+      يطلب التطبيق إذن <code>REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</code> لضمان
+      وصول إشعارات الصلاة في وقتها حتى عند إغلاق التطبيق في الخلفية.
+      هذا ضروري لأن Android يوقف التطبيقات في الخلفية لتوفير البطارية، مما قد يؤخر أذان الصلاة.
+    </p>
   </div>
 
   <div class="section">
     <h2>&#129490; الأطفال</h2>
-    <p>تطبيق نور آمن للأطفال. لا نجمع بيانات على خوادم خارجية بأي عمر. التطبيق مناسب لجميع أفراد العائلة.</p>
+    <p>تطبيق نور آمن للأطفال. لا نجمع بيانات على خوادم خارجية لأي مستخدم. التطبيق مناسب لجميع أفراد العائلة.</p>
   </div>
 
   <div class="section">
@@ -102,16 +171,16 @@
     <p>لا نشارك أي بيانات مع أطراف ثالثة. التطبيق لا يحتوي على:</p>
     <ul>
       <li>إعلانات (Ads)</li>
-      <li>تتبع (Tracking / Analytics)</li>
-      <li>أي SDK يجمع بيانات</li>
+      <li>تتبع (Analytics / Tracking)</li>
+      <li>أي SDK يجمع بيانات المستخدمين</li>
     </ul>
   </div>
 
   <div class="section">
     <h2>&#128231; تواصل معنا</h2>
-    <p>لأي سؤال عن سياسة الخصوصية:</p>
+    <p>لأي سؤال أو استفسار عن سياسة الخصوصية:</p>
     <div class="contact-box">
-      <p>&#128232; البريد الإلكتروني:</p>
+      <p>&#128232; البريد الإلكتروني</p>
       <a href="mailto:noorapp10000@gmail.com">noorapp10000@gmail.com</a>
     </div>
   </div>
@@ -119,7 +188,7 @@
 </div>
 <footer>
   <p>&#169; 2025 تطبيق نور &mdash; جميع الحقوق محفوظة</p>
-  <p style="margin-top:6px;font-size:0.8rem;">هذه السياسة تسري على تطبيق نور للأندرويد</p>
+  <p style="margin-top:6px;font-size:0.8rem;">هذه السياسة تسري على تطبيق نور للأندرويد &mdash; <code>com.noor.app</code></p>
 </footer>
 </body>
 </html>
