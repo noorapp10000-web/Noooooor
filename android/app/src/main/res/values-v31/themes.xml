@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ (API 31+) — Mandatory system splash screen.
+    The OS shows this BEFORE the Activity starts.
+
+    Key trick: windowSplashScreenIconBackgroundColor = cream (same as splash background)
+    This makes the circular border invisible — logo floats on a clean cream background.
+    The logo is fitted proportionally (no cropping, no distortion).
+-->
+<resources>
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+</resources>

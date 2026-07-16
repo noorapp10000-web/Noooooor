@@ -1,0 +1,37 @@
+appId: com.noor.app
+productName: "Noor - نور"
+copyright: "Copyright © 2024 Noor App"
+
+directories:
+  app: .
+  output: ../dist-electron
+
+files:
+  - main.js
+  - www/**/*
+  - package.json
+  - icon.png
+
+win:
+  icon: icon.png
+  target:
+    - target: nsis
+      arch:
+        - ia32
+  executableName: "Noor"
+  requestedExecutionLevel: asInvoker
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Noor - نور"
+  language: "1025"
+  artifactName: "Noor-v${version}-Setup-Win7-x86.exe"
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  allowElevation: false
+  include: null
+
+publish: null

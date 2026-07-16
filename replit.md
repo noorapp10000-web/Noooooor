@@ -1,45 +1,86 @@
-# [Project name]
+# نور — تطبيق إسلامي شامل
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+تطبيق إسلامي متكامل مبني بـ React + Vite + Express في pnpm monorepo.
 
-## Run & Operate
+## البنية العامة
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+### `artifacts/noor/` — الواجهة الأمامية
+- React + Vite + TypeScript
+- المدخل: `artifacts/noor/src/main.tsx`
+- البناء: `artifacts/noor/dist/public/`
+- لا lazy loading — كل الصفحات تُحمَّل معاً عند البدء لتنقل سلس
 
-## Stack
+### `artifacts/api-server/` — الخادم الخلفي
+- Express + TypeScript
+- يخدم فقط: `/health`، `/audio-proxy`، `/download`
+- بدون قاعدة بيانات معقدة — فقط تحقق من الاتصال
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+### `lib/db/` — اتصال قاعدة البيانات
+- Drizzle ORM + PostgreSQL
+- Schema فارغ حالياً (لا جداول نشطة)
 
-## Where things live
+### `scripts/` — سكريبتات التشغيل
+- `dev.sh` — الـ workflow الرئيسي: Vite + API server
+- `proxy.js` — بروكسي HTTP
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+## الصفحات (22 صفحة)
 
-## Architecture decisions
+| المسار | الصفحة |
+|--------|---------|
+| `/` | الرئيسية — مواقيت الصلاة + المتتبع اليومي |
+| `/quran` | القرآن الكريم — قارئ + تفسير + بحث |
+| `/azkar` | الأذكار — صباح/مساء/يومية |
+| `/tasbih` | التسبيح الرقمي |
+| `/ranking` | إحصائياتي |
+| `/more` | المزيد |
+| `/settings` | الإعدادات |
+| `/asma` | أسماء الله الحسنى |
+| `/reciters` | القراء وتشغيل الصوت |
+| `/radio` | الإذاعات الإسلامية |
+| `/qibla` | بوصلة القبلة |
+| `/hadith` | الأحاديث الشريفة |
+| `/history` | التاريخ الإسلامي |
+| `/prophets` | قصص الأنبياء |
+| `/quizzes` | الاختبارات الإسلامية |
+| `/sunnah` | السنة النبوية |
+| `/tv` | التلفزيون الإسلامي |
+| `/hifz-test` | اختبار الحفظ |
+| `/speed-reader` | القراءة السريعة |
+| `/learn-prayer` | تعلم الصلاة — 14 خطوة بالنص والتشكيل |
+| `/wudu` | دليل الوضوء — 10 خطوات مع التفريق بين الفرض والسنة |
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+## البيانات المحلية (offline-first)
+كل البيانات الكبيرة في `artifacts/noor/public/data/`:
+- `quran-uthmani-full.json` — نص القرآن الكريم
+- `quran-search.json` — فهرس البحث (6236 آية)
+- `tafsir-muyassar.json` — تفسير ميسر
+- `hadith-*.json` — 6 كتب حديث محلياً
+- `history-*.json` — أحداث تاريخية إسلامية
+- `quizzes.json` — 5820 سؤال
+- `sunnah.json` — السنن النبوية
 
-## Product
+## التشغيل في Replit
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+```bash
+# الـ workflow الرئيسي: "Start application"
+bash scripts/dev.sh
+```
 
-## User preferences
+- Vite dev server على port 5000
+- API server على port 3001
+- بدون Firebase، بدون خوادم خارجية
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+## APIs المتبقية (صوت فقط)
+- `GET /audio-proxy?url=` — بروكسي صوت من everyayah.com / mp3quran.net
+- `GET /download?url=&filename=` — تحميل MP3
 
-## Gotchas
+## نظام الألوان
+- **اللون الرئيسي**: `#C19A6B` (ذهبي/عنبري)
+- **الخطوط**: `Tajawal` للنص، `Amiri` / `Scheherazade New` للخط العربي
+- **المود**: فاتح/داكن — CSS variables
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+## التفضيلات
+- الكود نظيف وواضح بدون تعليقات زائدة
+- لا lazy loading — كل الصفحات تُحمَّل مع بعض
+- offline-first — كل البيانات محلية
+- لا Firebase — بيانات المستخدم على الجهاز فقط

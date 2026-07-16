@@ -1,0 +1,19 @@
+# ⚠️ هذا الـ Workflow مُدمج الآن في build-android.yml
+# This workflow is superseded by build-android.yml (APK + AAB + signing + logs)
+# Use: Actions → "Build Noor Android (APK + AAB)"
+
+name: "[Deprecated] Build Noor APK — use build-android.yml"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  notice:
+    name: Redirect to build-android.yml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notice
+        run: |
+          echo "⚠️ هذا الـ Workflow تم استبداله بـ build-android.yml"
+          echo "Please use: Actions → 'Build Noor Android (APK + AAB)'"
+          echo "يدعم الآن: APK + AAB + توقيع + Logs إجباري"

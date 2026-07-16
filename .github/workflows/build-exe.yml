@@ -1,0 +1,155 @@
+name: Build Noor Windows EXE
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'رقم الإصدار (مثال: 2.3.0)'
+        required: false
+        default: '2.3.0'
+
+jobs:
+  build-exe:
+    name: Build Noor Windows EXE (Desktop)
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Create build-logs directory
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path build-logs | Out-Null
+
+      - name: Install monorepo dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --filter @workspace/noor run build
+        env:
+          BASE_PATH: './'
+          NODE_ENV: production
+
+      - name: Prepare Electron bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path electron\www | Out-Null
+          Copy-Item -Recurse -Force artifacts\noor\dist\public\* electron\www\
+          # Use the real 512x512 PNG icon (not a JPEG renamed to .png)
+          Copy-Item -Force artifacts\noor\public\icon-512.png electron\icon.png
+          $count = (Get-ChildItem electron\www -Recurse | Measure-Object).Count
+          Write-Output "Web assets copied: $count files"
+          Write-Output "Icon: $(Get-Item electron\icon.png | Select-Object -ExpandProperty Length) bytes"
+
+      - name: Write electron package.json
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version || '2.3.0' }}"
+          $pkg = [ordered]@{
+            name        = "noor-app"
+            productName = "Noor - نور"
+            version     = $version
+            description = "Noor Islamic Companion App"
+            main        = "main.js"
+            author      = "Noor App"
+            license     = "ISC"
+          } | ConvertTo-Json -Depth 5
+          $pkg | Out-File -FilePath electron\package.json -Encoding UTF8
+          Write-Output "electron/package.json written (v$version)"
+
+      - name: Install Electron and electron-builder
+        shell: pwsh
+        run: |
+          Set-Location electron
+          npm install --save-dev electron@22.3.27 electron-builder@24.13.3
+
+      - name: Build Windows Setup EXE
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Set-Location electron
+          npx electron-builder --win --ia32 --config ..\electron-builder.yml 2>&1 | Tee-Object -FilePath ..\build-logs\exe-build.log
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "electron-builder failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+
+      - name: Collect build environment info
+        if: always()
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version || '2.3.0' }}"
+          $logFile = "build-logs\build-environment.txt"
+          $exe = Get-ChildItem dist-electron -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          "=== Noor Windows EXE Build Log ===" | Out-File -FilePath $logFile -Encoding UTF8
+          "Date        : $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')) UTC" | Out-File -Append $logFile
+          "Version     : $version" | Out-File -Append $logFile
+          "Branch      : ${{ github.ref_name }}" | Out-File -Append $logFile
+          "Commit      : ${{ github.sha }}" | Out-File -Append $logFile
+          "Runner OS   : ${{ runner.os }}" | Out-File -Append $logFile
+          "Node        : $(node --version)" | Out-File -Append $logFile
+          "NPM         : $(npm --version)" | Out-File -Append $logFile
+          "Architecture: x64" | Out-File -Append $logFile
+          "" | Out-File -Append $logFile
+          "=== EXE Output ===" | Out-File -Append $logFile
+          if ($exe) {
+            $sizeMB = [math]::Round($exe.Length / 1MB, 1)
+            "File : $($exe.Name)" | Out-File -Append $logFile
+            "Size : ${sizeMB} MB" | Out-File -Append $logFile
+          } else {
+            "No EXE found in dist-electron/" | Out-File -Append $logFile
+          }
+
+      - name: Upload build logs (mandatory)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exe-build-logs-run${{ github.run_number }}
+          path: build-logs/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload Windows Setup EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-v${{ github.event.inputs.version || '2.3.0' }}-windows-setup-win7-x86
+          path: dist-electron/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Build Summary
+        if: always()
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version || '2.3.0' }}"
+          $exe = Get-ChildItem dist-electron -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          "## Noor Windows EXE v${version}" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| الملف | الحجم | الحالة |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "|-------|-------|--------|" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          if ($exe) {
+            $sizeMB = [math]::Round($exe.Length / 1MB, 1)
+            "| $($exe.Name) | ${sizeMB} MB | OK |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          } else {
+            "| Windows EXE | -- | FAILED |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          }
+          "| Logs | build-logs/ | OK |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Architecture | ia32 (Windows 7+) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Electron | 22.3.27 (آخر إصدار يدعم Windows 7) |" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+          "| Window size | 1280x800 min 960x600 |" | Out-File -Append $env:GITHUB_STEP_SUMMARY

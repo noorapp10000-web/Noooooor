@@ -1,0 +1,281 @@
+name: Build Noor Android (APK + AAB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 2.3)'
+        required: false
+        default: '2.3'
+      build_type:
+        description: 'Build type'
+        required: false
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  KEYSTORE_PATH: ${{ github.workspace }}/noor-release.keystore
+
+jobs:
+  build-android:
+    name: Build APK + AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+            BUILD_TYPE="release"
+            IS_TAG="true"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            BUILD_TYPE="${{ github.event.inputs.build_type }}"
+            IS_TAG="false"
+          else
+            VERSION="0.0.${{ github.run_number }}"
+            BUILD_TYPE="debug"
+            IS_TAG="false"
+          fi
+          echo "version=$VERSION"       >> $GITHUB_OUTPUT
+          echo "build_type=$BUILD_TYPE" >> $GITHUB_OUTPUT
+          echo "is_tag=$IS_TAG"         >> $GITHUB_OUTPUT
+          echo "tag_name=v$VERSION"     >> $GITHUB_OUTPUT
+          echo "version=$VERSION  build_type=$BUILD_TYPE  is_tag=$IS_TAG"
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Accept Android SDK licenses & install SDK 35
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ ! -f "$SDKMANAGER" ] && SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name "sdkmanager" 2>/dev/null | head -1) || true
+          [ -n "$SDKMANAGER" ] && yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          [ -n "$SDKMANAGER" ] && "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" > /dev/null 2>&1 || true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --filter @workspace/noor run build
+        env:
+          BASE_PATH: /
+          NODE_ENV: production
+
+      - name: Sync Capacitor to Android
+        run: pnpm exec cap sync android
+
+      - name: Copy widget resources
+        run: bash scripts/copy-widget-files.sh
+
+      - name: Verify Android project structure
+        run: |
+          echo "=== Web assets ===" && ls android/app/src/main/assets/public/ | head -5
+          echo "=== Splash ===" && ls android/app/src/main/res/drawable/splash_logo.* 2>/dev/null || echo "WARNING: splash_logo not found"
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
+      - name: Fix Gradle permissions
+        run: chmod +x android/gradlew
+
+      - name: Create build-logs directory
+        run: mkdir -p /tmp/build-logs
+
+      - name: Build Debug APK
+        if: steps.ver.outputs.build_type == 'debug'
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+            2>&1 | tee /tmp/build-logs/gradle-debug.log
+
+      - name: Setup signing keystore
+        if: steps.ver.outputs.build_type == 'release'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ERROR: KEYSTORE_BASE64 secret is missing"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > $KEYSTORE_PATH
+          echo "Keystore loaded successfully"
+          ls -lh $KEYSTORE_PATH
+
+      - name: Build Release APK (signed)
+        if: steps.ver.outputs.build_type == 'release'
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD:   ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS:      ${{ secrets.KEY_ALIAS }}
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            2>&1 | tee /tmp/build-logs/gradle-release-apk.log
+
+      - name: Build Release AAB (signed - Play Store)
+        if: steps.ver.outputs.build_type == 'release'
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD:   ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS:      ${{ secrets.KEY_ALIAS }}
+        run: |
+          cd android
+          ./gradlew bundleRelease --no-daemon --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
+            -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            2>&1 | tee /tmp/build-logs/gradle-release-aab.log
+
+      - name: Rename output files
+        if: steps.ver.outputs.build_type == 'release'
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          mkdir -p /tmp/release-files
+          APK=$(find android/app/build/outputs/apk/release -name "*.apk" 2>/dev/null | head -1)
+          AAB=$(find android/app/build/outputs/bundle/release -name "*.aab" 2>/dev/null | head -1)
+          [ -n "$APK" ] && cp "$APK" "/tmp/release-files/noor-v${VERSION}.apk" && echo "APK copied"
+          [ -n "$AAB" ] && cp "$AAB" "/tmp/release-files/noor-v${VERSION}.aab" && echo "AAB copied"
+          ls -lh /tmp/release-files/
+
+      - name: Collect build info
+        if: always()
+        run: |
+          {
+            echo "=== Noor Android Build ==="
+            echo "Date: $(date -u)"
+            echo "Version: ${{ steps.ver.outputs.version }}"
+            echo "Build type: ${{ steps.ver.outputs.build_type }}"
+            echo "Trigger: ${{ github.event_name }}"
+            echo "Ref: ${{ github.ref }}"
+            echo "Java: $(java -version 2>&1 | head -1)"
+            echo "Node: $(node --version)"
+            df -h /
+          } > /tmp/build-logs/build-info.txt
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-v${{ steps.ver.outputs.version }}-run${{ github.run_number }}
+          path: /tmp/build-logs/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload Debug APK
+        if: steps.ver.outputs.build_type == 'debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-v${{ steps.ver.outputs.version }}-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Release APK
+        if: steps.ver.outputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-v${{ steps.ver.outputs.version }}-release-apk
+          path: /tmp/release-files/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Release AAB (Play Store)
+        if: steps.ver.outputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-v${{ steps.ver.outputs.version }}-release-aab
+          path: /tmp/release-files/*.aab
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: steps.ver.outputs.is_tag == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          TAG="${{ steps.ver.outputs.tag_name }}"
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "Noor v${VERSION}" \
+            --notes "## Noor - v${VERSION}
+
+          Files:
+          - **AAB** - Upload to Google Play Store
+          - **APK** - Direct install on devices
+
+          Package: com.noor.app
+          Build: #${{ github.run_number }}" \
+            /tmp/release-files/noor-v${VERSION}.aab \
+            /tmp/release-files/noor-v${VERSION}.apk
+          echo "Release created: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+
+      - name: Build Summary
+        if: always()
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          TYPE="${{ steps.ver.outputs.build_type }}"
+          {
+            echo "## Noor Android v${VERSION} (${TYPE})"
+            echo ""
+            if [ "$TYPE" = "debug" ]; then
+              APK=$(find android/app/build/outputs/apk/debug -name "*.apk" 2>/dev/null | head -1)
+              [ -n "$APK" ] && echo "| APK (debug) | $(du -sh "$APK" | cut -f1) | OK |" || echo "| APK (debug) | - | FAILED |"
+            else
+              APK=$(find /tmp/release-files -name "*.apk" 2>/dev/null | head -1)
+              AAB=$(find /tmp/release-files -name "*.aab" 2>/dev/null | head -1)
+              [ -n "$APK" ] && echo "| APK (signed) | $(du -sh "$APK" | cut -f1) | OK |" || echo "| APK | - | FAILED |"
+              [ -n "$AAB" ] && echo "| AAB (Play Store) | $(du -sh "$AAB" | cut -f1) | OK |" || echo "| AAB | - | FAILED |"
+            fi
+            if [ "${{ steps.ver.outputs.is_tag }}" = "true" ]; then
+              echo ""
+              echo "Release: https://github.com/${{ github.repository }}/releases/tag/v${VERSION}"
+            fi
+          } >> $GITHUB_STEP_SUMMARY

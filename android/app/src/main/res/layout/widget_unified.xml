@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wg_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_root_shape"
+    android:clipToOutline="true"
+    android:outlineProvider="background">
+
+    <!-- Live sky bitmap — rounded corners baked in by SkyBitmapRenderer -->
+    <ImageView
+        android:id="@+id/wg_sky_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="" />
+
+    <!-- All content on top of sky -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="11dp"
+        android:layoutDirection="rtl">
+
+        <!-- ══ HEADER: app title + location ══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/wg_app_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="نُور"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:shadowColor="#99000000"
+                    android:shadowRadius="4"
+                    android:shadowDx="0"
+                    android:shadowDy="1" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/wg_location_icon"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_location_pin"
+                        android:layout_marginEnd="3dp"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:id="@+id/wg_city"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textColor="#EEFFFFFF"
+                        android:textSize="9sp"
+                        android:shadowColor="#BB000000"
+                        android:shadowRadius="4"
+                        android:shadowDx="0"
+                        android:shadowDy="1" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/wg_username"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text=""
+                    android:textColor="#FFDDBB99"
+                    android:textSize="8.5sp"
+                    android:visibility="gone"
+                    android:shadowColor="#AA000000"
+                    android:shadowRadius="4"
+                    android:shadowDx="0"
+                    android:shadowDy="1" />
+
+                <TextView
+                    android:id="@+id/wg_current_prayer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#FFDDBB99"
+                    android:textSize="8.5sp"
+                    android:visibility="gone"
+                    android:shadowColor="#AA000000"
+                    android:shadowRadius="4"
+                    android:shadowDx="0"
+                    android:shadowDy="1" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/wg_hijri_date"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:text=""
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- ══ MAIN CARD: next prayer + countdown ══ -->
+        <LinearLayout
+            android:id="@+id/wg_main_card"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp">
+
+            <TextView
+                android:id="@+id/wg_next_prayer_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="الصلاة القادمة"
+                android:gravity="center"
+                android:textColor="#FFE0C090"
+                android:textSize="9sp"
+                android:visibility="gone"
+                android:shadowColor="#CC000000"
+                android:shadowRadius="5"
+                android:shadowDx="0"
+                android:shadowDy="1" />
+
+            <TextView
+                android:id="@+id/wg_prayer_name_icon"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:text=""
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/wg_prayer_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="..."
+                android:textColor="#FFFFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:shadowColor="#DD000000"
+                android:shadowRadius="8"
+                android:shadowDx="0"
+                android:shadowDy="2" />
+
+            <TextView
+                android:id="@+id/wg_remaining_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="متبقي على الأذان"
+                android:gravity="center"
+                android:textColor="#FFE0C090"
+                android:textSize="8.5sp"
+                android:layout_marginBottom="4dp"
+                android:visibility="gone"
+                android:shadowColor="#CC000000"
+                android:shadowRadius="4"
+                android:shadowDx="0"
+                android:shadowDy="1" />
+
+            <!-- Countdown hh : mm : ss -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layoutDirection="ltr">
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:gravity="center_horizontal">
+                    <TextView android:id="@+id/wg_hours"
+                        android:layout_width="44dp" android:layout_height="44dp"
+                        android:gravity="center"
+                        android:background="@drawable/widget_counter_box_dark"
+                        android:textColor="#FFFFFFFF" android:textSize="20sp" android:textStyle="bold"
+                        android:text="00"
+                        android:shadowColor="#CC000000" android:shadowRadius="6"
+                        android:shadowDx="0" android:shadowDy="1" />
+                    <TextView android:id="@+id/wg_hours_label"
+                        android:layout_width="44dp" android:layout_height="wrap_content"
+                        android:text="ساعة" android:textColor="#FFDDBB88"
+                        android:textSize="8sp" android:gravity="center"
+                        android:layout_marginTop="2dp" android:visibility="gone"
+                        android:shadowColor="#CC000000" android:shadowRadius="4"
+                        android:shadowDx="0" android:shadowDy="1" />
+                </LinearLayout>
+
+                <TextView android:layout_width="14dp" android:layout_height="wrap_content"
+                    android:gravity="center" android:text=":" android:textColor="#CCE8C898"
+                    android:textSize="22sp" android:textStyle="bold" android:paddingBottom="8dp"
+                    android:shadowColor="#CC000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:gravity="center_horizontal">
+                    <TextView android:id="@+id/wg_minutes"
+                        android:layout_width="44dp" android:layout_height="44dp"
+                        android:gravity="center"
+                        android:background="@drawable/widget_counter_box_dark"
+                        android:textColor="#FFFFFFFF" android:textSize="20sp" android:textStyle="bold"
+                        android:text="00"
+                        android:shadowColor="#CC000000" android:shadowRadius="6"
+                        android:shadowDx="0" android:shadowDy="1" />
+                    <TextView android:id="@+id/wg_minutes_label"
+                        android:layout_width="44dp" android:layout_height="wrap_content"
+                        android:text="دقيقة" android:textColor="#FFDDBB88"
+                        android:textSize="8sp" android:gravity="center"
+                        android:layout_marginTop="2dp" android:visibility="gone"
+                        android:shadowColor="#CC000000" android:shadowRadius="4"
+                        android:shadowDx="0" android:shadowDy="1" />
+                </LinearLayout>
+
+                <TextView android:layout_width="14dp" android:layout_height="wrap_content"
+                    android:gravity="center" android:text=":" android:textColor="#CCE8C898"
+                    android:textSize="22sp" android:textStyle="bold" android:paddingBottom="8dp"
+                    android:shadowColor="#CC000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:gravity="center_horizontal">
+                    <TextView android:id="@+id/wg_seconds"
+                        android:layout_width="44dp" android:layout_height="44dp"
+                        android:gravity="center"
+                        android:background="@drawable/widget_counter_box_dark"
+                        android:textColor="#FFFFFFFF" android:textSize="20sp" android:textStyle="bold"
+                        android:text="00"
+                        android:shadowColor="#CC000000" android:shadowRadius="6"
+                        android:shadowDx="0" android:shadowDy="1" />
+                    <TextView android:id="@+id/wg_seconds_label"
+                        android:layout_width="44dp" android:layout_height="wrap_content"
+                        android:text="ثانية" android:textColor="#FFDDBB88"
+                        android:textSize="8sp" android:gravity="center"
+                        android:layout_marginTop="2dp" android:visibility="gone"
+                        android:shadowColor="#CC000000" android:shadowRadius="4"
+                        android:shadowDx="0" android:shadowDy="1" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView android:id="@+id/wg_adhan_time"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="" android:gravity="center"
+                android:textColor="#EEFFFFFF" android:textSize="9sp" android:layout_marginTop="4dp"
+                android:shadowColor="#CC000000" android:shadowRadius="5"
+                android:shadowDx="0" android:shadowDy="1" />
+
+            <TextView android:id="@+id/wg_progress_pct"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="" android:gravity="center"
+                android:textColor="#FFDDBB88" android:textSize="8sp" android:layout_marginTop="5dp"
+                android:visibility="gone"
+                android:shadowColor="#CC000000" android:shadowRadius="4"
+                android:shadowDx="0" android:shadowDy="1" />
+
+            <ProgressBar android:id="@+id/wg_progress_container"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent" android:layout_height="6dp"
+                android:layout_marginTop="3dp"
+                android:progressDrawable="@drawable/widget_progress"
+                android:indeterminate="false" android:max="100" android:progress="0"
+                android:layoutDirection="ltr" android:visibility="gone" />
+
+            <TextView android:id="@+id/wg_remaining_text"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="" android:gravity="center"
+                android:textColor="#CCDDBB88" android:textSize="8sp" android:layout_marginTop="3dp"
+                android:visibility="gone"
+                android:shadowColor="#CC000000" android:shadowRadius="4"
+                android:shadowDx="0" android:shadowDy="1" />
+        </LinearLayout>
+
+        <!-- ══ PRAYERS ROW: 5 daily prayers ══ -->
+        <LinearLayout
+            android:id="@+id/wg_prayers_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <LinearLayout android:id="@+id/wg_fajr_box"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/widget_prayer_cell_bg"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:layout_marginStart="1dp" android:layout_marginEnd="1dp">
+                <TextView android:id="@+id/wg_fajr_icon"
+                    android:layout_width="0dp" android:layout_height="0dp"
+                    android:text="" android:visibility="gone" />
+                <TextView android:id="@+id/wg_fajr_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="الفجر" android:textColor="#EEFFFFFF" android:textSize="8sp"
+                    android:gravity="center"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_fajr_time"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--:--" android:textColor="#FFDDBB88"
+                    android:textSize="8.5sp" android:textStyle="bold"
+                    android:gravity="center" android:layout_marginTop="1dp"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/wg_dhuhr_box"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/widget_prayer_cell_bg"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:layout_marginStart="1dp" android:layout_marginEnd="1dp">
+                <TextView android:id="@+id/wg_dhuhr_icon"
+                    android:layout_width="0dp" android:layout_height="0dp"
+                    android:text="" android:visibility="gone" />
+                <TextView android:id="@+id/wg_dhuhr_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="الظهر" android:textColor="#EEFFFFFF" android:textSize="8sp"
+                    android:gravity="center"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_dhuhr_time"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--:--" android:textColor="#FFDDBB88"
+                    android:textSize="8.5sp" android:textStyle="bold"
+                    android:gravity="center" android:layout_marginTop="1dp"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/wg_asr_box"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/widget_prayer_cell_bg"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:layout_marginStart="1dp" android:layout_marginEnd="1dp">
+                <TextView android:id="@+id/wg_asr_icon"
+                    android:layout_width="0dp" android:layout_height="0dp"
+                    android:text="" android:visibility="gone" />
+                <TextView android:id="@+id/wg_asr_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="العصر" android:textColor="#EEFFFFFF" android:textSize="8sp"
+                    android:gravity="center"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_asr_time"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--:--" android:textColor="#FFDDBB88"
+                    android:textSize="8.5sp" android:textStyle="bold"
+                    android:gravity="center" android:layout_marginTop="1dp"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/wg_maghrib_box"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/widget_prayer_cell_bg"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:layout_marginStart="1dp" android:layout_marginEnd="1dp">
+                <TextView android:id="@+id/wg_maghrib_icon"
+                    android:layout_width="0dp" android:layout_height="0dp"
+                    android:text="" android:visibility="gone" />
+                <TextView android:id="@+id/wg_maghrib_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="المغرب" android:textColor="#EEFFFFFF" android:textSize="8sp"
+                    android:gravity="center"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_maghrib_time"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--:--" android:textColor="#FFDDBB88"
+                    android:textSize="8.5sp" android:textStyle="bold"
+                    android:gravity="center" android:layout_marginTop="1dp"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/wg_isha_box"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@drawable/widget_prayer_cell_bg"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:layout_marginStart="1dp" android:layout_marginEnd="1dp">
+                <TextView android:id="@+id/wg_isha_icon"
+                    android:layout_width="0dp" android:layout_height="0dp"
+                    android:text="" android:visibility="gone" />
+                <TextView android:id="@+id/wg_isha_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="العشاء" android:textColor="#EEFFFFFF" android:textSize="8sp"
+                    android:gravity="center"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_isha_time"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="--:--" android:textColor="#FFDDBB88"
+                    android:textSize="8.5sp" android:textStyle="bold"
+                    android:gravity="center" android:layout_marginTop="1dp"
+                    android:shadowColor="#BB000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ══ BOTTOM BAR: hijri date + day percent ══ -->
+        <LinearLayout
+            android:id="@+id/wg_bottom_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/wg_hijri_date_bottom"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="" android:textColor="#FFFFFFFF"
+                    android:textSize="9sp" android:textStyle="bold"
+                    android:shadowColor="#CC000000" android:shadowRadius="5"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_hijri_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="التاريخ الهجري" android:textColor="#AAFFFFFF"
+                    android:textSize="7.5sp"
+                    android:shadowColor="#CC000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+
+            <TextView android:layout_width="1dp" android:layout_height="20dp"
+                android:background="#35FFFFFF"
+                android:layout_marginStart="8dp" android:layout_marginEnd="8dp"
+                android:text="" />
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="vertical" android:gravity="end">
+                <TextView android:id="@+id/wg_day_pct"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="" android:textColor="#EEFFFFFF"
+                    android:textSize="9sp" android:textStyle="bold" android:gravity="end"
+                    android:shadowColor="#CC000000" android:shadowRadius="5"
+                    android:shadowDx="0" android:shadowDy="1" />
+                <TextView android:id="@+id/wg_day_pct_label"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="نسبة اليوم المنقضي" android:textColor="#AAFFFFFF"
+                    android:textSize="7.5sp" android:gravity="end"
+                    android:shadowColor="#CC000000" android:shadowRadius="4"
+                    android:shadowDx="0" android:shadowDy="1" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Hidden fields for data passing -->
+        <TextView android:id="@+id/wg_prev_prayer"
+            android:layout_width="0dp" android:layout_height="0dp"
+            android:text="" android:visibility="gone" />
+        <TextView android:id="@+id/wg_next_prayer"
+            android:layout_width="0dp" android:layout_height="0dp"
+            android:text="" android:visibility="gone" />
+    </LinearLayout>
+
+</FrameLayout>

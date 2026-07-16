@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Noor Brand Colors -->
+    <color name="colorPrimary">#C19A6B</color>
+    <color name="colorPrimaryDark">#A07848</color>
+    <color name="colorAccent">#C19A6B</color>
+
+    <!-- Adaptive icon background — cream matching logo background -->
+    <color name="ic_launcher_background">#F5E6CC</color>
+
+    <!-- Splash screen background — warm cream matching app icon (NOT black) -->
+    <color name="splash_background">#F5E6CC</color>
+</resources>

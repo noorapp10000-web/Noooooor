@@ -1,0 +1,205 @@
+uploads = []
+
+[[generated]]
+id = "4jVTh76gLYko6Oy1pxIW-"
+uri = "file://attached_assets/mascot_owl.png"
+type = "image"
+title = "Islamic owl mascot"
+
+[[generated]]
+id = "0-RXHzUfvhwHlFAag5hQf"
+uri = "file://attached_assets/mascot_moon.png"
+type = "image"
+title = "Islamic moon mascot"
+
+[[generated]]
+id = "PpLn8B9UctF_c59Vey8T9"
+uri = "file://attached_assets/mascot_student.png"
+type = "image"
+title = "Islamic student mascot"
+
+[[generated]]
+id = "h9U8JTgrKD6FFiA8hUyv6"
+uri = "file://artifacts/noor/public/images/wudu/step-01-niyyah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OZjLagIP1biHIC6asnFGB"
+uri = "file://artifacts/noor/public/images/wudu/step-02-hands.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "cehwU91CRf1dmm1puEYDm"
+uri = "file://artifacts/noor/public/images/wudu/step-03-mouth.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "-QGPpg8g1lSlJoXByLZyx"
+uri = "file://artifacts/noor/public/images/wudu/step-04-nose.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "XMOPJ7BX51xS4YW4bZVwJ"
+uri = "file://artifacts/noor/public/images/wudu/step-05-face.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Yy-qyLuX-LmYCWuQzOFth"
+uri = "file://artifacts/noor/public/images/wudu/step-06-arms.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "u-py1mBQJbcfkq_AYjT_h"
+uri = "file://artifacts/noor/public/images/wudu/step-07-head.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OUSuDmcrfKCsQlw9nIUzQ"
+uri = "file://artifacts/noor/public/images/wudu/step-08-ears.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "aFGMF8XRklE17f9r1Gvjc"
+uri = "file://artifacts/noor/public/images/wudu/step-09-feet.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OESGyVp1HNrIzxGsXtF_4"
+uri = "file://artifacts/noor/public/images/wudu/step-10-dua.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gkSU4K8ZhrSEKHUofuEXf"
+uri = "file://artifacts/noor/public/images/prayer/step-01-niyyah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "TwUhy34qLme6GwMbjPNt3"
+uri = "file://artifacts/noor/public/images/prayer/step-02-takbir.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "v2vTh2V800jy8y7Wf1fR1"
+uri = "file://artifacts/noor/public/images/prayer/step-03-istiftah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "BWGtA6uVIUqLFWN39bIBU"
+uri = "file://artifacts/noor/public/images/prayer/step-04-basmala.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "GiSKA5oYQ1zmB6AbsDgmR"
+uri = "file://artifacts/noor/public/images/prayer/step-05-fatiha.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Ick96_k0kZHaxXOUKq6LF"
+uri = "file://artifacts/noor/public/images/prayer/step-06-surah.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "N8OUX8uXiDXEVn5VVwgby"
+uri = "file://artifacts/noor/public/images/prayer/step-07-ruku.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "tUZkjxk5fiOqGlqu68GDc"
+uri = "file://artifacts/noor/public/images/prayer/step-08-itidal.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "of5yAoVw2MTTXTigUuQ4K"
+uri = "file://artifacts/noor/public/images/prayer/step-09-sujood1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "4DlFxGJ-cEiOOt6roNkQy"
+uri = "file://artifacts/noor/public/images/prayer/step-10-julus.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "DN4eK50ZHCYrwPPI3r1e2"
+uri = "file://artifacts/noor/public/images/prayer/step-12-tashahhud.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "jH9xpAIzkNNS0ONYcnzvS"
+uri = "file://artifacts/noor/public/images/prayer/step-14-tasleem.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Mk_Yk06r5N63YRcNz5Lzb"
+uri = "file://artifacts/noor/public/images/prayer/step-13-salawat.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "vEohle10ovsXS64d-47d0"
+uri = "file://android/app/src/main/res/drawable-xxhdpi/mosque_realistic.png"
+type = "image"
+title = "realistic mosque illustration"
+
+[[generated]]
+id = "ZrOEGcVKUAwR2my2cneRL"
+uri = "file://attached_assets/mosque_simple_raw.png"
+type = "image"
+title = "simple mosque silhouette"
+
+[[generated]]
+id = "a6Luqi7mABZduVZWN_dqZ"
+uri = "file://attached_assets/mosque_photo_raw.png"
+type = "image"
+title = "realistic mosque photo"
+
+[[generated]]
+id = "M85RgaWm4XQZSXBPTctBI"
+uri = "file://attached_assets/mosque_white_bg.png"
+type = "image"
+title = "mosque white background"
+
+[[outputs]]
+id = "UZTEXrYzWt5P9P7SddU_5"
+uri = "file://noor-website-prompt.md"
+type = "text"
+title = "برومت موقع نور — Export/Import + Google Drive"
+
+[[outputs]]
+id = "x44wRpvt6dFFhO7BFEkup"
+uri = "file://attached_assets/mascot_owl.png"
+type = "image"
+title = "١ — البومة العالِمة 🦉"
+
+[[outputs]]
+id = "QJPgPpX5TVnrPIwGvrW3J"
+uri = "file://attached_assets/mascot_moon.png"
+type = "image"
+title = "٢ — الهلال المبتسم 🌙"
+
+[[outputs]]
+id = "k-_T_xJZO1KKSivUfsz9O"
+uri = "file://attached_assets/mascot_student.png"
+type = "image"
+title = "٣ — الطالب الصغير 📖"

@@ -1,0 +1,323 @@
+import { useState, useRef, useEffect } from 'react';
+import { EGYPT_GOVERNORATES } from '@/lib/constants';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, User, ChevronRight, MapPin, FolderOpen, RefreshCw, CheckCircle } from 'lucide-react';
+import { saveProfileToRTDB, getOrCreateLocalUid, importAllData, type UserProfile } from '@/lib/rtdb';
+
+interface LoginProps { onComplete: () => void; }
+type Step = 'name' | 'city';
+type Gender = 'male' | 'female';
+
+function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string) => void }) {
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.65)', border: '1.5px solid rgba(139,99,64,0.2)', boxShadow: '0 2px 8px rgba(93,48,16,0.06)' }}>
+      <div className="overflow-y-auto" style={{ maxHeight: '44vh' }}>
+        <div className="grid grid-cols-3 gap-2 p-3">
+          {EGYPT_GOVERNORATES.map(gov => {
+            const selected = govId === gov.id;
+            return (
+              <motion.button
+                key={gov.id}
+                onClick={() => onSelect(gov.id)}
+                whileTap={{ scale: 0.93 }}
+                className="relative flex flex-col items-center gap-1.5 rounded-xl p-2 pt-2.5 transition-all duration-200"
+                style={{
+                  background: selected ? 'linear-gradient(135deg,rgba(193,154,107,0.28),rgba(193,154,107,0.1))' : 'rgba(255,255,255,0.6)',
+                  border: selected ? '1.5px solid rgba(193,154,107,0.7)' : '1.5px solid rgba(139,99,64,0.12)',
+                  boxShadow: selected ? '0 0 12px rgba(193,154,107,0.2)' : 'none',
+                }}
+              >
+                <div className="w-11 h-8 rounded-md overflow-hidden flex items-center justify-center" style={{ background: 'rgba(139,99,64,0.08)' }}>
+                  <img src={gov.flag} alt={gov.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                </div>
+                <span className="text-[10px] font-bold leading-tight text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: selected ? '#8B6340' : '#7A4F28' }}>
+                  {gov.name}
+                </span>
+                {selected && (
+                  <div className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#C19A6B' }}>
+                    <Check className="w-2.5 h-2.5 text-white" />
+                  </div>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Login({ onComplete }: LoginProps) {
+  const [step, setStep] = useState<Step>('name');
+  const [gender, setGender] = useState<Gender>('male');
+  const [nameValue, setNameValue] = useState('');
+  const [govId, setGovId] = useState('');
+  const [focused, setFocused] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const canNext = nameValue.trim().length > 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => nameInputRef.current?.focus(), 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  function syncNameFromInput() {
+    const val = nameInputRef.current?.value ?? '';
+    setNameValue(val);
+  }
+
+  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const result = importAllData(text);
+      setImportResult({ ok: result.success, msg: result.success ? 'تم استعادة البيانات ✓' : (result.error ?? 'خطأ غير معروف') });
+      setImporting(false);
+      if (result.success) setTimeout(() => onComplete(), 1600);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  function handleNameNext() {
+    const val = nameValue.trim() || nameInputRef.current?.value?.trim() || '';
+    if (!val) return;
+    setStep('city');
+  }
+
+  const slide = {
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -16 },
+    transition: { duration: 0.26 },
+  };
+
+  const BTN_GOLD = {
+    background: 'linear-gradient(135deg, #C19A6B 0%, #d4aa7d 50%, #b8894f 100%)',
+    color: '#1a0e00',
+    fontFamily: '"Tajawal", sans-serif',
+    boxShadow: '0 4px 24px rgba(193,154,107,0.35), 0 1px 0 rgba(255,255,255,0.15) inset',
+    fontWeight: 700,
+    fontSize: '1rem',
+  } as const;
+
+  function handleCitySelect(id: string) {
+    setGovId(id);
+    const gov = EGYPT_GOVERNORATES.find(g => g.id === id);
+    if (!gov) return;
+
+    const uid = getOrCreateLocalUid();
+    const userName = nameValue.trim() || nameInputRef.current?.value?.trim() || '';
+    const profile: UserProfile = {
+      uid,
+      name: userName,
+      email: '',
+      photo: '',
+      gender,
+      governorateId: gov.id,
+      governorateName: gov.name,
+      lat: gov.lat,
+      lng: gov.lng,
+      joinedAt: Date.now(),
+    };
+
+    saveProfileToRTDB(uid, profile);
+    onComplete();
+  }
+
+  const mascotSrc = gender === 'female' ? '/mascot-female.png' : '/mascot.png';
+
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-5 overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}
+      dir="rtl"
+    >
+      {/* Background glows */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full"
+          style={{ background: 'radial-gradient(ellipse, rgba(193,154,107,0.18) 0%, transparent 70%)', filter: 'blur(50px)' }} />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px] rounded-full"
+          style={{ background: 'radial-gradient(ellipse, rgba(139,99,64,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm">
+
+        {/* Mascot + App name */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="text-center mb-6"
+        >
+          {/* Mascot */}
+          <div className="relative mx-auto mb-2" style={{ height: 180, width: 160 }}>
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={mascotSrc}
+                src={mascotSrc}
+                alt="mascot"
+                className="absolute inset-0 w-full h-full object-contain drop-shadow-xl"
+                initial={{ opacity: 0, scale: 0.88, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.88, y: 8 }}
+                transition={{ duration: 0.28, ease: 'easeOut' }}
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* App name */}
+          <h1 className="text-3xl font-bold" style={{ fontFamily: '"Amiri", serif', background: 'linear-gradient(135deg, #e8c98a, #C19A6B, #a07840)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            نُور
+          </h1>
+          <p className="text-xs tracking-[0.25em] mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+            رفيقك الإسلامي الشامل
+          </p>
+        </motion.div>
+
+        <AnimatePresence mode="wait">
+
+          {/* Step 1: Name */}
+          {step === 'name' && (
+            <motion.div key="name" {...slide} className="flex flex-col gap-4">
+              <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(139,99,64,0.2)', boxShadow: '0 2px 12px rgba(93,48,16,0.08)' }}>
+
+                <h2 className="text-lg font-bold text-center mb-4" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>
+                  أهلاً بك في نور
+                </h2>
+
+                {/* Gender selector */}
+                <div className="flex gap-2 mb-4">
+                  {(['male', 'female'] as Gender[]).map(g => {
+                    const selected = gender === g;
+                    const label = g === 'male' ? 'ذكر' : 'أنثى';
+                    return (
+                      <button
+                        key={g}
+                        onClick={() => setGender(g)}
+                        className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-all duration-200"
+                        style={{
+                          fontFamily: '"Tajawal", sans-serif',
+                          background: selected
+                            ? 'linear-gradient(135deg, #C19A6B, #a07840)'
+                            : 'rgba(139,99,64,0.07)',
+                          color: selected ? '#fff' : '#8B6340',
+                          border: selected
+                            ? '1.5px solid rgba(193,154,107,0.6)'
+                            : '1.5px solid rgba(139,99,64,0.18)',
+                          boxShadow: selected ? '0 2px 10px rgba(193,154,107,0.3)' : 'none',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Name input */}
+                <p className="text-xs text-center mb-3" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+                  اكتب اسمك للبدء
+                </p>
+                <div
+                  className="relative w-full rounded-2xl transition-all duration-200"
+                  style={{
+                    background: focused ? '#fff' : 'rgba(255,255,255,0.8)',
+                    border: focused ? '1.5px solid #C19A6B' : '1.5px solid rgba(139,99,64,0.25)',
+                    boxShadow: focused ? '0 0 0 3px rgba(193,154,107,0.15)' : '0 1px 4px rgba(93,48,16,0.08)',
+                  }}
+                >
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2" style={{ color: focused ? '#C19A6B' : 'rgba(139,99,64,0.45)' }}>
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={nameValue}
+                    placeholder="اسمك..."
+                    maxLength={30}
+                    className="w-full bg-transparent outline-none py-4"
+                    style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => { setFocused(false); syncNameFromInput(); }}
+                    onChange={e => setNameValue(e.target.value)}
+                    onInput={syncNameFromInput}
+                    onCompositionEnd={syncNameFromInput}
+                    onKeyDown={e => { if (e.key === 'Enter') handleNameNext(); }}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleNameNext}
+                disabled={!canNext}
+                className="w-full py-4 rounded-2xl transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+                style={BTN_GOLD}
+              >
+                <ChevronRight className="w-4 h-4" />
+                التالي
+              </button>
+
+              {/* Import backup */}
+              <input ref={importRef} type="file" accept="*" className="hidden" onChange={handleImportFile} />
+              <button
+                onClick={() => importRef.current?.click()}
+                disabled={importing}
+                className="w-full py-3 rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{
+                  background: importResult?.ok ? 'rgba(34,197,94,0.1)' : importResult?.ok === false ? 'rgba(239,68,68,0.08)' : 'rgba(193,154,107,0.1)',
+                  border: `1.5px solid ${importResult?.ok ? 'rgba(34,197,94,0.35)' : importResult?.ok === false ? 'rgba(239,68,68,0.3)' : 'rgba(193,154,107,0.3)'}`,
+                  color: importResult?.ok ? '#16a34a' : importResult?.ok === false ? '#ef4444' : '#8B6340',
+                  fontFamily: '"Tajawal", sans-serif',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : importResult?.ok ? <CheckCircle className="w-4 h-4" /> : <FolderOpen className="w-4 h-4" />}
+                {importing ? 'جاري الاستعادة...' : importResult ? importResult.msg : 'استعادة من نسخة احتياطية'}
+              </button>
+
+              <p className="text-center text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(155,112,67,0.6)' }}>
+                بياناتك محفوظة على جهازك فقط — لا حاجة لإنترنت
+              </p>
+            </motion.div>
+          )}
+
+          {/* Step 2: City */}
+          {step === 'city' && (
+            <motion.div key="city" {...slide} className="flex flex-col gap-4">
+              <button
+                onClick={() => setStep('name')}
+                className="flex items-center gap-1.5 text-sm"
+                style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}
+              >
+                <ChevronRight className="w-4 h-4" /> رجوع
+              </button>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="w-4 h-4" style={{ color: '#C19A6B' }} />
+                  <h2 className="text-lg font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>
+                    اختر محافظتك
+                  </h2>
+                </div>
+                <p className="text-xs mb-4 mr-6" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+                  لضبط مواقيت الصلاة بدقة — تقدر تغيرها لاحقاً
+                </p>
+                <CityPicker govId={govId} onSelect={handleCitySelect} />
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}

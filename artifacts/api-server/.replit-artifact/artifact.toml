@@ -1,32 +1,26 @@
 kind = "api"
-previewPath = "/api" # TODO - should be excluded from preview in the first place
-title = "API Server"
+previewPath = "/api-server/"
+title = "Noor App"
 version = "1.0.0"
 id = "3B4_FFSkEVBkAeYMFRJ2e"
 
 [[services]]
-localPort = 8080
+localPort = 19382
 name = "API Server"
-paths = ["/api"]
+paths = ["/api-server/"]
 
 [services.development]
-run = "pnpm --filter @workspace/api-server run dev"
+run = "bash /home/runner/workspace/scripts/dev-artifact.sh"
+
+[services.development.env]
+PORT = "19382"
+API_SERVER_PORT = "3001"
 
 [services.production]
-
-[services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
-
-[services.production.build.env]
-NODE_ENV = "production"
+build = "npm run build && pnpm --filter @workspace/api-server run build"
 
 [services.production.run]
-# we don't run through pnpm to make startup faster in production
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+args = ["node", "artifacts/api-server/dist/index.cjs"]
 
 [services.production.run.env]
 PORT = "8080"
-NODE_ENV = "production"
-
-[services.production.health.startup]
-path = "/api/healthz"

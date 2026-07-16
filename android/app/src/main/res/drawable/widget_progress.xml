@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Track: warm golden tint — visible on both dark (#0F0C22) and cream (#F5EDD8) backgrounds -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="#28C19A6B" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape android:shape="rectangle">
+                <solid android:color="#45C19A6B" />
+                <corners android:radius="4dp" />
+            </shape>
+        </clip>
+    </item>
+    <!-- Fill: rich golden gradient -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <gradient
+                    android:startColor="#B8885A"
+                    android:centerColor="#C19A6B"
+                    android:endColor="#F5C878"
+                    android:angle="0" />
+                <corners android:radius="4dp" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>
