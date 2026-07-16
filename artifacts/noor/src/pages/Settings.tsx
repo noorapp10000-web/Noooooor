@@ -428,6 +428,106 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   );
 }
 
+function AccessibilityDisclosureDialog({
+  onConfirm, onCancel, textColor, subText,
+}: { onConfirm: () => void; onCancel: () => void; textColor: string; subText: string }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          background: '#fff', borderRadius: '20px', padding: '24px',
+          maxWidth: '360px', width: '100%', direction: 'rtl',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Icon */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '16px',
+            background: 'linear-gradient(145deg,#C19A6B,#8B5E3C)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ShieldCheck style={{ width: '28px', height: '28px', color: '#fff' }} />
+          </div>
+        </div>
+
+        {/* Title */}
+        <p style={{
+          fontFamily: '"Tajawal", sans-serif', fontWeight: 700,
+          fontSize: '18px', color: '#1a1a1a', textAlign: 'center', marginBottom: '12px',
+        }}>
+          إشعار إمكانية الوصول
+        </p>
+
+        {/* Body */}
+        <p style={{
+          fontFamily: '"Tajawal", sans-serif', fontSize: '13px',
+          color: '#444', lineHeight: '1.7', marginBottom: '10px', textAlign: 'center',
+        }}>
+          تستخدم ميزة <strong>حارس أوقات الصلاة</strong> خدمة إمكانية الوصول (Accessibility Service) لمراقبة التطبيق المفتوح حالياً أثناء وقت الصلاة، وذلك لعرض شاشة التذكير بالصلاة.
+        </p>
+
+        <div style={{
+          background: 'rgba(193,154,107,0.1)', borderRadius: '12px',
+          padding: '12px 14px', marginBottom: '10px',
+        }}>
+          <p style={{
+            fontFamily: '"Tajawal", sans-serif', fontSize: '12px',
+            color: '#8B5E3C', lineHeight: '1.7', margin: 0,
+          }}>
+            ✔️ تعمل محلياً على جهازك فقط<br />
+            ✔️ لا تجمع أو ترسل أي بيانات شخصية<br />
+            ✔️ تتوقف تلقائياً خارج أوقات الصلاة<br />
+            ✔️ يمكن تعطيلها في أي وقت من إعدادات الجهاز
+          </p>
+        </div>
+
+        <p style={{
+          fontFamily: '"Tajawal", sans-serif', fontSize: '12px',
+          color: '#777', textAlign: 'center', marginBottom: '20px',
+        }}>
+          بالمتابعة ستُفتح إعدادات الجهاز لتفعيل الخدمة
+        </p>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1, padding: '12px', borderRadius: '12px',
+              border: '1.5px solid #e5e5e5', background: '#f9f9f9',
+              fontFamily: '"Tajawal", sans-serif', fontWeight: 600,
+              fontSize: '14px', color: '#555', cursor: 'pointer',
+            }}
+          >
+            إلغاء
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1, padding: '12px', borderRadius: '12px',
+              border: 'none', background: 'linear-gradient(145deg,#C19A6B,#8B5E3C)',
+              fontFamily: '"Tajawal", sans-serif', fontWeight: 700,
+              fontSize: '14px', color: '#fff', cursor: 'pointer',
+            }}
+          >
+            موافق — متابعة
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PrayerGuardSection({
   sectionBg, borderColor, textColor, subText,
 }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
@@ -435,6 +535,7 @@ function PrayerGuardSection({
   const [enabled,     setEnabled]     = useState(false);
   const [permissions, setPermissions] = useState({ overlay: false, accessibility: false });
   const [loading,     setLoading]     = useState(true);
+  const [showDisclosure, setShowDisclosure] = useState(false);
 
   async function refreshState() {
     if (!isNative) return;
@@ -467,7 +568,12 @@ function PrayerGuardSection({
     setTimeout(() => NoorGuard.checkPermissions().then(setPermissions).catch(() => {}), 1500);
   }
 
-  async function handleGrantAccessibility() {
+  function handleGrantAccessibility() {
+    setShowDisclosure(true);
+  }
+
+  async function handleDisclosureConfirm() {
+    setShowDisclosure(false);
     await NoorGuard.requestAccessibilityPermission().catch(() => {});
   }
 
@@ -569,6 +675,15 @@ function PrayerGuardSection({
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#22c55e' }} />
           <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>الحارس مفعّل — يبدأ العمل عند دخول وقت الصلاة</p>
         </div>
+      )}
+
+      {showDisclosure && (
+        <AccessibilityDisclosureDialog
+          onConfirm={handleDisclosureConfirm}
+          onCancel={() => setShowDisclosure(false)}
+          textColor={textColor}
+          subText={subText}
+        />
       )}
     </motion.div>
   );

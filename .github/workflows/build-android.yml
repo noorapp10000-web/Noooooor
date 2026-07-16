@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g. 2.3)'
+        description: 'Version number (e.g. 3.2)'
         required: false
-        default: '2.3'
+        default: '3.2'
       build_type:
         description: 'Build type'
         required: false
