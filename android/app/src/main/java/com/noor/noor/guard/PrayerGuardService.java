@@ -33,7 +33,6 @@ public class PrayerGuardService extends AccessibilityService {
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes          = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
         info.feedbackType        = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        info.flags               = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS;
         info.notificationTimeout = 200;
         setServiceInfo(info);
 
@@ -53,6 +52,16 @@ public class PrayerGuardService extends AccessibilityService {
         // If overlay is already visible — do nothing at all, let it stay
         if (overlay != null && overlay.isShowing()) return;
 
+        // Do not access the foreground app identity unless the optional feature
+        // is enabled and a prayer reminder is currently needed.
+        if (!PrayerGuardPrefs.isEnabled(this)) return;
+
+        PrayerWindowInfo window = getCurrentPrayerWindow();
+        if (window == null) return;
+
+        String dateKey = PrayerGuardPrefs.todayKey();
+        if (PrayerGuardPrefs.hasPrayed(this, dateKey, window.key)) return;
+
         CharSequence pkgSeq = event.getPackageName();
         if (pkgSeq == null) return;
         String pkg = pkgSeq.toString();
@@ -67,14 +76,6 @@ public class PrayerGuardService extends AccessibilityService {
 
         // A genuinely new app was opened — check once
         lastShownPkg = pkg;
-
-        if (!PrayerGuardPrefs.isEnabled(this)) return;
-
-        PrayerWindowInfo window = getCurrentPrayerWindow();
-        if (window == null) return;
-
-        String dateKey = PrayerGuardPrefs.todayKey();
-        if (PrayerGuardPrefs.hasPrayed(this, dateKey, window.key)) return;
 
         overlay.show(window.nameAr, window.key, dateKey);
     }

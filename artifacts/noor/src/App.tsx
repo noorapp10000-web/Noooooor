@@ -14,6 +14,10 @@ import { BatteryOptPrompt } from "@/components/BatteryOptPrompt";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { TutorialMascot } from "@/components/TutorialMascot";
 import { TutorialProvider } from "@/components/TutorialMascotContext";
+import {
+  AccessibilityDisclosure,
+  ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY,
+} from "@/components/AccessibilityDisclosure";
 
 import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
@@ -46,6 +50,7 @@ import {
 } from "@/lib/rtdb";
 import { scheduleAllNotifications, setupNotificationTapHandler } from "@/lib/notifications";
 import { Capacitor } from "@capacitor/core";
+import NoorGuard from "@/lib/guard-bridge";
 import NoorWidget from "@/lib/widget-bridge";
 
 const queryClient = new QueryClient({
@@ -106,6 +111,49 @@ function NotificationTapHandler() {
     setupNotificationTapHandler((route) => navigate(route));
   }, [navigate]);
   return null;
+}
+
+function GlobalAccessibilityDisclosure() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    if (localStorage.getItem(ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY)) return;
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      NoorGuard.checkPermissions()
+        .then(({ accessibility }) => {
+          if (active && !accessibility) setVisible(true);
+        })
+        .catch(() => {});
+    }, 800);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  if (!visible) return null;
+
+  function handleDecline() {
+    localStorage.setItem(ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY, 'declined');
+    setVisible(false);
+  }
+
+  async function handleAccept() {
+    localStorage.setItem(ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY, 'accepted');
+    setVisible(false);
+    await NoorGuard.requestAccessibilityPermission().catch(() => {});
+  }
+
+  return (
+    <AccessibilityDisclosure
+      onAccept={handleAccept}
+      onDecline={handleDecline}
+    />
+  );
 }
 
 function Router() {
@@ -299,6 +347,7 @@ function App() {
                     <>
                       <GlobalBackground />
                       <Router />
+                      <GlobalAccessibilityDisclosure />
                     </>
                   </TutorialProvider>
                 </WouterRouter>

@@ -12,6 +12,10 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { flushRTDB, exportAllData, importAllData, getProfileCache } from '@/lib/rtdb';
 import {
+  AccessibilityDisclosure,
+  ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY,
+} from '@/components/AccessibilityDisclosure';
+import {
   requestNotificationPermission,
   checkNotificationPermission,
   reschedulePrayerNotifications,
@@ -428,118 +432,6 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
   );
 }
 
-function AccessibilityDisclosureDialog({
-  onConfirm, onCancel, textColor, subText,
-}: { onConfirm: () => void; onCancel: () => void; textColor: string; subText: string }) {
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px',
-      }}
-      onClick={onCancel}
-    >
-      <div
-        style={{
-          background: '#fff', borderRadius: '20px', padding: '24px',
-          maxWidth: '360px', width: '100%', direction: 'rtl',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Icon */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-          <div style={{
-            width: '56px', height: '56px', borderRadius: '16px',
-            background: 'linear-gradient(145deg,#C19A6B,#8B5E3C)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <ShieldCheck style={{ width: '28px', height: '28px', color: '#fff' }} />
-          </div>
-        </div>
-
-        {/* Title */}
-        <p style={{
-          fontFamily: '"Tajawal", sans-serif', fontWeight: 700,
-          fontSize: '18px', color: '#1a1a1a', textAlign: 'center', marginBottom: '12px',
-        }}>
-          إشعار إمكانية الوصول
-        </p>
-
-        {/* Body */}
-        <p style={{
-          fontFamily: '"Tajawal", sans-serif', fontSize: '13px',
-          color: '#444', lineHeight: '1.7', marginBottom: '10px', textAlign: 'center',
-        }}>
-          تستخدم ميزة <strong>حارس أوقات الصلاة</strong> خدمة إمكانية الوصول
-          (<strong>Accessibility Service</strong>) <strong>فقط</strong> لاكتشاف اسم التطبيق المفتوح
-          حالياً على الشاشة، وذلك لعرض شاشة تذكير الصلاة عند دخول وقت الصلاة.
-        </p>
-
-        <div style={{
-          background: 'rgba(193,154,107,0.1)', borderRadius: '12px',
-          padding: '12px 14px', marginBottom: '10px',
-        }}>
-          <p style={{
-            fontFamily: '"Tajawal", sans-serif', fontSize: '12px',
-            color: '#8B5E3C', lineHeight: '1.8', margin: 0,
-          }}>
-            ✔️ تعمل <strong>محلياً على جهازك فقط</strong> — بدون إنترنت<br />
-            ✔️ <strong>لا تقرأ</strong> محتوى التطبيقات أو النصوص أو كلمات المرور<br />
-            ✔️ <strong>لا تجمع أو ترسل</strong> أي بيانات شخصية لأي جهة<br />
-            ✔️ <strong>لا تُسجّل</strong> المكالمات أو الرسائل أو أي نشاط<br />
-            ✔️ تتوقف تلقائياً خارج أوقات الصلاة الخمس<br />
-            ✔️ يمكن تعطيلها في أي وقت من إعدادات الجهاز
-          </p>
-        </div>
-
-        <p style={{
-          fontFamily: '"Tajawal", sans-serif', fontSize: '11px',
-          color: '#999', textAlign: 'center', marginBottom: '8px', lineHeight: '1.6',
-        }}>
-          الاستخدام الوحيد لهذه الخدمة هو معرفة متى تفتح تطبيقاً آخر
-          أثناء وقت الصلاة لعرض التذكير — لا شيء آخر.
-        </p>
-
-        <p style={{
-          fontFamily: '"Tajawal", sans-serif', fontSize: '12px',
-          color: '#777', textAlign: 'center', marginBottom: '20px',
-        }}>
-          بالمتابعة ستُفتح إعدادات الجهاز لتفعيل الخدمة
-        </p>
-
-        {/* Buttons */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1, padding: '12px', borderRadius: '12px',
-              border: '1.5px solid #e5e5e5', background: '#f9f9f9',
-              fontFamily: '"Tajawal", sans-serif', fontWeight: 600,
-              fontSize: '14px', color: '#555', cursor: 'pointer',
-            }}
-          >
-            إلغاء
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              flex: 1, padding: '12px', borderRadius: '12px',
-              border: 'none', background: 'linear-gradient(145deg,#C19A6B,#8B5E3C)',
-              fontFamily: '"Tajawal", sans-serif', fontWeight: 700,
-              fontSize: '14px', color: '#fff', cursor: 'pointer',
-            }}
-          >
-            موافق — متابعة
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PrayerGuardSection({
   sectionBg, borderColor, textColor, subText,
 }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
@@ -585,8 +477,14 @@ function PrayerGuardSection({
   }
 
   async function handleDisclosureConfirm() {
+    localStorage.setItem(ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY, 'accepted');
     setShowDisclosure(false);
     await NoorGuard.requestAccessibilityPermission().catch(() => {});
+  }
+
+  function handleDisclosureDecline() {
+    localStorage.setItem(ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY, 'declined');
+    setShowDisclosure(false);
   }
 
   if (!isNative) {
@@ -690,11 +588,9 @@ function PrayerGuardSection({
       )}
 
       {showDisclosure && (
-        <AccessibilityDisclosureDialog
-          onConfirm={handleDisclosureConfirm}
-          onCancel={() => setShowDisclosure(false)}
-          textColor={textColor}
-          subText={subText}
+        <AccessibilityDisclosure
+          onAccept={handleDisclosureConfirm}
+          onDecline={handleDisclosureDecline}
         />
       )}
     </motion.div>
