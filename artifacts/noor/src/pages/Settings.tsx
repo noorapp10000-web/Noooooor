@@ -473,7 +473,9 @@ function AccessibilityDisclosureDialog({
           fontFamily: '"Tajawal", sans-serif', fontSize: '13px',
           color: '#444', lineHeight: '1.7', marginBottom: '10px', textAlign: 'center',
         }}>
-          تستخدم ميزة <strong>حارس أوقات الصلاة</strong> خدمة إمكانية الوصول (Accessibility Service) لمراقبة التطبيق المفتوح حالياً أثناء وقت الصلاة، وذلك لعرض شاشة التذكير بالصلاة.
+          تستخدم ميزة <strong>حارس أوقات الصلاة</strong> خدمة إمكانية الوصول
+          (<strong>Accessibility Service</strong>) <strong>فقط</strong> لاكتشاف اسم التطبيق المفتوح
+          حالياً على الشاشة، وذلك لعرض شاشة تذكير الصلاة عند دخول وقت الصلاة.
         </p>
 
         <div style={{
@@ -482,14 +484,24 @@ function AccessibilityDisclosureDialog({
         }}>
           <p style={{
             fontFamily: '"Tajawal", sans-serif', fontSize: '12px',
-            color: '#8B5E3C', lineHeight: '1.7', margin: 0,
+            color: '#8B5E3C', lineHeight: '1.8', margin: 0,
           }}>
-            ✔️ تعمل محلياً على جهازك فقط<br />
-            ✔️ لا تجمع أو ترسل أي بيانات شخصية<br />
-            ✔️ تتوقف تلقائياً خارج أوقات الصلاة<br />
+            ✔️ تعمل <strong>محلياً على جهازك فقط</strong> — بدون إنترنت<br />
+            ✔️ <strong>لا تقرأ</strong> محتوى التطبيقات أو النصوص أو كلمات المرور<br />
+            ✔️ <strong>لا تجمع أو ترسل</strong> أي بيانات شخصية لأي جهة<br />
+            ✔️ <strong>لا تُسجّل</strong> المكالمات أو الرسائل أو أي نشاط<br />
+            ✔️ تتوقف تلقائياً خارج أوقات الصلاة الخمس<br />
             ✔️ يمكن تعطيلها في أي وقت من إعدادات الجهاز
           </p>
         </div>
+
+        <p style={{
+          fontFamily: '"Tajawal", sans-serif', fontSize: '11px',
+          color: '#999', textAlign: 'center', marginBottom: '8px', lineHeight: '1.6',
+        }}>
+          الاستخدام الوحيد لهذه الخدمة هو معرفة متى تفتح تطبيقاً آخر
+          أثناء وقت الصلاة لعرض التذكير — لا شيء آخر.
+        </p>
 
         <p style={{
           fontFamily: '"Tajawal", sans-serif', fontSize: '12px',
