@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy — مطلوب من Apple لكل التطبيقات منذ iOS 17.4
+  يصف هذا الملف:
+  1. أنواع البيانات التي يجمعها التطبيق
+  2. سبب الوصول إلى APIs الخاصة بالخصوصية
+  يجب إضافته لـ Xcode project: File → Add Files to App
+-->
+<plist version="1.0">
+<dict>
+  <!-- ── هل تجمع التطبيق بيانات مرتبطة بالمستخدم؟ ── -->
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array>
+    <!-- الموقع الجغرافي (تقريبي) — لحساب مواقيت الصلاة والقبلة -->
+    <dict>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <false/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+        <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+      </array>
+    </dict>
+  </array>
+
+  <!-- ── هل يتتبع التطبيق المستخدم عبر تطبيقات أخرى؟ لا ── -->
+  <key>NSPrivacyTracking</key>
+  <false/>
+
+  <!-- ── الـ APIs التي تستخدمها مع سبب الاستخدام ── -->
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+
+    <!-- UserDefaults — لحفظ إعدادات التطبيق والبيانات الشخصية -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- CA92.1: الوصول إلى UserDefaults للوظائف الأساسية للتطبيق -->
+        <string>CA92.1</string>
+      </array>
+    </dict>
+
+    <!-- File Timestamp — لإدارة الملفات المحمّلة (الصوتيات) -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- C617.1: الوصول لطوابع الوقت للملفات التي أنشأها التطبيق نفسه -->
+        <string>C617.1</string>
+      </array>
+    </dict>
+
+    <!-- System Boot Time — لحساب الفترات الزمنية للإشعارات -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- 35F9.1: حساب الفترات الزمنية المنقضية -->
+        <string>35F9.1</string>
+      </array>
+    </dict>
+
+    <!-- Disk Space — لاتخاذ قرار التخزين قبل تحميل الملفات الصوتية -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- E174.1: التحقق من مساحة التخزين قبل حفظ الملفات -->
+        <string>E174.1</string>
+      </array>
+    </dict>
+
+  </array>
+</dict>
+</plist>

@@ -345,7 +345,8 @@ export function HomeTracker() {
       const next = { ...prev, prayers: { ...prev.prayers, [key]: newValue } };
       const uid = getCurrentUid() || getOrCreateLocalUid();
       if (uid) queueDailyTrackerSync(uid, currentDateKey, next);
-      if (Capacitor.isNativePlatform()) {
+      // NoorGuard.setPrayedStatus syncs to Android PrayerGuard overlay — Android-only
+      if (Capacitor.getPlatform() === 'android') {
         NoorGuard.setPrayedStatus({ date: currentDateKey, prayer: key, prayed: newValue }).catch(() => {});
       }
       return next;

@@ -413,7 +413,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       } catch {}
     }
 
-    if (!Capacitor.isNativePlatform()) return;
+    // AudioBridge is Android-only (media notification shade controls).
+    // On iOS, WKWebView exposes native MediaSession, which is already registered above.
+    if (Capacitor.getPlatform() !== 'android') return;
     const listeners: Array<{ remove: () => void }> = [];
     AudioBridge.addListener('mediaPlay', () => {
       userPausedRef.current = false;

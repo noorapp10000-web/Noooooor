@@ -117,7 +117,8 @@ function GlobalAccessibilityDisclosure() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    // NoorGuard (AccessibilityService) is Android-only — skip entirely on iOS
+    if (Capacitor.getPlatform() !== 'android') return;
     if (localStorage.getItem(ACCESSIBILITY_DISCLOSURE_RESPONSE_KEY)) return;
 
     let active = true;
@@ -190,7 +191,8 @@ function Router() {
 }
 
 function syncWidgetTheme() {
-  if (!Capacitor.isNativePlatform()) return;
+  // NoorWidget is Android-only (home screen widget) — no-op on iOS
+  if (Capacitor.getPlatform() !== 'android') return;
   const isDark = document.documentElement.classList.contains('dark');
   NoorWidget.setTheme({ theme: isDark ? 'dark' : 'light' }).catch(() => {});
 }

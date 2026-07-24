@@ -273,8 +273,9 @@ export function Home() {
   // ── Android Widget Bridge ────────────────────────────────────────────────
   // Sends prayer times + city + username + hijri date to SharedPreferences so the
   // widget works even when the app is fully closed. Re-runs when any of these change.
+  // NoorWidget is Android-only (home screen widget) — not available on iOS.
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (Capacitor.getPlatform() !== 'android') return;
     if (!lat || !lng) return;
     const prayers = buildWidgetPayload(lat, lng);
     const todayHijri = (() => {

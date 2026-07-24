@@ -9,7 +9,8 @@ export function BatteryOptPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    // BatteryOpt plugin is Android-only (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS intent)
+    if (Capacitor.getPlatform() !== 'android') return;
     const alreadyAsked = localStorage.getItem(STORAGE_KEY);
     if (alreadyAsked) return;
 

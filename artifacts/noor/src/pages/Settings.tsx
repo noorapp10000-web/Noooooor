@@ -435,14 +435,15 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
 function PrayerGuardSection({
   sectionBg, borderColor, textColor, subText,
 }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
-  const isNative = Capacitor.isNativePlatform();
+  // NoorGuard (Accessibility + Overlay) is Android-only — never runs on iOS
+  const isAndroid = Capacitor.getPlatform() === 'android';
   const [enabled,     setEnabled]     = useState(false);
   const [permissions, setPermissions] = useState({ overlay: false, accessibility: false });
   const [loading,     setLoading]     = useState(true);
   const [showDisclosure, setShowDisclosure] = useState(false);
 
   async function refreshState() {
-    if (!isNative) return;
+    if (!isAndroid) return;
     try {
       const [en, perms] = await Promise.all([NoorGuard.isEnabled(), NoorGuard.checkPermissions()]);
       setEnabled(en.enabled);
@@ -451,7 +452,7 @@ function PrayerGuardSection({
   }
 
   useEffect(() => {
-    if (!isNative) { setLoading(false); return; }
+    if (!isAndroid) { setLoading(false); return; }
     refreshState().finally(() => setLoading(false));
 
     function onVisible() {
@@ -487,7 +488,8 @@ function PrayerGuardSection({
     setShowDisclosure(false);
   }
 
-  if (!isNative) {
+  // Show "Android only" card on web AND on iOS — only Android gets the full UI
+  if (!isAndroid) {
     return (
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
         className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>

@@ -70,6 +70,50 @@ bash scripts/dev.sh
 - API server على port 3001
 - بدون Firebase، بدون خوادم خارجية
 
+## iOS — بناء التطبيق ورفعه على App Store
+
+### الميزات حسب المنصة
+
+| الميزة | أندرويد | iOS |
+|--------|---------|-----|
+| ويدجت الشاشة الرئيسية | ✅ | ❌ (أندرويد فقط) |
+| حارس الصلاة (Accessibility Overlay) | ✅ | ❌ (أندرويد فقط) |
+| تحسين البطارية (BatteryOpt) | ✅ | ❌ (أندرويد فقط) |
+| تحكم الإشعارات (AudioBridge) | ✅ | ❌ (MediaSession كافٍ) |
+| إشعارات الصلاة | ✅ | ✅ |
+| بوصلة القبلة | ✅ | ✅ |
+| تشغيل القرآن | ✅ | ✅ |
+| الأذكار والتسبيح | ✅ | ✅ |
+| التحميل والمشاركة | ✅ | ✅ |
+
+### خطوات البناء على macOS
+
+```bash
+# 1. المرة الأولى فقط
+bash scripts/ios-build.sh setup
+
+# 2. بعد كل تعديل كود
+bash scripts/ios-build.sh sync
+
+# 3. فتح Xcode
+bash scripts/ios-build.sh open
+```
+
+### إعداد Xcode (مطلوب يدوياً)
+
+1. **Signing & Capabilities** → أضف: `Background Modes` → فعّل `Audio, AirPlay, and Picture in Picture`
+2. **Signing & Capabilities** → أضف: `Push Notifications`
+3. **Bundle ID**: `com.noor.noor`
+4. **Privacy Manifest**: أضف `ios-config/PrivacyInfo.xcprivacy` عبر File → Add Files to App
+
+### صلاحيات Info.plist (تُضاف تلقائياً بـ ios-setup.sh)
+
+- `NSLocationWhenInUseUsageDescription` — لبوصلة القبلة ومواقيت الصلاة
+- `NSLocationAlwaysAndWhenInUseUsageDescription` — للإشعارات مع الموقع
+- `NSSpeechRecognitionUsageDescription` — للتعرف على الصوت
+- `NSMicrophoneUsageDescription` — للميكروفون
+- `UIBackgroundModes: audio` — لتشغيل القرآن في الخلفية
+
 ## APIs المتبقية (صوت فقط)
 - `GET /audio-proxy?url=` — بروكسي صوت من everyayah.com / mp3quran.net
 - `GET /download?url=&filename=` — تحميل MP3
