@@ -5,6 +5,8 @@ import { getSettingCache } from './rtdb';
 import { DAILY_MESSAGES } from './daily-messages';
 
 const EGYPT_TZ = 'Africa/Cairo';
+const IS_IOS = Capacitor.getPlatform() === 'ios';
+const IOS_SCHEDULE_DAYS = 4;
 
 const NOTIF_PRAYERS = [
   { id: 'Fajr',    name: 'الفجر',  idx: 0 },
@@ -141,7 +143,8 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
   const now = new Date();
   const notifications: Parameters<typeof LocalNotifications.schedule>[0]['notifications'] = [];
 
-  for (let day = 0; day <= 13; day++) {
+  const daysToSchedule = IS_IOS ? IOS_SCHEDULE_DAYS : 14;
+  for (let day = 0; day < daysToSchedule; day++) {
     const times = computePrayerTimesForDay(lat, lng, day);
 
     for (const prayer of NOTIF_PRAYERS) {
@@ -159,6 +162,7 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
           id: prayerNotifId(day, prayer.idx, 0),
           title: 'نُور',
           body: `صلاة ${prayer.name} بعد 20 دقيقة ♥️`,
+          sound: IS_IOS ? 'default' : undefined,
           schedule: { at: t20, allowWhileIdle: true },
           channelId: 'prayers',
           extra: { route: '/' },
@@ -174,6 +178,7 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
           id: prayerNotifId(day, prayer.idx, 1),
           title: 'نُور',
           body: `صلاة ${prayer.name} بعد 10 دقائق ♥️`,
+          sound: IS_IOS ? 'default' : undefined,
           schedule: { at: t10, allowWhileIdle: true },
           channelId: 'prayers',
           extra: { route: '/' },
@@ -188,6 +193,7 @@ export async function schedulePrayerNotifications(lat: number, lng: number): Pro
           id: prayerNotifId(day, prayer.idx, 2),
           title: 'نُور',
           body: `حان الآن موعد صلاة ${prayer.name} — قم للصلاة ♥️`,
+          sound: IS_IOS ? 'default' : undefined,
           schedule: { at: prayerTime, allowWhileIdle: true },
           channelId: 'prayers',
           extra: { route: '/' },
@@ -222,7 +228,8 @@ export async function scheduleDailyNotifications(): Promise<void> {
 
   const notifications: Parameters<typeof LocalNotifications.schedule>[0]['notifications'] = [];
 
-  for (let slot = 0; slot < 30; slot++) {
+  const daysToSchedule = IS_IOS ? IOS_SCHEDULE_DAYS : 30;
+  for (let slot = 0; slot < daysToSchedule; slot++) {
     // Build the target Date for this slot at exactly HH:00:00
     const dayDate = new Date(todayMidnight.getTime() + slot * 86400000);
     dayDate.setHours(hour, 0, 0, 0);
@@ -236,6 +243,7 @@ export async function scheduleDailyNotifications(): Promise<void> {
       id: dailyNotifId(slot),
       title: 'نُور',
       body: msg.text,
+      sound: IS_IOS ? 'default' : undefined,
       schedule: { at: dayDate, allowWhileIdle: true },
       channelId: 'daily',
       extra: { route: msg.route },

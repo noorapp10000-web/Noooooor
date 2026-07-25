@@ -1,0 +1,63 @@
+PODS:
+  - Capacitor (8.4.2):
+    - CapacitorCordova
+  - CapacitorCordova (8.4.2)
+  - CapacitorFilesystem (8.1.2):
+    - Capacitor
+    - IONFilesystemLib (~> 1.1.1)
+  - CapacitorGeolocation (8.2.0):
+    - Capacitor
+    - IONGeolocationLib (= 2.1.0)
+  - CapacitorHaptics (8.0.2):
+    - Capacitor
+  - CapacitorLocalNotifications (8.2.1):
+    - Capacitor
+  - CapacitorShare (8.0.1):
+    - Capacitor
+  - IONFilesystemLib (1.1.2)
+  - IONGeolocationLib (2.1.0)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/.pnpm/@capacitor+ios@8.4.2_@capacitor+core@8.4.2/node_modules/@capacitor/ios`)"
+  - "CapacitorCordova (from `../../node_modules/.pnpm/@capacitor+ios@8.4.2_@capacitor+core@8.4.2/node_modules/@capacitor/ios`)"
+  - "CapacitorFilesystem (from `../../node_modules/.pnpm/@capacitor+filesystem@8.1.2_@capacitor+core@8.4.2/node_modules/@capacitor/filesystem`)"
+  - "CapacitorGeolocation (from `../../node_modules/.pnpm/@capacitor+geolocation@8.2.0_@capacitor+core@8.4.2/node_modules/@capacitor/geolocation`)"
+  - "CapacitorHaptics (from `../../node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.4.2/node_modules/@capacitor/haptics`)"
+  - "CapacitorLocalNotifications (from `../../node_modules/.pnpm/@capacitor+local-notifications@8.2.1_@capacitor+core@8.4.2/node_modules/@capacitor/local-notifications`)"
+  - "CapacitorShare (from `../../node_modules/.pnpm/@capacitor+share@8.0.1_@capacitor+core@8.4.2/node_modules/@capacitor/share`)"
+
+SPEC REPOS:
+  trunk:
+    - IONFilesystemLib
+    - IONGeolocationLib
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/.pnpm/@capacitor+ios@8.4.2_@capacitor+core@8.4.2/node_modules/@capacitor/ios"
+  CapacitorCordova:
+    :path: "../../node_modules/.pnpm/@capacitor+ios@8.4.2_@capacitor+core@8.4.2/node_modules/@capacitor/ios"
+  CapacitorFilesystem:
+    :path: "../../node_modules/.pnpm/@capacitor+filesystem@8.1.2_@capacitor+core@8.4.2/node_modules/@capacitor/filesystem"
+  CapacitorGeolocation:
+    :path: "../../node_modules/.pnpm/@capacitor+geolocation@8.2.0_@capacitor+core@8.4.2/node_modules/@capacitor/geolocation"
+  CapacitorHaptics:
+    :path: "../../node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.4.2/node_modules/@capacitor/haptics"
+  CapacitorLocalNotifications:
+    :path: "../../node_modules/.pnpm/@capacitor+local-notifications@8.2.1_@capacitor+core@8.4.2/node_modules/@capacitor/local-notifications"
+  CapacitorShare:
+    :path: "../../node_modules/.pnpm/@capacitor+share@8.0.1_@capacitor+core@8.4.2/node_modules/@capacitor/share"
+
+SPEC CHECKSUMS:
+  Capacitor: 52f999235b8bd6a7d01694753f4f4d54d182e3a3
+  CapacitorCordova: 345eacdc4c8282415446aea4acd8c77d82480bd4
+  CapacitorFilesystem: 2db285a1ac6e475cc27cae2e1bea999000f9e2be
+  CapacitorGeolocation: b36f6287bfc9f2eefa04dc900496f2c8ae666136
+  CapacitorHaptics: 296f771ecd89c7a1bd92a7b6826a7d268e2e70f5
+  CapacitorLocalNotifications: 908a69a3cf7ae345426de3223d4980befb0103c6
+  CapacitorShare: 0c58305114538568059bfc07111f22dcb9cb2a82
+  IONFilesystemLib: 21a63377696b2d8fab5632ecfb7d2ac67bddb68a
+  IONGeolocationLib: 6a7b6f76063fb1b01cfb14fae7d0f526e3c9b271
+
+PODFILE CHECKSUM: 2dc081a9f01dc8c4d634cef74ffbe410fb0a97a5
+
+COCOAPODS: 1.16.2

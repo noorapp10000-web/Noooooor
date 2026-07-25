@@ -30,6 +30,17 @@ add_plist_key() {
   fi
 }
 
+set_plist_string() {
+  local KEY="$1"
+  local VALUE="$2"
+  if /usr/libexec/PlistBuddy -c "Print :$KEY" "$INFOPLIST" &>/dev/null; then
+    /usr/libexec/PlistBuddy -c "Set :$KEY '$VALUE'" "$INFOPLIST"
+  else
+    /usr/libexec/PlistBuddy -c "Add :$KEY string '$VALUE'" "$INFOPLIST"
+  fi
+  echo "  ✓ ضُبط: $KEY"
+}
+
 echo ""
 echo "📋 إضافة صلاحيات الخصوصية..."
 
@@ -38,14 +49,16 @@ add_plist_key "NSLocationWhenInUseUsageDescription" \
   "يستخدم نُور موقعك لتحديد اتجاه القبلة ومواقيت الصلاة بدقة"
 
 add_plist_key "NSLocationAlwaysAndWhenInUseUsageDescription" \
-  "يستخدم نُور موقعك لتحديد اتجاه القبلة ومواقيت الصلاة بدقة"
+  "يستخدم نُور موقعك لتحديد مواقيت الصلاة واتجاه القبلة بدقة. لا يتم تتبع موقعك أو استخدامه للإعلانات."
 
-# التعرف على الكلام — الـ plugin مثبَّت في المشروع
-add_plist_key "NSSpeechRecognitionUsageDescription" \
-  "يستخدم نُور التعرف على الصوت لتحسين تجربة البحث في القرآن الكريم"
+set_plist_string "CFBundleDisplayName" "نُور"
 
-add_plist_key "NSMicrophoneUsageDescription" \
-  "يستخدم نُور الميكروفون للتعرف على الصوت عند البحث في القرآن الكريم"
+if /usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" "$INFOPLIST" &>/dev/null; then
+  /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$INFOPLIST"
+else
+  /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$INFOPLIST"
+fi
+echo "  ✓ ضُبط: ITSAppUsesNonExemptEncryption"
 
 # ── إضافة قدرة الصوت في الخلفية ─────────────────────────────────────────────
 echo ""
@@ -70,24 +83,67 @@ fi
 echo ""
 echo "📱 ضبط الاتجاهات المدعومة (Portrait فقط)..."
 
-# إعداد UISupportedInterfaceOrientations لـ iPhone
-if /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$INFOPLIST" &>/dev/null; then
-  echo "  ↳ UISupportedInterfaceOrientations — موجود، لا تغيير"
-else
-  /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$INFOPLIST"
-  /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations: string 'UIInterfaceOrientationPortrait'" "$INFOPLIST"
-  echo "  ✓ أُنشئ: Portrait فقط"
-fi
+# إعداد UISupportedInterfaceOrientations لـ iPhone وiPad
+/usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" "$INFOPLIST" &>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$INFOPLIST"
+/usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations: string 'UIInterfaceOrientationPortrait'" "$INFOPLIST"
+/usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations~ipad" "$INFOPLIST" &>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad array" "$INFOPLIST"
+/usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad: string 'UIInterfaceOrientationPortrait'" "$INFOPLIST"
+echo "  ✓ ضُبط: Portrait فقط"
 
 # ── نسخ ملف Privacy Manifest ─────────────────────────────────────────────────
 PRIVACY_SRC="$ROOT/ios-config/PrivacyInfo.xcprivacy"
 PRIVACY_DST="$ROOT/ios/App/App/PrivacyInfo.xcprivacy"
 
-if [ -f "$PRIVACY_SRC" ] && [ ! -f "$PRIVACY_DST" ]; then
+if [ -f "$PRIVACY_SRC" ]; then
   cp "$PRIVACY_SRC" "$PRIVACY_DST"
   echo ""
   echo "✓ نُسِخ PrivacyInfo.xcprivacy إلى مجلد iOS"
-  echo "  ⚠️  يجب إضافته يدوياً لـ Xcode project: File → Add Files to App"
+fi
+
+# ── نسخ أيقونات iOS ───────────────────────────────────────────────────────────
+ICON_SRC="$ROOT/ios-config/AppIcon.appiconset"
+ICON_DST="$ROOT/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+
+if [ -d "$ICON_SRC" ]; then
+  mkdir -p "$ICON_DST"
+  rsync -a --delete "$ICON_SRC/" "$ICON_DST/"
+  echo "✓ نُسخت أيقونات iOS إلى Assets.xcassets"
+fi
+
+# ── ربط الخصوصية وضبط هدف الإصدار الأول ─────────────────────────────────────
+XCODE_PROJECT="$ROOT/ios/App/App.xcodeproj"
+
+if [ -d "$XCODE_PROJECT" ] && ruby -e "require 'xcodeproj'" &>/dev/null; then
+  ruby - "$XCODE_PROJECT" <<'RUBY'
+require 'xcodeproj'
+
+project = Xcodeproj::Project.open(ARGV.fetch(0))
+target = project.targets.find { |item| item.name == 'App' }
+app_group = project.main_group.groups.find { |group| group.path == 'App' || group.display_name == 'App' }
+
+abort 'تعذر العثور على Target App داخل مشروع Xcode' unless target && app_group
+
+privacy_ref = app_group.files.find { |file| file.path == 'PrivacyInfo.xcprivacy' }
+privacy_ref ||= app_group.new_file('PrivacyInfo.xcprivacy')
+
+unless target.resources_build_phase.files_references.include?(privacy_ref)
+  target.resources_build_phase.add_file_reference(privacy_ref)
+end
+
+target.build_configurations.each do |configuration|
+  configuration.build_settings['TARGETED_DEVICE_FAMILY'] = '1'
+  configuration.build_settings['MARKETING_VERSION'] = '1.0.0'
+  configuration.build_settings['CURRENT_PROJECT_VERSION'] = '2'
+  configuration.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.noorapp10000.noor'
+end
+
+project.save
+RUBY
+  echo "✓ رُبط Privacy Manifest وضُبط الإصدار 1.0.0 (Build 2) ومعرّف iOS"
+else
+  echo "⚠️ تعذر تعديل مشروع Xcode تلقائياً؛ تأكد من تثبيت CocoaPods ثم أعد تشغيل السكريبت"
 fi
 
 echo ""
@@ -96,8 +152,6 @@ echo "✅  الإعداد اكتمل!"
 echo ""
 echo "الخطوات التالية في Xcode:"
 echo "  1. افتح ios/App/App.xcworkspace"
-echo "  2. Signing & Capabilities ← أضف: Background Modes → Audio"
-echo "  3. Signing & Capabilities ← أضف: Push Notifications"
-echo "  4. تأكد من Bundle ID: com.noor.noor"
-echo "  5. اختر Development Team"
+echo "  2. تأكد من Bundle ID وDevelopment Team"
+echo "  3. لا تضف Push Notifications — التطبيق يستخدم Local Notifications"
 echo "═══════════════════════════════════════════════════"

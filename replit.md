@@ -103,7 +103,7 @@ bash scripts/ios-build.sh open
 
 1. **Signing & Capabilities** → أضف: `Background Modes` → فعّل `Audio, AirPlay, and Picture in Picture`
 2. **Signing & Capabilities** → أضف: `Push Notifications`
-3. **Bundle ID**: `com.noor.noor`
+3. **iOS Bundle ID**: `com.noorapp10000.noor`
 4. **Privacy Manifest**: أضف `ios-config/PrivacyInfo.xcprivacy` عبر File → Add Files to App
 
 ### صلاحيات Info.plist (تُضاف تلقائياً بـ ios-setup.sh)

@@ -460,7 +460,7 @@ function PrayerGuardSection({
     }
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [isNative]);
+  }, [isAndroid]);
 
   async function handleToggle() {
     const next = !enabled;

@@ -57,7 +57,7 @@ cmd_setup() {
   # إضافة منصة iOS
   if [ ! -d "$ROOT/ios" ]; then
     echo "📱 إضافة منصة iOS..."
-    cd "$ROOT" && npx cap add ios
+    cd "$ROOT" && npx cap add ios --packagemanager CocoaPods
     echo "  ✓ أُنشئ مجلد ios/"
   else
     echo "  ↳ مجلد ios/ موجود — تخطي cap add ios"
@@ -65,6 +65,9 @@ cmd_setup() {
 
   # إعداد Info.plist والصلاحيات
   bash "$ROOT/scripts/ios-setup.sh"
+
+  # مزامنة إضافات Capacitor وملفات الويب
+  cap_sync
 
   # تثبيت CocoaPods
   if command -v pod &>/dev/null; then
@@ -94,7 +97,7 @@ cmd_sync() {
 # ── فتح Xcode ─────────────────────────────────────────────────────────────────
 cmd_open() {
   local XCWORKSPACE="$ROOT/ios/App/App.xcworkspace"
-  [ -f "$XCWORKSPACE" ] || { echo "❌ App.xcworkspace غير موجود. شغّل أولاً: bash scripts/ios-build.sh setup"; exit 1; }
+  [ -d "$XCWORKSPACE" ] || { echo "❌ App.xcworkspace غير موجود. شغّل أولاً: bash scripts/ios-build.sh setup"; exit 1; }
   echo "🚀 فتح Xcode..."
   open "$XCWORKSPACE"
 }

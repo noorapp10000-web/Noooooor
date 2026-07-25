@@ -1,3 +1,5 @@
+/// <reference types="@capacitor/local-notifications" />
+
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -6,7 +8,6 @@ const config: CapacitorConfig = {
   webDir: 'artifacts/noor/dist/public',
   server: {
     androidScheme: 'https',
-    iosScheme: 'https',
     cleartext: true,
   },
   android: {
@@ -20,13 +21,13 @@ const config: CapacitorConfig = {
   ios: {
     // contentInset: 'automatic' — lets WKWebView respect safe-area insets (notch, home bar)
     contentInset: 'automatic',
-    // Disable the rubber-band scroll bounce so the app feels native
-    scrollEnabled: false,
+    // Keep WKWebView scrolling enabled; long app pages depend on it
+    scrollEnabled: true,
     backgroundColor: '#F5EDD8',
     // Disable 3D-Touch link previews inside the WebView
     allowsLinkPreview: false,
-    // Let Capacitor handle push/local notification presentation itself
-    handleApplicationNotifications: false,
+    // Let Capacitor forward local-notification callbacks to the JS plugin
+    handleApplicationNotifications: true,
     // Force mobile content mode even on large-screen iPads
     preferredContentMode: 'mobile',
   },
@@ -35,7 +36,7 @@ const config: CapacitorConfig = {
       // Android-only fields — iOS ignores smallIcon / iconColor / channelId
       smallIcon: 'ic_stat_icon_config_sample',
       iconColor: '#C19A6B',
-      sound: 'beep.wav',
+      presentationOptions: ['badge', 'sound', 'banner', 'list'],
     },
   },
 };
