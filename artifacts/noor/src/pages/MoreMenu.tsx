@@ -678,7 +678,7 @@ export function MoreMenu() {
             </p>
             <p className="text-muted-foreground text-xs mt-1 tracking-widest uppercase"
               style={{ fontFamily: '"Tajawal", sans-serif', letterSpacing: '0.12em' }}>
-              Noor App · الإصدار 3.0
+              Noor App · الإصدار 3.3
             </p>
 
             {/* Decorative divider */}
