@@ -103,6 +103,7 @@ function FullScreenShell({ children }: { children: React.ReactNode }) {
     >
       <ScreenArt />
       <div className="relative z-10 noor-page">{children}</div>
+      <MiniPlayer floating />
     </div>
   );
 }

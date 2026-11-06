@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
+import { Coordinates, PrayerTimes } from 'adhan';
+import { getCalcParams } from '@/lib/prayer-calc';
 import { getSettingCache } from './rtdb';
 import { DAILY_MESSAGES } from './daily-messages';
 
@@ -36,7 +37,7 @@ function egyptCalendarDate(dayOffset = 0): Date {
 function computePrayerTimesForDay(lat: number, lng: number, dayOffset: number): Record<string, Date> {
   const d = egyptCalendarDate(dayOffset);
   const coords = new Coordinates(lat, lng);
-  const params = CalculationMethod.Egyptian();
+  const params = getCalcParams();
   const pt = new PrayerTimes(coords, d, params);
   return {
     Fajr:    pt.fajr,

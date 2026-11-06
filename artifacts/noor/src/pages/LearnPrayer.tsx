@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { useLocation } from 'wouter';
-import { useUserSetting } from '@/hooks/use-user-setting';
+import { ChevronLeft } from 'lucide-react';
+import { PageHeader, ChipTabs, GoldBadge, NoorImg, arNum } from '@/components/noor/kit';
+import { StepTimeline, StepCard, StepControls, RulingList, KindBadge, type GuideStep, type StepKind } from '@/components/noor/StepGuide';
+import { vibrateLight } from '@/lib/haptics';
 
 /* ── Prayer time SVG icons ───────────────────────────────────── */
 function FajrIcon({ size = 36 }: { size?: number }) {
@@ -76,35 +76,6 @@ function IshaIcon({ size = 36 }: { size?: number }) {
       <circle cx="30" cy="22" r="1" fill="rgba(255,255,255,0.55)"/>
       <circle cx="6" cy="26" r="0.8" fill="rgba(255,255,255,0.5)"/>
       <circle cx="26" cy="28" r="1.1" fill="rgba(255,255,255,0.6)"/>
-    </svg>
-  );
-}
-
-function MosqueIcon({ size = 44, color = 'white' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 44 44" fill="none">
-      <rect x="3" y="14" width="5" height="24" rx="1.5" fill={color} opacity="0.88"/>
-      <path d="M5.5 14 C3.5 14 2 12.5 2 10.5 L9 10.5 C9 12.5 7.5 14 5.5 14Z" fill={color} opacity="0.88"/>
-      <rect x="4.5" y="7" width="2" height="4" rx="1" fill={color} opacity="0.88"/>
-      <circle cx="5.5" cy="6.5" r="1.2" fill={color} opacity="0.7"/>
-      <rect x="36" y="14" width="5" height="24" rx="1.5" fill={color} opacity="0.88"/>
-      <path d="M38.5 14 C36.5 14 35 12.5 35 10.5 L42 10.5 C42 12.5 40.5 14 38.5 14Z" fill={color} opacity="0.88"/>
-      <rect x="37.5" y="7" width="2" height="4" rx="1" fill={color} opacity="0.88"/>
-      <circle cx="38.5" cy="6.5" r="1.2" fill={color} opacity="0.7"/>
-      <rect x="8" y="28" width="28" height="10" rx="1" fill={color}/>
-      <path d="M8 28 Q8 14 22 14 Q36 14 36 28Z" fill={color}/>
-      <path d="M17 38 L17 32 Q17 28 22 28 Q27 28 27 32 L27 38Z" fill={color === 'white' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.2)'}/>
-      <path d="M22 14.5 C21.2 14.5 20.5 15.2 20.5 16 C21 15.7 21.6 15.7 22 16 C22.9 15.3 22.9 14.3 22 14.5Z" fill={color === 'white' ? '#C19A6B' : 'rgba(255,255,255,0.8)'} opacity="0.85"/>
-    </svg>
-  );
-}
-
-function TipIcon({ size = 16, color = '#C19A6B' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <circle cx="8" cy="8" r="7" stroke={color} strokeWidth="1.5"/>
-      <line x1="8" y1="7" x2="8" y2="11.5" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
-      <circle cx="8" cy="4.8" r="0.9" fill={color}/>
     </svg>
   );
 }
@@ -256,264 +227,129 @@ const PRAYERS: Prayer[] = [
   { name: 'العشاء', rakaas: 4, color: '#0C1C17', Icon: IshaIcon },
 ];
 
+
+const STEPS: GuideStep[] = PRAYER_STEPS.map(s => ({
+  id: s.id,
+  title: s.title,
+  subtitle: s.position.split(' — ')[0],
+  kind: (s.position.includes('ركن') ? 'ركن' : s.position.includes('سنة') ? 'سنة' : undefined) as StepKind | undefined,
+  arabic: s.arabic,
+  transliteration: s.transliteration,
+  meaning: s.meaning,
+  note: s.note,
+  repetitions: s.repetitions,
+  img: s.img,
+}));
+
+const ARKAN = [
+  { title: 'القيام مع القدرة', desc: 'في صلاة الفريضة' }, { title: 'تكبيرة الإحرام', desc: '«الله أكبر» لا يجزئ غيرها' },
+  { title: 'قراءة الفاتحة', desc: 'في كل ركعة' }, { title: 'الركوع' }, { title: 'الرفع من الركوع' }, { title: 'الاعتدال قائماً' },
+  { title: 'السجود على الأعضاء السبعة', desc: 'الجبهة مع الأنف، الكفان، الركبتان، أطراف القدمين' },
+  { title: 'الرفع من السجود' }, { title: 'الجلوس بين السجدتين' }, { title: 'الطمأنينة في جميع الأركان' },
+  { title: 'التشهد الأخير' }, { title: 'الجلوس للتشهد الأخير والتسليم' },
+  { title: 'الصلاة على النبي ﷺ في التشهد الأخير' }, { title: 'الترتيب بين الأركان' }, { title: 'التسليم' },
+];
+const WAJIBAT = [
+  { title: 'تكبيرات الانتقال', desc: 'جميع التكبيرات غير تكبيرة الإحرام' },
+  { title: 'قول «سمع الله لمن حمده»', desc: 'للإمام والمنفرد' }, { title: 'قول «ربنا ولك الحمد»' },
+  { title: '«سبحان ربي العظيم» مرة في الركوع' }, { title: '«سبحان ربي الأعلى» مرة في السجود' },
+  { title: '«رب اغفر لي» بين السجدتين' }, { title: 'التشهد الأول' }, { title: 'الجلوس للتشهد الأول' },
+];
+const SUNAN = [
+  { title: 'رفع اليدين', desc: 'عند تكبيرة الإحرام والركوع والرفع منه والقيام من التشهد الأول' },
+  { title: 'وضع اليمنى على اليسرى', desc: 'على الصدر حال القيام' }, { title: 'النظر إلى موضع السجود' },
+  { title: 'دعاء الاستفتاح' }, { title: 'التعوذ والبسملة' }, { title: 'التأمين بعد الفاتحة', desc: 'قول «آمين»' },
+  { title: 'قراءة سورة بعد الفاتحة', desc: 'في الركعتين الأوليين' }, { title: 'الزيادة على تسبيحة واحدة', desc: 'في الركوع والسجود' },
+  { title: 'الدعاء قبل التسليم' },
+];
+const MUBTILAT = [
+  { title: 'ترك ركن أو شرط عمداً', desc: 'كترك الطهارة أو استقبال القبلة بلا عذر' }, { title: 'الكلام العمد', desc: 'بكلام الناس لغير مصلحة الصلاة' },
+  { title: 'القهقهة', desc: 'الضحك بصوت' }, { title: 'الأكل والشرب عمداً' },
+  { title: 'الحركة الكثيرة المتوالية', desc: 'لغير ضرورة' }, { title: 'انتقاض الوضوء أثناء الصلاة' },
+  { title: 'كشف العورة عمداً' }, { title: 'زيادة ركن أو ركعة عمداً' },
+];
+
+type Tab = 'prayers' | 'arkan' | 'wajibat' | 'sunan' | 'mubtilat';
+
 export function LearnPrayer() {
-  const [, navigate] = useLocation();
-  const theme = 'dark' as 'light' | 'dark';
-  const dark = theme === 'dark';
-  const [step, setStep] = useState(0);
+  const [tab, setTab] = useState<Tab>('prayers');
   const [selectedPrayer, setSelectedPrayer] = useState<number | null>(null);
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState<Set<number>>(new Set());
+  const total = STEPS.length;
 
-  const total = PRAYER_STEPS.length;
-  const current = PRAYER_STEPS[step];
-  const progress = ((step + 1) / total) * 100;
-
-  const bg        = dark ? '#07130F' : '#fdfaf5';
-  const cardBg    = dark ? '#0C1C17' : '#ffffff';
-  const border    = dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.25)';
-  const textColor  = dark ? '#e8d8b0' : '#3d2a0e';
-  const mutedColor = dark ? 'rgba(232,216,176,0.5)' : 'rgba(61,42,14,0.45)';
-
-  /* ── Prayer selector screen ── */
   if (selectedPrayer === null) {
     return (
-      <div className="flex flex-col h-[100dvh]" style={{ background: bg, direction: 'rtl' }}>
-        <div className="flex items-center gap-3 px-4 pt-5 pb-4 flex-shrink-0">
-          <button onClick={() => navigate('/more')}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
-            <ChevronRight size={20} />
-          </button>
-          <h1 className="text-xl font-black" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
-            تعلم الصلاة
-          </h1>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 pb-8">
-          {/* Intro */}
-          <div className="rounded-3xl p-5 mb-5 flex items-start gap-4"
-            style={{ background: 'linear-gradient(135deg,#2d6a4f,#1b4332)' }}>
-            <div className="flex-shrink-0 mt-0.5">
-              <MosqueIcon size={44} color="white" />
-            </div>
-            <div>
-              <p className="text-white font-black text-lg mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-                خطوات الصلاة كاملة
-              </p>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(255,255,255,0.75)' }}>
-                دليل مفصل لكل خطوة في الصلاة مع النص العربي والتشكيل والشرح — مناسب للمسلم الجديد والمراجع
-              </p>
-            </div>
-          </div>
-
-          {/* Prayer selector */}
-          <p className="font-bold mb-3 text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
-            اختار الصلاة لمعرفة عدد ركعاتها — الخطوات واحدة لكل الصلوات
-          </p>
-          <div className="flex flex-col gap-3 mb-6">
-            {PRAYERS.map((p, i) => (
-              <button key={i} onClick={() => { setSelectedPrayer(i); setStep(0); }}
-                className="flex items-center gap-4 p-4 rounded-2xl text-right transition-transform active:scale-95"
-                style={{ background: p.color, border: `1px solid rgba(255,255,255,0.12)` }}>
-                <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-2xl"
-                  style={{ background: 'rgba(255,255,255,0.12)' }}>
-                  <p.Icon size={32} />
+      <div className="min-h-screen pb-24" dir="rtl">
+        <PageHeader title="تعلّم الصلاة" subtitle="صفة صلاة النبي ﷺ — دليل مصوّر خطوة بخطوة" icon="prayer">
+          <ChipTabs<Tab> value={tab} onChange={setTab} items={[
+            { id: 'prayers', label: 'الصلوات' }, { id: 'arkan', label: 'الأركان' }, { id: 'wajibat', label: 'الواجبات' },
+            { id: 'sunan', label: 'السنن' }, { id: 'mubtilat', label: 'المبطلات' },
+          ]} />
+        </PageHeader>
+        <div className="max-w-lg mx-auto px-4 pt-4">
+          {tab === 'prayers' ? (
+            <>
+              <div className="noor-card-hero rounded-[28px] p-5 mb-5 flex items-center gap-4 relative overflow-hidden">
+                <div className="absolute inset-0 noor-pattern" />
+                <NoorImg name="prayer" size={64} className="relative" />
+                <div className="relative">
+                  <p className="font-black text-lg text-gold-gradient">«صلّوا كما رأيتموني أصلّي»</p>
+                  <p className="text-xs text-muted-foreground mt-1">رواه البخاري — {arNum(total)} خطوة مصوّرة بالنص والتشكيل والشرح</p>
                 </div>
-                <div className="flex-1">
-                  <p className="font-black text-lg text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-                    صلاة {p.name}
-                  </p>
-                  <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(255,255,255,0.65)' }}>
-                    {p.rakaas} ركعات
-                  </p>
-                </div>
-                <ChevronLeft size={20} color="rgba(255,255,255,0.5)" />
-              </button>
-            ))}
-          </div>
-
-          {/* Steps overview */}
-          <p className="font-bold mb-3 text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
-            الخطوات ({total} خطوة)
-          </p>
-          <div className="flex flex-col gap-2">
-            {PRAYER_STEPS.map((s, i) => (
-              <button key={s.id} onClick={() => { setSelectedPrayer(0); setStep(i); }}
-                className="flex items-center gap-3 p-3 rounded-2xl text-right"
-                style={{ background: cardBg, border: `1px solid ${border}` }}>
-                <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
-                  style={{ background: s.color + '22', minWidth: 40 }}>
-                  <img src={s.img} alt={s.title} className="w-full h-full object-cover object-top" />
-                </div>
-                <p className="flex-1 font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
-                  {s.title}
-                </p>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
-                  {s.position.split(' — ')[0]}
-                </span>
-              </button>
-            ))}
-          </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3 px-1">اختر الصلاة — الخطوات واحدة وتتكرر بحسب عدد الركعات</p>
+              <div className="grid grid-cols-1 gap-3 mb-6">
+                {PRAYERS.map((p, i) => (
+                  <button key={p.name} onClick={() => { setSelectedPrayer(i); setStep(0); setDone(new Set()); }}
+                    className="press noor-card rounded-3xl p-4 flex items-center gap-4 text-right">
+                    <span className="w-12 h-12 rounded-2xl noor-gold-orb flex items-center justify-center"><p.Icon size={30} /></span>
+                    <div className="flex-1">
+                      <p className="font-bold text-lg text-foreground">صلاة {p.name}</p>
+                      <div className="flex gap-1 mt-1">{Array.from({ length: p.rakaas }).map((_, k) => <span key={k} className="w-5 h-1.5 rounded-full bg-gradient-gold" />)}</div>
+                    </div>
+                    <GoldBadge>{arNum(p.rakaas)} ركعات</GoldBadge>
+                    <ChevronLeft className="w-5 h-5 text-primary/60" />
+                  </button>
+                ))}
+              </div>
+              <h3 className="font-bold text-primary mb-3 px-1">مراحل الصلاة</h3>
+              <div className="flex flex-col gap-2">
+                {STEPS.map((s, i) => (
+                  <button key={s.id} onClick={() => { setSelectedPrayer(0); setStep(i); }} className="press noor-card rounded-2xl p-2.5 flex items-center gap-3 text-right">
+                    <img src={s.img} alt="" className="w-11 h-11 rounded-xl object-cover object-top bg-secondary" />
+                    <p className="flex-1 font-bold text-sm text-foreground">{arNum(i + 1)}. {s.title}</p>
+                    <KindBadge kind={s.kind} />
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : tab === 'arkan' ? (
+            <RulingList title="أركان الصلاة" intro="لا تصح الصلاة إلا بها، ولا تسقط عمداً ولا سهواً" items={ARKAN} />
+          ) : tab === 'wajibat' ? (
+            <RulingList title="واجبات الصلاة" intro="تبطل الصلاة بتركها عمداً، ويُجبر تركها سهواً بسجود السهو — على مذهب الحنابلة" items={WAJIBAT} tone="emerald" />
+          ) : tab === 'sunan' ? (
+            <RulingList title="سنن الصلاة" intro="يُثاب فاعلها ولا تبطل الصلاة بتركها" items={SUNAN} tone="emerald" />
+          ) : (
+            <RulingList title="مبطلات الصلاة" intro="ما يفسد الصلاة ويوجب إعادتها" items={MUBTILAT} tone="danger" />
+          )}
         </div>
       </div>
     );
   }
 
-  /* ── Step-by-step screen ── */
   const prayer = PRAYERS[selectedPrayer];
+  const current = STEPS[step];
+  const next = () => {
+    vibrateLight().catch(() => {});
+    setDone(prev => new Set([...prev, step]));
+    if (step < total - 1) setStep(s => s + 1); else setSelectedPrayer(null);
+  };
 
-  return (
-    <div className="flex flex-col h-[100dvh]" style={{ background: bg, direction: 'rtl' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-3 flex-shrink-0">
-        <button onClick={() => setSelectedPrayer(null)}
-          className="w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
-          <ChevronRight size={20} />
-        </button>
-        <div className="text-center flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-              style={{ background: prayer.color }}>
-              <prayer.Icon size={18} />
-            </div>
-            <p className="font-black text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
-              صلاة {prayer.name}
-            </p>
-          </div>
-          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
-            خطوة {step + 1} من {total}
-          </p>
-        </div>
-        <div className="text-xs font-bold px-3 py-1 rounded-full"
-          style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-          {prayer.rakaas} ركعات
-        </div>
-      </div>
-
-      {/* Progress */}
-      <div className="mx-4 h-1.5 rounded-full overflow-hidden flex-shrink-0"
-        style={{ background: 'rgba(193,154,107,0.12)' }}>
-        <motion.div className="h-full rounded-full"
-          style={{ background: `linear-gradient(90deg, ${current.color}, #C19A6B)` }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.4 }} />
-      </div>
-
-      {/* Step dots */}
-      <div className="flex justify-center gap-1 py-3 flex-shrink-0 flex-wrap px-6">
-        {PRAYER_STEPS.map((s, i) => (
-          <button key={i} onClick={() => setStep(i)}
-            className="rounded-full transition-all"
-            style={{
-              width: i === step ? 16 : 7,
-              height: 7,
-              background: i === step ? '#C19A6B' : i < step ? s.color : 'rgba(193,154,107,0.2)',
-            }} />
-        ))}
-      </div>
-
-      {/* Main card */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
-        <AnimatePresence mode="wait">
-          <motion.div key={step}
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 30 }}
-            transition={{ duration: 0.25 }}
-            className="rounded-3xl border overflow-hidden"
-            style={{ background: cardBg, borderColor: border }}>
-
-            {/* Character illustration — same style as WuduGuide */}
-            <div className="relative flex items-end justify-center overflow-hidden"
-              style={{
-                height: 240,
-                background: dark
-                  ? `linear-gradient(160deg, ${current.color}55 0%, #07130F 100%)`
-                  : `linear-gradient(160deg, ${current.color}22 0%, #fdfaf5 100%)`,
-              }}>
-              <div className="absolute inset-0 flex items-center justify-center opacity-15">
-                <div className="w-48 h-48 rounded-full"
-                  style={{ background: `radial-gradient(circle, ${current.color} 0%, transparent 70%)` }} />
-              </div>
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={current.img}
-                  src={current.img}
-                  alt={current.title}
-                  className="h-56 object-contain object-bottom relative z-10 drop-shadow-xl"
-                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </AnimatePresence>
-              {/* Step badge */}
-              <div className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white shadow-lg"
-                style={{ background: current.color, boxShadow: `0 2px 12px ${current.color}88` }}>
-                {step + 1}
-              </div>
-              {/* Position badge */}
-              <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full text-xs font-bold text-white"
-                style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-                {current.position.split(' — ')[0]}
-              </div>
-            </div>
-
-            {/* Title block */}
-            <div className="px-5 pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-2xl font-black" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
-                  {current.title}
-                </h2>
-                {current.position.includes('ركن') && (
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: '#ef444422', color: '#ef4444', border: '1px solid #ef444444', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-                    ركن
-                  </span>
-                )}
-                {current.position.includes('سنة') && (
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: '#C19A6B22', color: '#C19A6B', border: '1px solid #C19A6B44', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-                    سنة
-                  </span>
-                )}
-              </div>
-
-              {/* Arabic text */}
-              <div className="rounded-2xl p-4 mb-3"
-                style={{ background: dark ? 'rgba(193,154,107,0.07)' : 'rgba(193,154,107,0.07)', border: `1px solid ${border}` }}>
-                {current.repetitions && (
-                  <p className="text-xs font-bold mb-2 text-center"
-                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#C19A6B' }}>
-                    × {current.repetitions} مرات
-                  </p>
-                )}
-                <p className="text-center leading-[2.2] mb-2"
-                  style={{
-                    fontFamily: '"Scheherazade New","Amiri Quran","Amiri",serif',
-                    fontSize: current.arabic.length > 100 ? '1rem' : '1.25rem',
-                    color: textColor,
-                    direction: 'rtl',
-                  }}>
-                  {current.arabic}
-                </p>
-                <p className="text-center text-xs italic mb-1" style={{ color: mutedColor, fontFamily: 'sans-serif' }}>
-                  {current.transliteration}
-                </p>
-                <p className="text-center text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
-                  {current.meaning}
-                </p>
-              </div>
-
-              {/* Tashahhud hand position guide — step 12 only */}
-              {step === 11 && (
-                <div className="rounded-2xl p-4 mb-3"
-                  style={{ background: dark ? 'rgba(30,77,43,0.18)' : 'rgba(30,77,43,0.07)', border: '1px solid rgba(30,77,43,0.25)' }}>
-                  <p className="text-xs font-bold text-center mb-3"
-                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#1e4d2b' }}>
-                    وضع اليدين في التشهد
-                  </p>
-                  <div className="flex items-end justify-center gap-6">
+  const handGuide = step === 11 ? (
+    <div className="rounded-2xl p-4 mb-3 bg-primary/5 border border-primary/15">
+      <p className="text-xs font-bold text-center mb-3 text-primary">وضع اليدين في التشهد</p>
+      <div className="flex items-end justify-center gap-6">
                     {/* Right hand — fist with index finger extended ~45° */}
                     <div className="flex flex-col items-center gap-1">
                       <svg width="80" height="90" viewBox="0 0 80 90" fill="none">
@@ -533,10 +369,10 @@ export function LearnPrayer() {
                         {/* Fingertip */}
                         <circle cx="13" cy="17" r="4.5" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
                       </svg>
-                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#1e4d2b' }}>
+                      <p className="text-[10px] font-bold text-center text-primary">
                         اليد اليمنى
                       </p>
-                      <p className="text-[9px] text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
+                      <p className="text-[9px] text-center text-muted-foreground">
                         قبضة + سبابة ممتدة
                       </p>
                     </div>
@@ -555,58 +391,30 @@ export function LearnPrayer() {
                         {/* Thumb */}
                         <path d="M18 35 Q10 32 10 26 Q10 20 16 20" stroke="#C8A070" strokeWidth="4" strokeLinecap="round" fill="none"/>
                       </svg>
-                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#1e4d2b' }}>
+                      <p className="text-[10px] font-bold text-center text-primary">
                         اليد اليسرى
                       </p>
-                      <p className="text-[9px] text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
+                      <p className="text-[9px] text-center text-muted-foreground">
                         مفتوحة مبسوطة
                       </p>
                     </div>
                   </div>
-                  <p className="text-[10px] text-center mt-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(30,77,43,0.65)' }}>
-                    كلتا اليدين على الركبتين — السبابة اليمنى ترفع عند قول «إلا الله»
-                  </p>
-                </div>
-              )}
+                  <p className="text-[10px] text-center mt-2 text-muted-foreground">كلتا اليدين على الفخذين — والسبابة اليمنى تُرفع عند التشهد</p>
+    </div>
+  ) : undefined;
 
-              {/* Note */}
-              {current.note && (
-                <div className="flex items-start gap-2.5 rounded-xl p-3 mb-4"
-                  style={{ background: 'rgba(193,154,107,0.08)', border: `1px solid rgba(193,154,107,0.18)` }}>
-                  <TipIcon size={16} color="#C19A6B" />
-                  <p className="text-xs leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
-                    {current.note}
-                  </p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+  return (
+    <div className="flex flex-col h-[100dvh]" dir="rtl">
+      <PageHeader title={`صلاة ${prayer.name}`} subtitle={`${arNum(prayer.rakaas)} ركعات · الخطوة ${arNum(step + 1)} من ${arNum(total)}`} back={() => setSelectedPrayer(null)} icon="prayer" />
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-lg mx-auto px-4 pt-3 pb-6">
+          <StepTimeline steps={STEPS} current={step} done={done} onSelect={setStep} />
+          <div className="mt-3"><StepCard step={current} index={step} total={total} extra={handGuide} /></div>
+        </div>
       </div>
-
-      {/* Controls */}
-      <div className="px-4 pb-6 pt-2 flex gap-3 flex-shrink-0">
-        <button onClick={() => setStep(s => Math.max(0, s - 1))}
-          disabled={step === 0}
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
-          style={{ background: 'rgba(193,154,107,0.1)', border: `1.5px solid ${border}`, color: '#C19A6B', opacity: step === 0 ? 0.3 : 1 }}>
-          <ChevronRight size={22} />
-        </button>
-
-        <button
-          onClick={() => { if (step < total - 1) setStep(s => s + 1); else setSelectedPrayer(null); }}
-          className="flex-1 h-14 rounded-2xl font-bold text-base text-white"
-          style={{ background: `linear-gradient(135deg, ${current.color}, #C19A6B)`, fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
-          {step === total - 1 ? 'انتهت الصلاة ✓' : `التالي — ${PRAYER_STEPS[step + 1]?.title} →`}
-        </button>
-
-        <button onClick={() => setStep(s => Math.min(total - 1, s + 1))}
-          disabled={step === total - 1}
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
-          style={{ background: 'rgba(193,154,107,0.1)', border: `1.5px solid ${border}`, color: '#C19A6B', opacity: step === total - 1 ? 0.3 : 1 }}>
-          <ChevronLeft size={22} />
-        </button>
-      </div>
+      <StepControls index={step} total={total} done={done.has(step)}
+        onPrev={() => setStep(s => Math.max(0, s - 1))} onSkip={() => setStep(s => Math.min(total - 1, s + 1))} onNext={next}
+        nextLabel={step === total - 1 ? 'انتهت الصلاة ✓' : `التالي: ${STEPS[step + 1]?.title ?? ''}`} />
     </div>
   );
 }

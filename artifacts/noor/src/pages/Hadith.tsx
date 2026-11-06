@@ -1,29 +1,28 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTutorial } from '@/components/TutorialMascotContext';
-import { ChevronLeft, ChevronRight, Search, X, Copy, Share2, ArrowLeft, BookOpen } from 'lucide-react';
-import { Link } from 'wouter';
+import { ChevronLeft, ChevronRight, Search, X, Copy, Share2, Heart, Check, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Capacitor } from '@capacitor/core';
-import { useDarkMode } from '@/hooks/use-dark-mode';
 import { normalizeArabic } from '@/lib/arabic-utils';
+import { PageHeader, ChipTabs, GoldBadge, EmptyState, SkeletonList, Spinner, FooterAyah, NoorImg, arNum } from '@/components/noor/kit';
+import { shareText, copyText } from '@/lib/share';
+import { useUserSetting } from '@/hooks/use-user-setting';
+import { cn } from '@/lib/utils';
 
 /* ── Book definitions ── */
 const BOOKS = [
-  { slug: 'sahih-bukhari',  name: 'صحيح البخاري',   iconBg: '#1F5C4B', count: 7580 },
-  { slug: 'sahih-muslim',   name: 'صحيح مسلم',      iconBg: '#8A6A35', count: 7360 },
-  { slug: 'al-tirmidhi',   name: 'جامع الترمذي',    iconBg: '#2F7A66', count: 3924 },
-  { slug: 'abu-dawood',    name: 'سنن أبي داود',    iconBg: '#9E7B4A', count: 5272 },
-  { slug: 'ibn-e-majah',   name: 'سنن ابن ماجه',    iconBg: '#1A4D40', count: 4338 },
-  { slug: 'sunan-nasai',   name: 'سنن النسائي',     iconBg: '#B08A50', count: 5679 },
+  { slug: 'sahih-bukhari', name: 'صحيح البخاري', author: 'الإمام محمد بن إسماعيل البخاري', grade: 'أصح الكتب بعد القرآن', count: 7580 },
+  { slug: 'sahih-muslim', name: 'صحيح مسلم', author: 'الإمام مسلم بن الحجاج', grade: 'من الصحيحين', count: 7360 },
+  { slug: 'al-tirmidhi', name: 'جامع الترمذي', author: 'الإمام أبو عيسى الترمذي', grade: 'من الكتب الستة', count: 3924 },
+  { slug: 'abu-dawood', name: 'سنن أبي داود', author: 'الإمام أبو داود السجستاني', grade: 'من الكتب الستة', count: 5272 },
+  { slug: 'ibn-e-majah', name: 'سنن ابن ماجه', author: 'الإمام ابن ماجه القزويني', grade: 'من الكتب الستة', count: 4338 },
+  { slug: 'sunan-nasai', name: 'سنن النسائي', author: 'الإمام أحمد بن شعيب النسائي', grade: 'من الكتب الستة', count: 5679 },
 ];
 
 type Book = typeof BOOKS[0];
-
-/* Local file format: [{n: hadithNumber, t: arabicText}] */
 interface LocalHadith { n: number; t: string; }
+type Fav = { slug: string; n: number; t: string };
 
 const bookCache = new Map<string, LocalHadith[]>();
-
 async function loadBook(slug: string): Promise<LocalHadith[]> {
   if (bookCache.has(slug)) return bookCache.get(slug)!;
   const res = await fetch(`/data/hadith-${slug}.json`);
@@ -36,521 +35,251 @@ async function loadBook(slug: string): Promise<LocalHadith[]> {
 const PAGE_SIZE = 10;
 const SEARCH_LIMIT = 50;
 
-/* ── Share helper ── */
-async function shareHadith(text: string, bookName: string, hadithNum: number) {
-  const shareText = `${bookName} — حديث رقم ${hadithNum}\n\n${text}\n\n📱 من تطبيق نور`;
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const { Share } = await import('@capacitor/share');
-      await Share.share({ text: shareText, dialogTitle: 'مشاركة الحديث' });
-      return;
-    } catch {}
+/** Split a narration into its chain (sanad) and its text (matn). */
+function splitHadith(raw: string): { sanad: string; matn: string } {
+  const t = raw.replace(/\u200f/g, '').replace(/\s+/g, ' ').trim();
+  const q = t.search(/["«]/);
+  if (q > 20 && q < t.length - 10) {
+    const sanad = t.slice(0, q).trim();
+    const matn = t.slice(q).replace(/^["«]\s*/, '').replace(/\s*["»]\s*\.?\s*$/, '').replace(/"\s*\./g, '').replace(/"/g, '').trim();
+    return { sanad, matn };
   }
-  if (navigator.share) {
-    try { await navigator.share({ text: shareText }); return; } catch {}
-  }
-  try { await navigator.clipboard.writeText(shareText); } catch {}
-  const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-  window.open(url, '_blank', 'noopener');
+  const m = t.match(/^(.{20,}?(?:قَالَ|قال)\s+رَسُولُ\s+اللَّهِ\s+صلى الله عليه وسلم)\s*(.+)$/);
+  if (m) return { sanad: m[1], matn: m[2] };
+  return { sanad: '', matn: t.replace(/"/g, '') };
 }
 
-/* ── Book SVG ── */
-function BookSvg() {
-  return (
-    <svg viewBox="0 0 40 40" fill="none" className="w-6 h-6">
-      <rect x="5" y="8" width="13" height="24" rx="2" stroke="white" strokeWidth="2" fill="none"/>
-      <rect x="22" y="8" width="13" height="24" rx="2" stroke="white" strokeWidth="2" fill="none"/>
-      <line x1="18" y1="8" x2="18" y2="32" stroke="white" strokeWidth="2"/>
-      <line x1="22" y1="8" x2="22" y2="32" stroke="white" strokeWidth="2"/>
-      <line x1="8" y1="14" x2="15" y2="14" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="8" y1="18" x2="15" y2="18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="8" y1="22" x2="15" y2="22" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="25" y1="14" x2="32" y2="14" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="25" y1="18" x2="32" y2="18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="25" y1="22" x2="32" y2="22" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-/* ── Single Hadith card ── */
-function HadithCard({
-  hadith,
-  book,
-  highlighted = false,
-  snippet,
-}: {
-  hadith: LocalHadith;
-  book: Book;
-  highlighted?: boolean;
-  snippet?: string;
-}) {
-  const isDark = useDarkMode();
-  const ref = useRef<HTMLDivElement>(null);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (highlighted && ref.current) {
-      setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-    }
-  }, [highlighted]);
-
-  async function handleCopy(e: React.MouseEvent) {
-    e.stopPropagation();
-    const text = `${book.name} — حديث رقم ${hadith.n}\n\n${hadith.t}`;
-    try { await navigator.clipboard.writeText(text); } catch {}
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }
-
-  async function handleShare(e: React.MouseEvent) {
-    e.stopPropagation();
-    await shareHadith(hadith.t, book.name, hadith.n);
-  }
-
-  return (
-    <div
-      ref={ref}
-      className="rounded-2xl overflow-hidden transition-all"
-      style={{
-        background: highlighted
-          ? isDark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.1)'
-          : isDark ? 'rgba(193,154,107,0.04)' : 'rgba(193,154,107,0.03)',
-        border: `1px solid rgba(193,154,107,${highlighted ? (isDark ? '0.45' : '0.4') : (isDark ? '0.18' : '0.2')})`,
-        boxShadow: highlighted ? '0 0 0 2px rgba(193,154,107,0.25)' : 'none',
-      }}
-    >
-      <div className="h-[3px] w-full" style={{ background: book.iconBg, opacity: isDark ? 0.8 : 0.7 }} />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3" dir="rtl">
-          <div
-            className="text-xs font-bold px-2.5 py-1 rounded-full"
-            style={{
-              background: isDark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.12)',
-              border: `1px solid rgba(193,154,107,${isDark ? '0.35' : '0.3'})`,
-              color: isDark ? '#E8C98A' : '#7A4F1E',
-              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-            }}
-          >
-            حديث {hadith.n.toLocaleString('ar-EG')}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleCopy}
-              title="نسخ"
-              className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
-              style={{ background: copied ? 'rgba(34,197,94,0.18)' : 'rgba(193,154,107,0.1)', border: `1px solid rgba(193,154,107,${isDark ? '0.25' : '0.2'})` }}
-            >
-              {copied
-                ? <span style={{ fontSize: 12 }}>✓</span>
-                : <Copy className="w-3.5 h-3.5" style={{ color: isDark ? '#C19A6B' : '#8B6340' }} />}
-            </button>
-            <button
-              onClick={handleShare}
-              title="مشاركة"
-              className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
-              style={{ background: 'rgba(193,154,107,0.1)', border: `1px solid rgba(193,154,107,${isDark ? '0.25' : '0.2'})` }}
-            >
-              <Share2 className="w-3.5 h-3.5" style={{ color: isDark ? '#C19A6B' : '#8B6340' }} />
-            </button>
-          </div>
-        </div>
-        <p
-          className="text-sm text-right"
-          style={{
-            fontFamily: '"Amiri", serif',
-            lineHeight: '2.2rem',
-            color: isDark ? 'rgba(255,255,255,0.88)' : 'rgba(30,20,10,0.88)',
-          }}
-        >
-          {snippet ? <HighlightedText text={hadith.t} snippet={snippet} isDark={isDark} /> : hadith.t}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* Highlight search snippet in text — correct position-aware mapping */
-function HighlightedText({ text, snippet, isDark }: { text: string; snippet: string; isDark: boolean }) {
+/* Highlight search snippet — position-aware mapping over normalized text */
+function HighlightedText({ text, snippet }: { text: string; snippet: string }) {
   const normSnippet = normalizeArabic(snippet);
   if (!normSnippet) return <>{text}</>;
-
   const normText = normalizeArabic(text);
   const matchIdx = normText.indexOf(normSnippet);
   if (matchIdx === -1) return <>{text}</>;
-
-  // Build a position-accurate map from normalized index → original index.
-  // We process each original char and track how it contributes to normalized output,
-  // handling diacritics (removed), character substitutions (1→1), and space collapse.
-  type Pair = [origPos: number, normChar: string];
+  type Pair = [number, string];
   const pairs: Pair[] = [];
   let prevWasSpace = false;
-
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    // Remove diacritics (harakat) — they map to 0 normalized chars
     if (/[\u064B-\u065F\u0670]/.test(ch)) continue;
-    // Collapse whitespace (trim behaviour only applies to leading/trailing)
-    if (/\s/.test(ch)) {
-      if (!prevWasSpace) {
-        pairs.push([i, ' ']);
-        prevWasSpace = true;
-      }
-      continue;
-    }
+    if (/\s/.test(ch)) { if (!prevWasSpace) { pairs.push([i, ' ']); prevWasSpace = true; } continue; }
     prevWasSpace = false;
-    // Character substitution (same as normalizeArabic, 1→1)
     let nc = ch;
-    if (/[أإآ]/.test(ch)) nc = 'ا';
-    else if (ch === 'ة') nc = 'ه';
-    else if (ch === 'ى') nc = 'ي';
-    else nc = ch.toLowerCase();
+    if (/[أإآ]/.test(ch)) nc = 'ا'; else if (ch === 'ة') nc = 'ه'; else if (ch === 'ى') nc = 'ي'; else nc = ch.toLowerCase();
     pairs.push([i, nc]);
   }
-
-  // Trim leading/trailing spaces from pairs to match normalizeArabic().trim()
   let start = 0, end = pairs.length;
   while (start < end && pairs[start][1] === ' ') start++;
   while (end > start && pairs[end - 1][1] === ' ') end--;
   const final = pairs.slice(start, end);
-
   if (matchIdx >= final.length) return <>{text}</>;
-
   const origStart = final[matchIdx][0];
-  const origEnd = matchIdx + normSnippet.length < final.length
-    ? final[matchIdx + normSnippet.length][0]
-    : text.length;
-
+  const origEnd = matchIdx + normSnippet.length < final.length ? final[matchIdx + normSnippet.length][0] : text.length;
   if (origStart >= origEnd) return <>{text}</>;
-
   return (
     <>
       {text.slice(0, origStart)}
-      <mark style={{ background: 'rgba(193,154,107,0.35)', color: isDark ? '#e8c98a' : '#5a3800', borderRadius: 3, padding: '0 2px', textDecoration: 'underline', textDecorationColor: isDark ? '#e8c98a' : '#C19A6B' }}>
-        {text.slice(origStart, origEnd)}
-      </mark>
+      <mark className="rounded px-0.5 bg-primary/30 text-gold-soft">{text.slice(origStart, origEnd)}</mark>
       {text.slice(origEnd)}
     </>
   );
 }
 
-/* ── Search results ── */
-function SearchResults({
-  query,
-  book,
-  onOpenBook,
-}: {
-  query: string;
-  book: Book | null;
-  onOpenBook: (b: Book, hadithNum: number) => void;
+/* ── Hadith card ── */
+function HadithCard({ hadith, book, highlighted = false, snippet, isFav, onToggleFav }: {
+  hadith: LocalHadith; book: Book; highlighted?: boolean; snippet?: string; isFav: boolean; onToggleFav: () => void;
 }) {
-  const isDark = useDarkMode();
+  const ref = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [showSanad, setShowSanad] = useState(false);
+  const { sanad, matn } = useMemo(() => splitHadith(hadith.t), [hadith.t]);
+
+  useEffect(() => {
+    if (highlighted && ref.current) setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+  }, [highlighted]);
+
+  const full = `${matn}\n\n[${book.name} — حديث رقم ${hadith.n}]`;
+
+  return (
+    <div ref={ref} className={cn('rounded-3xl overflow-hidden noor-card', highlighted && 'noor-card-active')}>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <GoldBadge>{book.name} · {arNum(hadith.n)}</GoldBadge>
+          <div className="flex-1" />
+          <button onClick={e => { e.stopPropagation(); onToggleFav(); }} aria-label="المفضلة"
+            className={cn('press w-8 h-8 rounded-full flex items-center justify-center', isFav ? 'noor-btn-gold' : 'noor-btn-ghost')}>
+            <Heart className={cn('w-3.5 h-3.5', isFav && 'fill-current')} />
+          </button>
+          <button onClick={async e => { e.stopPropagation(); if (await copyText(full)) { setCopied(true); setTimeout(() => setCopied(false), 1600); } }}
+            aria-label="نسخ" className={cn('press w-8 h-8 rounded-full flex items-center justify-center', copied ? 'noor-btn-emerald' : 'noor-btn-ghost')}>
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+          <button onClick={e => { e.stopPropagation(); shareText(full, 'مشاركة الحديث'); }} aria-label="مشاركة"
+            className="press w-8 h-8 rounded-full flex items-center justify-center noor-btn-ghost">
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {sanad && (
+          <button onClick={e => { e.stopPropagation(); setShowSanad(s => !s); }} className="block w-full text-right mb-2">
+            <p className={cn('text-[13px] leading-7 text-sanad font-serif', !showSanad && 'line-clamp-1')}>
+              {snippet ? <HighlightedText text={sanad} snippet={snippet} /> : sanad}
+            </p>
+            <span className="text-[10px] text-primary/70">{showSanad ? 'إخفاء السند' : 'عرض السند كاملاً'}</span>
+          </button>
+        )}
+
+        <p className="font-serif text-[1.12rem] leading-[2.15] text-foreground/95">
+          {snippet ? <HighlightedText text={matn} snippet={snippet} /> : matn}
+        </p>
+
+        <div className="mt-3 pt-3 border-t border-primary/10 flex items-center gap-2">
+          <NoorImg name="hadith" size={20} />
+          <span className="text-[11px] text-muted-foreground">التخريج:</span>
+          <GoldBadge>رواه {book.name.replace(/^(صحيح|سنن|جامع)\s/, '')} ({arNum(hadith.n)})</GoldBadge>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Live search ── */
+function SearchResults({ query, book, onOpenBook, favs, toggleFav }: {
+  query: string; book: Book | null; onOpenBook: (b: Book, n: number) => void; favs: Fav[]; toggleFav: (b: Book, h: LocalHadith) => void;
+}) {
   const [results, setResults] = useState<Array<{ hadith: LocalHadith; book: Book }>>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); setLoading(false); return; }
-
     setLoading(true);
-    const cancelRef = { cancelled: false };
-
-    const debounceTimer = setTimeout(async () => {
+    const cancel = { c: false };
+    const timer = setTimeout(async () => {
       const norm = normalizeArabic(query);
       if (!norm) { setResults([]); setLoading(false); return; }
-
       setResults([]);
-      const books = book ? [book] : BOOKS;
       let total = 0;
-      const CHUNK_SIZE = 300;
-
-      for (const b of books) {
-        if (total >= SEARCH_LIMIT || cancelRef.cancelled) break;
+      for (const b of book ? [book] : BOOKS) {
+        if (total >= SEARCH_LIMIT || cancel.c) break;
         try {
           const hadiths = await loadBook(b.slug);
           const found: Array<{ hadith: LocalHadith; book: Book }> = [];
-
           for (let i = 0; i < hadiths.length; i++) {
-            if (total >= SEARCH_LIMIT || cancelRef.cancelled) break;
-            const h = hadiths[i];
-            if (normalizeArabic(h.t).includes(norm)) {
-              found.push({ hadith: h, book: b });
-              total++;
-            }
-            if (i % CHUNK_SIZE === CHUNK_SIZE - 1) {
-              await new Promise<void>(resolve => setTimeout(resolve, 0));
-              if (cancelRef.cancelled) break;
-            }
+            if (total >= SEARCH_LIMIT || cancel.c) break;
+            if (normalizeArabic(hadiths[i].t).includes(norm)) { found.push({ hadith: hadiths[i], book: b }); total++; }
+            if (i % 300 === 299) { await new Promise<void>(r => setTimeout(r, 0)); if (cancel.c) break; }
           }
-
-          if (found.length > 0 && !cancelRef.cancelled) {
-            setResults(prev => [...prev, ...found]);
-          }
-        } catch {}
-        if (cancelRef.cancelled) break;
+          if (found.length && !cancel.c) setResults(prev => [...prev, ...found]);
+        } catch { /* skip book */ }
       }
-
-      if (!cancelRef.cancelled) setLoading(false);
-    }, 350);
-
-    return () => {
-      cancelRef.cancelled = true;
-      clearTimeout(debounceTimer);
-    };
+      if (!cancel.c) setLoading(false);
+    }, 300);
+    return () => { cancel.c = true; clearTimeout(timer); };
   }, [query, book]);
 
-  if (loading) return (
-    <div className="flex items-center justify-center gap-2 py-12">
-      <div className="w-5 h-5 border-2 border-[#C19A6B]/30 border-t-[#C19A6B] rounded-full animate-spin" />
-      <span style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C19A6B', fontSize: 14 }}>يبحث...</span>
-    </div>
-  );
-
-  if (!query.trim()) return null;
-
-  if (results.length === 0) return (
-    <div className="py-12 text-center">
-      <p style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)', fontSize: 14 }}>
-        لا توجد نتائج لـ «{query}»
-      </p>
-    </div>
-  );
+  if (!query.trim()) return <EmptyState icon="hadith" title="ابحث في الأحاديث" hint="اكتب كلمة من متن الحديث أو اسم راوٍ وستظهر النتائج فوراً" />;
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-right px-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)' }}>
-        {results.length}{results.length >= SEARCH_LIMIT ? '+' : ''} نتيجة
-      </p>
-      {results.map(({ hadith, book: b }, i) => (
-        <button
-          key={i}
-          onClick={() => onOpenBook(b, hadith.n)}
-          className="w-full text-right"
-        >
-          {!book && (
-            <div className="flex items-center gap-2 px-1 mb-1">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.iconBg }} />
-              <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: b.iconBg }}>{b.name}</span>
-            </div>
-          )}
-          <HadithCard hadith={hadith} book={b} snippet={query} />
-        </button>
+      <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+        {loading && <Spinner className="w-4 h-4 border-2" />}
+        <span>{arNum(results.length)}{results.length >= SEARCH_LIMIT ? '+' : ''} نتيجة</span>
+      </div>
+      {!loading && results.length === 0 && <EmptyState icon="hadith" title={`لا توجد نتائج لـ «${query}»`} />}
+      {results.map(({ hadith, book: b }) => (
+        <div key={`${b.slug}-${hadith.n}`} onClick={() => onOpenBook(b, hadith.n)} className="cursor-pointer">
+          <HadithCard hadith={hadith} book={b} snippet={query}
+            isFav={favs.some(f => f.slug === b.slug && f.n === hadith.n)} onToggleFav={() => toggleFav(b, hadith)} />
+        </div>
       ))}
     </div>
   );
 }
 
-/* ── Hadith reader (local) ── */
-function HadithReader({
-  book,
-  onBack,
-  initialHadithNum,
-}: {
-  book: Book;
-  onBack: () => void;
-  initialHadithNum?: number;
+/* ── Reader ── */
+function HadithReader({ book, initialHadithNum, favs, toggleFav }: {
+  book: Book; initialHadithNum?: number; favs: Fav[]; toggleFav: (b: Book, h: LocalHadith) => void;
 }) {
-  const isDark = useDarkMode();
   const [hadiths, setHadiths] = useState<LocalHadith[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [highlightNum, setHighlightNum] = useState<number | undefined>(initialHadithNum);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchMode, setSearchMode] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [query, setQuery] = useState('');
+  const [jump, setJump] = useState('');
 
   useEffect(() => {
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     loadBook(book.slug)
       .then(data => {
-        setHadiths(data);
-        setLoading(false);
+        setHadiths(data); setLoading(false);
         if (initialHadithNum) {
           const idx = data.findIndex(h => h.n === initialHadithNum);
-          if (idx !== -1) {
-            const p = Math.floor(idx / PAGE_SIZE) + 1;
-            setPage(p);
-          }
+          if (idx !== -1) setPage(Math.floor(idx / PAGE_SIZE) + 1);
         }
       })
-      .catch(e => {
-        setError(e.message);
-        setLoading(false);
-      });
+      .catch(e => { setError(e.message); setLoading(false); });
   }, [book.slug, initialHadithNum]);
 
   const totalPages = Math.max(1, Math.ceil(hadiths.length / PAGE_SIZE));
   const pageHadiths = hadiths.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  const goToPage = (p: number) => { setPage(p); setHighlightNum(undefined); scrollToTop(); };
+  const goToPage = (p: number) => { setPage(Math.min(totalPages, Math.max(1, p))); setHighlightNum(undefined); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const doJump = () => {
+    const n = parseInt(jump, 10);
+    const idx = hadiths.findIndex(h => h.n === n);
+    if (idx !== -1) { setPage(Math.floor(idx / PAGE_SIZE) + 1); setHighlightNum(n); setJump(''); }
+  };
 
   return (
-    <div dir="rtl">
-      {/* Reader header */}
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={onBack} className="p-2 bg-secondary rounded-xl hover-elevate" data-testid="button-hadith-back">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-            {book.name}
-          </p>
-          <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-            صفحة {page.toLocaleString('ar-EG')} من {totalPages.toLocaleString('ar-EG')} • {hadiths.length.toLocaleString('ar-EG')} حديث
-          </p>
+    <div>
+      <div className="noor-card-hero rounded-3xl p-4 mb-4 relative overflow-hidden">
+        <div className="absolute inset-0 noor-pattern" />
+        <div className="relative flex items-center gap-3">
+          <NoorImg name="hadith" size={48} />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-foreground">{book.name}</p>
+            <p className="text-[11px] text-muted-foreground truncate">{book.author}</p>
+            <p className="text-[11px] text-primary mt-0.5">{arNum(hadiths.length.toLocaleString('en'))} حديث · صفحة {arNum(page)} من {arNum(totalPages)}</p>
+          </div>
         </div>
-        <button
-          onClick={() => setSearchMode(s => !s)}
-          className="p-2 rounded-xl transition-all"
-          style={{
-            background: searchMode ? 'rgba(193,154,107,0.18)' : 'rgba(193,154,107,0.08)',
-            border: '1px solid rgba(193,154,107,0.25)',
-          }}
-          data-testid="button-hadith-search"
-        >
-          <Search className="w-4 h-4 text-[#C19A6B]" />
-        </button>
+        <div className="relative flex gap-2 mt-3">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/60" />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="ابحث داخل الكتاب..." className="noor-input !py-2.5" />
+            {query && <button onClick={() => setQuery('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary"><X className="w-4 h-4" /></button>}
+          </div>
+          <input value={jump} onChange={e => setJump(e.target.value.replace(/\D/g, ''))} onKeyDown={e => e.key === 'Enter' && doJump()}
+            inputMode="numeric" placeholder="رقم" className="noor-input !w-20 !px-3 !py-2.5 text-center" />
+        </div>
       </div>
 
-      {/* Search bar */}
-      <AnimatePresence>
-        {searchMode && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mb-4"
-          >
-            <div
-              className="flex items-center gap-2 rounded-2xl px-4 py-3 mb-2"
-              style={{
-                background: isDark ? 'rgba(193,154,107,0.06)' : 'rgba(255,255,255,0.8)',
-                border: '1.5px solid rgba(193,154,107,0.3)',
-              }}
-            >
-              <Search className="w-4 h-4 flex-shrink-0 text-[#C19A6B]" />
-              <input
-                ref={searchRef}
-                autoFocus
-                type="text"
-                placeholder="ابحث في الكتاب..."
-                defaultValue=""
-                onInput={() => {
-                  const val = searchRef.current?.value ?? '';
-                  clearTimeout(searchDebounceRef.current);
-                  searchDebounceRef.current = setTimeout(() => setSearchQuery(val), 0);
-                }}
-                className="flex-1 bg-transparent outline-none text-right"
-                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#10241E' }}
-              />
-              {searchQuery && (
-                <button onClick={() => {
-                  if (searchRef.current) searchRef.current.value = '';
-                  clearTimeout(searchDebounceRef.current);
-                  setSearchQuery('');
-                }}>
-                  <X className="w-4 h-4 text-[#C19A6B]" />
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Search results */}
-      {searchMode && searchQuery && (
-        <SearchResults
-          query={searchQuery}
-          book={book}
-          onOpenBook={(b, num) => {
-            setSearchMode(false);
-            setSearchQuery('');
-            if (searchRef.current) searchRef.current.value = '';
-            clearTimeout(searchDebounceRef.current);
-            const idx = hadiths.findIndex(h => h.n === num);
-            if (idx !== -1) {
-              const p = Math.floor(idx / PAGE_SIZE) + 1;
-              setPage(p);
-              setHighlightNum(num);
-            }
-          }}
-        />
-      )}
-
-      {/* Regular content */}
-      {!(searchMode && searchQuery) && (
+      {query.trim() ? (
+        <SearchResults query={query} book={book} favs={favs} toggleFav={toggleFav}
+          onOpenBook={(_, num) => { setQuery(''); const idx = hadiths.findIndex(h => h.n === num); if (idx !== -1) { setPage(Math.floor(idx / PAGE_SIZE) + 1); setHighlightNum(num); } }} />
+      ) : (
         <>
-          {loading && (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="rounded-2xl p-4 animate-pulse" style={{ background: 'rgba(193,154,107,0.04)', border: '1px solid rgba(193,154,107,0.15)' }}>
-                  <div className="h-3 rounded-full w-1/4 mb-3" style={{ background: 'rgba(193,154,107,0.12)' }} />
-                  <div className="space-y-2">
-                    {[1, 0.83, 0.9].map((w, j) => (
-                      <div key={j} className="h-3 rounded-full" style={{ background: 'rgba(193,154,107,0.08)', width: `${w * 100}%` }} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-5 text-center">
-              <p className="text-destructive text-sm font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                حدث خطأ: {error}
-              </p>
-            </div>
-          )}
-
+          {loading && <SkeletonList rows={4} h="h-40" />}
+          {error && <div className="noor-danger border rounded-2xl p-4 text-center text-sm">تعذّر تحميل الكتاب: {error}</div>}
           {!loading && !error && (
             <AnimatePresence mode="wait">
-              <motion.div
-                key={page}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-3"
-              >
+              <motion.div key={page} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-3">
                 {pageHadiths.map(h => (
-                  <HadithCard
-                    key={h.n}
-                    hadith={h}
-                    book={book}
-                    highlighted={highlightNum !== undefined && h.n === highlightNum}
-                  />
+                  <HadithCard key={h.n} hadith={h} book={book} highlighted={highlightNum === h.n}
+                    isFav={favs.some(f => f.slug === book.slug && f.n === h.n)} onToggleFav={() => toggleFav(book, h)} />
                 ))}
               </motion.div>
             </AnimatePresence>
           )}
-
           {!loading && totalPages > 1 && (
             <div className="flex items-center gap-3 mt-5">
-              <button
-                onClick={() => goToPage(page + 1)}
-                disabled={page >= totalPages}
-                className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-secondary rounded-xl font-bold text-sm disabled:opacity-30 hover-elevate"
-                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
-                data-testid="button-hadith-next"
-              >
-                <ChevronRight className="w-4 h-4" />
-                التالي
+              <button onClick={() => goToPage(page - 1)} disabled={page === 1}
+                className="press flex-1 h-12 rounded-2xl noor-btn-ghost flex items-center justify-center gap-1 disabled:opacity-30">
+                <ChevronRight className="w-4 h-4" /> السابق
               </button>
-              <span className="text-xs text-muted-foreground whitespace-nowrap px-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                {page} / {totalPages.toLocaleString('ar-EG')}
-              </span>
-              <button
-                onClick={() => goToPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-secondary rounded-xl font-bold text-sm disabled:opacity-30 hover-elevate"
-                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
-                data-testid="button-hadith-prev"
-              >
-                السابق
-                <ChevronLeft className="w-4 h-4" />
+              <span className="text-xs text-muted-foreground tabular-nums px-1">{arNum(page)} / {arNum(totalPages)}</span>
+              <button onClick={() => goToPage(page + 1)} disabled={page >= totalPages}
+                className="press flex-1 h-12 rounded-2xl noor-btn-gold flex items-center justify-center gap-1 disabled:opacity-30">
+                التالي <ChevronLeft className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -560,225 +289,93 @@ function HadithReader({
   );
 }
 
-/* ── Book list ── */
-function BookList({ onSelect }: { onSelect: (b: Book) => void }) {
-  const isDark = useDarkMode();
-  return (
-    <div className="flex flex-col gap-3" dir="rtl">
-      {BOOKS.map((book, i) => (
-        <motion.button
-          key={book.slug}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
-          onClick={() => onSelect(book)}
-          className="w-full text-right bg-card border border-border rounded-2xl overflow-hidden hover-elevate"
-          data-testid={`button-book-${book.slug}`}
-        >
-          <div className="p-4 flex items-center gap-4">
-            <ChevronLeft className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1 min-w-0 text-right">
-              <p className="font-bold text-base text-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                {book.name}
-              </p>
-              <p className="text-xs font-semibold mt-0.5" style={{ color: book.iconBg, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', opacity: 0.9 }}>
-                {book.count.toLocaleString('ar-EG')} حديث
-              </p>
-            </div>
-            <div className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: book.iconBg }}>
-              <BookSvg />
-            </div>
-          </div>
-        </motion.button>
-      ))}
-    </div>
-  );
-}
+type Tab = 'books' | 'search' | 'favs';
 
-/* ── Global Search ── */
-function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number) => void }) {
-  const isDark = useDarkMode();
-  const [query, setQuery] = useState('');
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const queryInputRef = useRef<HTMLInputElement>(null);
-  const queryDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  return (
-    <div dir="rtl">
-      <div
-        className="flex items-center gap-2 rounded-2xl px-4 py-3 mb-4"
-        style={{
-          background: isDark ? 'rgba(193,154,107,0.06)' : 'rgba(255,255,255,0.8)',
-          border: '1.5px solid rgba(193,154,107,0.3)',
-        }}
-      >
-        <Search className="w-4 h-4 flex-shrink-0 text-[#C19A6B]" />
-        <input
-          ref={queryInputRef}
-          autoFocus
-          type="text"
-          placeholder="ابحث في كل الكتب..."
-          defaultValue=""
-          onInput={() => {
-            const val = queryInputRef.current?.value ?? '';
-            clearTimeout(queryDebounceRef.current);
-            queryDebounceRef.current = setTimeout(() => setQuery(val), 0);
-          }}
-          className="flex-1 bg-transparent outline-none text-right"
-          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#10241E' }}
-        />
-        {query && <button onClick={() => {
-          if (queryInputRef.current) queryInputRef.current.value = '';
-          clearTimeout(queryDebounceRef.current);
-          setQuery('');
-        }}><X className="w-4 h-4 text-[#C19A6B]" /></button>}
-      </div>
-
-      {/* Book filter */}
-      <div className="flex gap-2 flex-wrap mb-4">
-        <button
-          onClick={() => setSelectedBook(null)}
-          className="text-xs px-3 py-1.5 rounded-xl font-bold transition-all"
-          style={{
-            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-            background: !selectedBook ? '#C19A6B' : 'rgba(193,154,107,0.1)',
-            color: !selectedBook ? '#fff' : (isDark ? '#C19A6B' : '#7A4F1E'),
-          }}
-        >
-          الكل
-        </button>
-        {BOOKS.map(b => (
-          <button
-            key={b.slug}
-            onClick={() => setSelectedBook(sb => sb?.slug === b.slug ? null : b)}
-            className="text-xs px-3 py-1.5 rounded-xl font-bold transition-all"
-            style={{
-              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-              background: selectedBook?.slug === b.slug ? b.iconBg : 'rgba(193,154,107,0.1)',
-              color: selectedBook?.slug === b.slug ? '#fff' : (isDark ? '#C19A6B' : '#7A4F1E'),
-            }}
-          >
-            {b.name.replace('صحيح ', '').replace('سنن ', '').replace('جامع ', '')}
-          </button>
-        ))}
-      </div>
-
-      <SearchResults query={query} book={selectedBook} onOpenBook={onOpenBook} />
-    </div>
-  );
-}
-
-/* ── Main page ── */
 export function Hadith() {
   const [selected, setSelected] = useState<Book | null>(null);
   const [initHadithNum, setInitHadithNum] = useState<number | undefined>(undefined);
-  const [tab, setTab] = useState<'books' | 'search'>('books');
+  const [tab, setTab] = useState<Tab>('books');
+  const [globalQuery, setGlobalQuery] = useState('');
+  const [filterBook, setFilterBook] = useState<string>('all');
+  const [favs, setFavs] = useUserSetting<Fav[]>('hadith_favorites', []);
   const { showTutorial } = useTutorial();
 
   useEffect(() => {
     if (selected) {
       showTutorial('hadith:book:' + selected.slug,
-        `أنت داخل ${selected.name}! 📜\n\n• اسحب للأعلى لتكمل قراءة الأحاديث\n• 🔍 زر البحث يفلتر الأحاديث داخل هذا الكتاب\n• اضغط على أي حديث لعرضه كاملاً مع التفاصيل\n• زر النسخ 📋 ينسخ الحديث كاملاً للمشاركة\n• السهم ← فوق للرجوع لقائمة الكتب`
-      );
+        `أنت داخل ${selected.name}! 📜\n\n• السند يظهر بلون رمادي هادئ والمتن بخط واضح\n• 🔍 ابحث داخل الكتاب أو اكتب رقم الحديث للانتقال إليه\n• ❤️ أضف الحديث للمفضلة، 📋 انسخه، أو شاركه`);
     }
   }, [selected, showTutorial]);
-  const isDark = useDarkMode();
+
+  const toggleFav = useCallback((b: Book, h: LocalHadith) => {
+    setFavs(prev => prev.some(f => f.slug === b.slug && f.n === h.n)
+      ? prev.filter(f => !(f.slug === b.slug && f.n === h.n))
+      : [{ slug: b.slug, n: h.n, t: h.t }, ...prev]);
+  }, [setFavs]);
 
   const openBook = useCallback((b: Book, hadithNum?: number) => {
-    setSelected(b);
-    setInitHadithNum(hadithNum);
-    setTab('books');
+    setSelected(b); setInitHadithNum(hadithNum); setTab('books'); window.scrollTo({ top: 0 });
   }, []);
 
-  const handleBack = () => {
-    setSelected(null);
-    setInitHadithNum(undefined);
-  };
+  const handleBack = () => { if (selected) { setSelected(null); setInitHadithNum(undefined); } };
 
   return (
-    <div className="h-screen flex flex-col max-w-lg mx-auto bg-background" dir="rtl">
-      {/* Header */}
-      <div className="px-4 py-4 flex items-center gap-4 bg-card shadow-sm border-b border-border flex-shrink-0 sticky top-0 z-50">
-        {selected ? (
-          <button onClick={handleBack} className="p-2 bg-secondary rounded-full hover-elevate" data-testid="button-back-to-books">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        ) : (
-          <Link href="/more">
-            <button className="p-2 bg-secondary rounded-full hover-elevate" data-testid="button-nav-back">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          </Link>
+    <div className="min-h-screen pb-28 max-w-lg mx-auto" dir="rtl">
+      <PageHeader
+        title={selected ? selected.name : 'الأحاديث الشريفة'}
+        subtitle={selected ? selected.grade : 'الكتب الستة · أكثر من ٣٤ ألف حديث'}
+        back={selected ? handleBack : '/more'}
+        icon="hadith"
+      >
+        {!selected && (
+          <ChipTabs<Tab> value={tab} onChange={setTab} items={[
+            { id: 'books', label: 'الكتب', icon: <BookOpen className="w-4 h-4" /> },
+            { id: 'search', label: 'البحث', icon: <Search className="w-4 h-4" /> },
+            { id: 'favs', label: `المفضلة${favs.length ? ` (${arNum(favs.length)})` : ''}`, icon: <Heart className="w-4 h-4" /> },
+          ]} />
         )}
-        <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-xl truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-            {selected ? selected.name : 'الأحاديث الشريفة'}
-          </h1>
-          {!selected && (
-            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-              كتب الحديث الكبرى
-            </p>
-          )}
-        </div>
-      </div>
+      </PageHeader>
 
-      {/* Tabs (only when no book selected) */}
-      {!selected && (
-        <div
-          className="flex border-b border-border px-4 pt-1"
-          style={{ background: isDark ? 'rgba(15,12,7,0.95)' : 'rgba(253,251,245,0.95)' }}
-        >
-          {([['books', <BookOpen className="w-4 h-4" />, 'الكتب'], ['search', <Search className="w-4 h-4" />, 'البحث']] as const).map(([t, icon, label]) => (
-            <button
-              key={t}
-              onClick={() => setTab(t as 'books' | 'search')}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold transition-all border-b-2"
-              style={{
-                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-                borderColor: tab === t ? '#C19A6B' : 'transparent',
-                color: tab === t ? '#C19A6B' : (isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)'),
-              }}
-            >
-              {icon}
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
-          <AnimatePresence mode="wait">
-            {selected ? (
-              <motion.div key={selected.slug} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                <HadithReader book={selected} onBack={handleBack} initialHadithNum={initHadithNum} />
-              </motion.div>
-            ) : tab === 'books' ? (
-              <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="mb-5 text-center">
-                  <p className="text-2xl font-black text-primary" style={{ fontFamily: '"Amiri", serif' }}>
-                    الأحاديث النبوية الشريفة
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                    اختر كتاباً للقراءة
-                  </p>
-                </div>
-                <BookList onSelect={b => openBook(b)} />
-                <div className="mt-6 mb-4 text-center px-2">
-                  <div className="h-px mb-4 opacity-20" style={{ background: 'linear-gradient(to left, transparent, currentColor, transparent)' }} />
-                  <p className="text-sm leading-loose text-muted-foreground" style={{ fontFamily: '"Amiri", serif' }}>
-                    إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى ۝ متفق عليه
-                  </p>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <GlobalSearch onOpenBook={openBook} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      <div className="p-4">
+        {selected ? (
+          <HadithReader book={selected} initialHadithNum={initHadithNum} favs={favs} toggleFav={toggleFav} />
+        ) : tab === 'books' ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {BOOKS.map((book, i) => (
+                <motion.button key={book.slug} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  onClick={() => openBook(book)}
+                  className={cn('press relative text-right rounded-3xl p-4 overflow-hidden min-h-[150px] flex flex-col', i < 2 ? 'noor-card-hero col-span-1' : 'noor-card')}>
+                  <div className="absolute inset-0 noor-pattern" style={{ opacity: 0.07 }} />
+                  <NoorImg name="hadith" size={42} className="relative mb-3" />
+                  <p className="relative font-bold text-[15px] text-foreground leading-snug">{book.name}</p>
+                  <p className="relative text-[10px] text-muted-foreground mt-1 line-clamp-2">{book.author}</p>
+                  <div className="relative mt-auto pt-2"><GoldBadge>{arNum(book.count.toLocaleString('en'))} حديث</GoldBadge></div>
+                </motion.button>
+              ))}
+            </div>
+            <FooterAyah text="إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى" source="متفق عليه" />
+          </>
+        ) : tab === 'search' ? (
+          <>
+            <div className="relative mb-3">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/60" />
+              <input autoFocus value={globalQuery} onChange={e => setGlobalQuery(e.target.value)} placeholder="ابحث في كل كتب الحديث..." className="noor-input" />
+              {globalQuery && <button onClick={() => setGlobalQuery('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary"><X className="w-4 h-4" /></button>}
+            </div>
+            <ChipTabs className="mb-4" value={filterBook} onChange={setFilterBook}
+              items={[{ id: 'all', label: 'الكل' }, ...BOOKS.map(b => ({ id: b.slug, label: b.name.replace(/^(صحيح|سنن|جامع)\s/, '') }))]} />
+            <SearchResults query={globalQuery} book={BOOKS.find(b => b.slug === filterBook) ?? null} onOpenBook={openBook} favs={favs} toggleFav={toggleFav} />
+          </>
+        ) : (
+          <div className="space-y-3">
+            {favs.length === 0 && <EmptyState icon="hadith" title="لا توجد أحاديث مفضلة بعد" hint="اضغط على ❤️ في أي حديث لحفظه هنا" />}
+            {favs.map(f => {
+              const b = BOOKS.find(x => x.slug === f.slug) ?? BOOKS[0];
+              return <HadithCard key={`${f.slug}-${f.n}`} hadith={{ n: f.n, t: f.t }} book={b} isFav onToggleFav={() => toggleFav(b, { n: f.n, t: f.t })} />;
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

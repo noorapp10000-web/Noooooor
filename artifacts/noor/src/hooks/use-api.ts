@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
+import { Coordinates, PrayerTimes } from 'adhan';
+import { getCalcParams } from '@/lib/prayer-calc';
 import { SURAH_NAMES } from '@/lib/constants';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -206,7 +207,7 @@ function _computePrayerTimes(lat: number, lng: number, dateOffset: number): Pray
   const cached = _ptLoad(lat, lng, isoDate);
   if (cached) return cached;
   const coords = new Coordinates(lat, lng);
-  const params = CalculationMethod.Egyptian();
+  const params = getCalcParams();
   // Use Egypt's calendar date (not UTC) so adhan sees the correct local day
   // Works for all 27 Egyptian governorates + DST transitions
   const d = _egyptDate(dateOffset);
@@ -251,7 +252,7 @@ export function usePrayerTimes(lat: number | null, lng: number | null, dateOffse
 
       // ── 2. Compute with adhan.js (static import — always bundled, no network) ─
       const coords = new Coordinates(lat, lng);
-      const params = CalculationMethod.Egyptian();
+      const params = getCalcParams();
       // _egyptDate: uses Egypt's current calendar day (all 27 govs, auto-DST)
       const d = _egyptDate(dateOffset);
       const pt = new PrayerTimes(coords, d, params);

@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { addListenSeconds, flushListenSeconds } from '@/lib/stats';
 
 interface AudioBridgePlugin {
   updateMetadata(opts: { title: string; artist: string; isPlaying: boolean }): Promise<void>;
@@ -33,7 +34,15 @@ interface AudioState {
   duration: number;
   isLoading: boolean;
   autoPlay: boolean;
+  /** Playback speed (0.75 – 2) */
+  rate: number;
+  /** Epoch ms when the sleep timer pauses playback */
+  sleepEndsAt: number | null;
+  /** Pause when the current surah ends */
+  sleepAtEnd: boolean;
 }
+
+export type SleepOption = number | 'end' | null;
 
 interface AudioContextType extends AudioState {
   play: (opts: { reciterId: string; reciterName: string; serverUrl: string; surahNum: number; surahName: string }) => void;
@@ -44,6 +53,8 @@ interface AudioContextType extends AudioState {
   seekPrev: () => void;
   stop: () => void;
   toggleAutoPlay: () => void;
+  setRate: (rate: number) => void;
+  setSleepTimer: (opt: SleepOption) => void;
 }
 
 const AudioCtx = createContext<AudioContextType | null>(null);
@@ -255,6 +266,10 @@ function readAutoPlayPref(): boolean {
   try { return localStorage.getItem('noor_autoplay') !== 'false'; } catch { return true; }
 }
 
+function readRatePref(): number {
+  try { const v = parseFloat(localStorage.getItem('noor_play_rate') ?? '1'); return v >= 0.5 && v <= 2 ? v : 1; } catch { return 1; }
+}
+
 /* ── Provider ── */
 export function AudioProvider({ children }: { children: ReactNode }) {
   const initAutoPlay = readAutoPlayPref();
@@ -264,7 +279,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     surahNum: null, surahName: '',
     isPlaying: false, currentTime: 0, duration: 0, isLoading: false,
     autoPlay: initAutoPlay,
+    rate: readRatePref(),
+    sleepEndsAt: null,
+    sleepAtEnd: false,
   });
+  const rateRef = useRef<number>(state.rate);
+  const sleepAtEndRef = useRef(false);
+  const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTickRef = useRef<number>(0);
 
   const rafRef      = useRef<number>(0);
   const stateRef    = useRef(state);
@@ -275,13 +297,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const userPausedRef = useRef<boolean>(false);
 
   const tick = useCallback(() => {
+    const now = performance.now();
+    if (lastTickRef.current && !audioEl.paused) addListenSeconds((now - lastTickRef.current) / 1000);
+    lastTickRef.current = now;
     setState(s => ({ ...s, currentTime: audioEl.currentTime, duration: audioEl.duration || 0 }));
     updateMediaPositionState();
     rafRef.current = requestAnimationFrame(tick);
   }, []);
 
-  const startTick = () => { rafRef.current = requestAnimationFrame(tick); };
-  const stopTick  = () => cancelAnimationFrame(rafRef.current);
+  const startTick = () => { lastTickRef.current = 0; rafRef.current = requestAnimationFrame(tick); };
+  const stopTick  = () => { cancelAnimationFrame(rafRef.current); lastTickRef.current = 0; flushListenSeconds(); };
 
   audioEl.onplay = () => {
     userPausedRef.current = false;
@@ -308,6 +333,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const pad = surahNum.toString().padStart(3, '0');
     audioEl.src = `${serverUrl}${pad}.mp3`;
     audioEl.load();
+    audioEl.defaultPlaybackRate = rateRef.current;
+    audioEl.playbackRate = rateRef.current;
     audioEl.play().catch(() => {});
     setState(s => ({ ...s, reciterId, reciterName, serverUrl, surahNum, surahName, isLoading: true, currentTime: 0 }));
     updateMediaSession(surahName, reciterName);
@@ -319,6 +346,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   /* ── onended: auto-play or stop ── */
   audioEl.onended = () => {
     const cur = stateRef.current;
+    if (sleepAtEndRef.current) {
+      sleepAtEndRef.current = false;
+      userPausedRef.current = true;
+      setState(s => ({ ...s, isPlaying: false, sleepAtEnd: false }));
+      setMediaSessionState('paused');
+      stopTick();
+      return;
+    }
     if (autoPlayRef.current && cur.surahNum && cur.surahNum < 114 && playRef.current) {
       playRef.current({
         reciterId: cur.reciterId, reciterName: cur.reciterName, serverUrl: cur.serverUrl,
@@ -378,6 +413,34 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       return { ...s, autoPlay: next };
     });
   }, []);
+
+  const setRate = useCallback((rate: number) => {
+    const r = Math.max(0.5, Math.min(2, rate));
+    rateRef.current = r;
+    audioEl.defaultPlaybackRate = r;
+    audioEl.playbackRate = r;
+    try { localStorage.setItem('noor_play_rate', String(r)); } catch {}
+    setState(s => ({ ...s, rate: r }));
+  }, []);
+
+  const setSleepTimer = useCallback((opt: SleepOption) => {
+    if (sleepTimerRef.current) { clearTimeout(sleepTimerRef.current); sleepTimerRef.current = null; }
+    sleepAtEndRef.current = opt === 'end';
+    if (typeof opt === 'number' && opt > 0) {
+      const ms = opt * 60_000;
+      sleepTimerRef.current = setTimeout(() => {
+        sleepTimerRef.current = null;
+        userPausedRef.current = true;
+        audioEl.pause();
+        setState(s => ({ ...s, sleepEndsAt: null }));
+      }, ms);
+      setState(s => ({ ...s, sleepEndsAt: Date.now() + ms, sleepAtEnd: false }));
+    } else {
+      setState(s => ({ ...s, sleepEndsAt: null, sleepAtEnd: opt === 'end' }));
+    }
+  }, []);
+
+  useEffect(() => () => { if (sleepTimerRef.current) clearTimeout(sleepTimerRef.current); }, []);
 
   /* ── Register MediaSession + Native AudioBridge handlers ONCE at mount ── */
   useEffect(() => {
@@ -465,7 +528,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AudioCtx.Provider value={{ ...state, play, togglePlay, pause, seek, seekNext, seekPrev, stop, toggleAutoPlay }}>
+    <AudioCtx.Provider value={{ ...state, play, togglePlay, pause, seek, seekNext, seekPrev, stop, toggleAutoPlay, setRate, setSleepTimer }}>
       {children}
     </AudioCtx.Provider>
   );

@@ -1,188 +1,112 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Play, Pause, SkipBack, SkipForward, ChevronFirst, ChevronLast, Bookmark } from 'lucide-react';
-import { Link } from 'wouter';
-import { useQuranSurahs, useSurah } from '@/hooks/use-api';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Play, Pause, SkipBack, SkipForward, ChevronFirst, ChevronLast, Bookmark, Search, Type, AlignJustify } from 'lucide-react';
+import { useSurah } from '@/hooks/use-api';
 import { useUserSetting } from '@/hooks/use-user-setting';
-import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { SURAH_NAMES } from '@/lib/constants';
+import { PageHeader, EightStar, ChipTabs, GoldBar, Spinner, arNum } from '@/components/noor/kit';
+import { normalizeArabic } from '@/lib/arabic-utils';
+import { markAyahRead } from '@/lib/stats';
+import { cn } from '@/lib/utils';
 
 const TOTAL_QURAN_WORDS = 77430;
+const PRESETS = [{ wpm: 30, label: 'تدبّر' }, { wpm: 60, label: 'هادئ' }, { wpm: 120, label: 'متوسط' }, { wpm: 200, label: 'سريع' }];
 
-interface WordItem {
-  word: string;
-  ayah: number;
-  globalIndex: number;
-}
+interface WordItem { word: string; ayah: number; idx: number }
+type Display = 'word' | 'ayah';
 
-function fmtTime(mins: number): string {
+function fmtMins(mins: number): string {
   if (!isFinite(mins) || mins < 0) return '—';
   const h = Math.floor(mins / 60);
-  const m = Math.floor(mins % 60);
-  if (h > 0) return `${h}س ${m}د`;
-  return `${m} دقيقة`;
+  const m = Math.max(1, Math.round(mins % 60));
+  return h > 0 ? `${arNum(h)}س ${arNum(m)}د` : `${arNum(m)} د`;
 }
 
 export function SpeedReader() {
-  const { data: surahs } = useQuranSurahs();
-  const theme = 'dark' as 'light' | 'dark';
-  const dark = theme === 'dark';
-
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [phase, setPhase] = useState<'select' | 'read'>('select');
   const { data: surahData } = useSurah(selectedSurah);
-
   const [words, setWords] = useState<WordItem[]>([]);
   const [wordIndex, setWordIndex] = useState(0);
-  const [wpm, setWpm] = useState(60);
+  const [wpm, setWpm] = useUserSetting<number>('speed_reader_wpm', 60);
+  const [display, setDisplay] = useUserSetting<Display>('speed_reader_display', 'word');
   const [isPlaying, setIsPlaying] = useState(false);
-
-  const [savedProgress, setSavedProgress] = useUserSetting<{ surah: number; wordIndex: number; surahName: string } | null>(
-    'speed_reader_progress', null
-  );
-
+  const [search, setSearch] = useState('');
+  const [pendingIndex, setPendingIndex] = useState<number | null>(null);
+  const [savedProgress, setSavedProgress] = useUserSetting<{ surah: number; wordIndex: number; surahName: string } | null>('speed_reader_progress', null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastAyahRef = useRef(0);
 
-  // Theme palette
-  const C = {
-    pageBg: dark ? '#0a0805' : '#FDFBF5',
-    headerBg: dark ? '#07130F' : '#F7EDD6',
-    headerBorder: dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.3)',
-    text: dark ? '#e8d9b8' : '#10241E',
-    textSecondary: dark ? 'rgba(232,217,184,0.4)' : 'rgba(44,30,22,0.4)',
-    wordDisplay: dark ? '#C19A6B' : '#7a4e25',
-    wordGlow: dark
-      ? '0 0 40px rgba(193,154,107,0.6), 0 0 80px rgba(193,154,107,0.3)'
-      : '0 0 20px rgba(193,154,107,0.3)',
-    prevNextWord: dark ? '#e8d9b8' : '#10241E',
-    btnBg: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.12)',
-    btnBorder: dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.35)',
-    progressBg: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.15)',
-    statBg: dark ? 'rgba(193,154,107,0.06)' : 'rgba(193,154,107,0.08)',
-    itemBg: dark ? 'rgba(255,255,255,0.04)' : 'rgba(193,154,107,0.06)',
-    itemBorder: dark ? 'rgba(255,255,255,0.06)' : 'rgba(193,154,107,0.15)',
-    itemBgHover: dark ? 'rgba(255,255,255,0.08)' : 'rgba(193,154,107,0.1)',
-    selectedBg: 'rgba(193,154,107,0.18)',
-    selectedBorder: 'rgba(193,154,107,0.4)',
-  };
-
-  // Build words array from surah data
   useEffect(() => {
     if (!surahData?.ayahs) return;
     const arr: WordItem[] = [];
-    let gIdx = 0;
-    surahData.ayahs.forEach((ayah: any) => {
-      let text = ayah.text as string;
-      if (ayah.numberInSurah === 1 && selectedSurah !== 1 && selectedSurah !== 9) {
-        text = text.replace('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ', '');
-      }
-      const ws = text.split(/\s+/).filter(Boolean);
-      ws.forEach(w => {
-        arr.push({ word: w, ayah: ayah.numberInSurah, globalIndex: gIdx++ });
-      });
+    let i = 0;
+    surahData.ayahs.forEach((ayah: { text: string; numberInSurah: number }) => {
+      let text = ayah.text;
+      if (ayah.numberInSurah === 1 && selectedSurah !== 1 && selectedSurah !== 9) text = text.replace('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ', '');
+      text.split(/\s+/).filter(Boolean).forEach(w => arr.push({ word: w, ayah: ayah.numberInSurah, idx: i++ }));
     });
     setWords(arr);
-    setWordIndex(0);
+    setWordIndex(pendingIndex !== null ? Math.min(pendingIndex, arr.length - 1) : 0);
+    setPendingIndex(null);
     setIsPlaying(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surahData, selectedSurah]);
 
-  const startInterval = useCallback((currentWpm: number) => {
+  const ayahGroups = useMemo(() => {
+    const m = new Map<number, WordItem[]>();
+    for (const w of words) { if (!m.has(w.ayah)) m.set(w.ayah, []); m.get(w.ayah)!.push(w); }
+    return m;
+  }, [words]);
+
+  const start = useCallback((rate: number) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    const ms = Math.round(60000 / currentWpm);
     intervalRef.current = setInterval(() => {
       setWordIndex(prev => {
-        if (prev >= words.length - 1) {
-          clearInterval(intervalRef.current!);
-          setIsPlaying(false);
-          return prev;
-        }
+        if (prev >= words.length - 1) { if (intervalRef.current) clearInterval(intervalRef.current); setIsPlaying(false); return prev; }
         return prev + 1;
       });
-    }, ms);
+    }, Math.round(60000 / rate));
   }, [words.length]);
 
   useEffect(() => {
-    if (isPlaying) {
-      startInterval(wpm);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
+    if (isPlaying) start(wpm); else if (intervalRef.current) clearInterval(intervalRef.current);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isPlaying, wpm, startInterval]);
+  }, [isPlaying, wpm, start]);
 
-  const handleWpmChange = (newWpm: number) => {
-    setWpm(newWpm);
-    if (isPlaying) startInterval(newWpm);
-  };
+  const cur = words[wordIndex];
+  useEffect(() => {
+    if (cur && cur.ayah !== lastAyahRef.current) { lastAyahRef.current = cur.ayah; markAyahRead(selectedSurah, cur.ayah); }
+  }, [cur, selectedSurah]);
 
-  const saveBookmark = () => {
-    setSavedProgress({ surah: selectedSurah, wordIndex, surahName: SURAH_NAMES[selectedSurah] ?? '' });
-  };
+  const openSurah = (n: number, at?: number) => { setPendingIndex(at ?? null); setSelectedSurah(n); setPhase('read'); };
 
-  const currentWord = words[wordIndex];
-  const prevWord = words[wordIndex - 1];
-  const nextWord = words[wordIndex + 1];
-
-  const wordsRemaining = words.length - wordIndex;
-  const minsToFinishSurah = wordsRemaining / wpm;
-  const wordsReadGlobal = wordIndex;
-  const minsToFinishQuran = (TOTAL_QURAN_WORDS - wordsReadGlobal) / wpm;
-
-  // ── Phase: Surah Selection ──
   if (phase === 'select') {
+    const q = normalizeArabic(search.trim());
+    const list = Array.from({ length: 114 }, (_, i) => i + 1).filter(n => !q || normalizeArabic(SURAH_NAMES[n] ?? '').includes(q) || String(n) === search.trim());
     return (
-      <div className="min-h-screen flex flex-col" dir="rtl" style={{ background: C.pageBg }}>
-        <div className="flex items-center gap-3 p-4 border-b flex-shrink-0" style={{ background: C.headerBg, borderColor: C.headerBorder }}>
-          <Link href="/more">
-            <button className="p-2 rounded-full" style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}` }}>
-              <ArrowLeft className="w-5 h-5" style={{ color: '#C19A6B' }} />
-            </button>
-          </Link>
-          <div>
-            <h1 className="font-bold text-lg" style={{ color: C.text, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>قارئ التدبر الذكي</h1>
-            <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>قراءة كلمة بكلمة مع التدبر</p>
+      <div className="min-h-screen flex flex-col" dir="rtl">
+        <PageHeader title="قارئ التدبّر الذكي" subtitle="اقرأ كلمة بكلمة أو آية بآية بإيقاع يناسب تدبّرك" icon="quran">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/60" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن سورة..." className="noor-input" />
           </div>
-        </div>
-
-        {savedProgress && (
-          <button
-            onClick={() => {
-              setSelectedSurah(savedProgress.surah);
-              setPhase('read');
-              setTimeout(() => setWordIndex(savedProgress.wordIndex), 500);
-            }}
-            className="mx-4 mt-4 p-4 rounded-2xl flex items-center gap-3"
-            style={{ background: 'rgba(193,154,107,0.12)', border: '1px solid rgba(193,154,107,0.35)' }}
-          >
-            <Bookmark className="w-5 h-5" style={{ color: '#C19A6B' }} />
-            <div className="text-right">
-              <p className="font-bold text-sm" style={{ color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>متابعة من آخر توقف</p>
-              <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                سورة {savedProgress.surahName} - الكلمة {savedProgress.wordIndex + 1}
-              </p>
-            </div>
-          </button>
-        )}
-
-        <div className="flex-1 overflow-y-auto p-4">
-          <p className="text-sm mb-3" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>اختر سورة للبدء:</p>
-          <div className="space-y-2 pb-6">
-            {Array.from({ length: 114 }, (_, i) => i + 1).map(num => (
-              <button
-                key={num}
-                onClick={() => { setSelectedSurah(num); setPhase('read'); }}
-                className="w-full flex items-center gap-4 p-3 rounded-xl transition-colors text-right"
-                style={{
-                  background: selectedSurah === num ? C.selectedBg : C.itemBg,
-                  border: `1px solid ${selectedSurah === num ? C.selectedBorder : C.itemBorder}`,
-                }}
-              >
-                <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ background: 'rgba(193,154,107,0.2)', color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                  {num}
-                </span>
-                <span className="font-bold" style={{ color: C.text, fontFamily: '"Amiri", serif' }}>
-                  {SURAH_NAMES[num] ?? `سورة ${num}`}
-                </span>
+        </PageHeader>
+        <div className="max-w-lg mx-auto w-full px-4 pt-4 pb-10">
+          {savedProgress && (
+            <button onClick={() => openSurah(savedProgress.surah, savedProgress.wordIndex)}
+              className="press w-full mb-4 p-4 rounded-3xl noor-card-hero flex items-center gap-3 text-right">
+              <Bookmark className="w-5 h-5 text-primary fill-current" />
+              <div className="flex-1">
+                <p className="font-bold text-sm text-primary">متابعة من آخر توقف</p>
+                <p className="text-xs text-muted-foreground">سورة {savedProgress.surahName} · الكلمة {arNum(savedProgress.wordIndex + 1)}</p>
+              </div>
+            </button>
+          )}
+          <div className="grid grid-cols-2 gap-2.5">
+            {list.map(n => (
+              <button key={n} onClick={() => openSurah(n)} className="press noor-card rounded-2xl p-3 flex items-center gap-3 text-right">
+                <EightStar n={n} size={34} />
+                <span className="font-quran text-lg text-foreground truncate">{SURAH_NAMES[n] ?? `سورة ${n}`}</span>
               </button>
             ))}
           </div>
@@ -191,167 +115,78 @@ export function SpeedReader() {
     );
   }
 
-  // ── Phase: Reading ──
+  const prev = words[wordIndex - 1];
+  const next = words[wordIndex + 1];
+  const remaining = words.length - wordIndex;
+  const ayahWords = cur ? ayahGroups.get(cur.ayah) ?? [] : [];
+
   return (
-    <div className="min-h-screen flex flex-col" dir="rtl" style={{ background: C.pageBg }}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
-        style={{ background: C.headerBg, borderColor: C.headerBorder }}>
-        <button onClick={() => { setPhase('select'); setIsPlaying(false); }} className="p-2 rounded-full"
-          style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}` }}>
-          <ArrowLeft className="w-5 h-5" style={{ color: '#C19A6B' }} />
-        </button>
-        <div className="text-center">
-          <p className="font-bold" style={{ color: C.text, fontFamily: '"Amiri", serif' }}>سورة {SURAH_NAMES[selectedSurah]}</p>
-          <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>آية {currentWord?.ayah ?? 1}</p>
-        </div>
-        <button onClick={saveBookmark} title="حفظ مكاني">
-          <Bookmark
-            className="w-5 h-5"
-            style={{
-              color: savedProgress?.surah === selectedSurah && savedProgress?.wordIndex === wordIndex ? '#C19A6B' : C.textSecondary,
-              fill: savedProgress?.surah === selectedSurah && savedProgress?.wordIndex === wordIndex ? '#C19A6B' : 'transparent',
-            }}
-          />
-        </button>
-      </div>
+    <div className="h-[100dvh] flex flex-col" dir="rtl">
+      <PageHeader title={`سورة ${SURAH_NAMES[selectedSurah] ?? ''}`} subtitle={cur ? `الآية ${arNum(cur.ayah)} · الكلمة ${arNum(wordIndex + 1)} من ${arNum(words.length)}` : 'جارٍ التحميل…'}
+        back={() => { setPhase('select'); setIsPlaying(false); }}
+        right={
+          <button onClick={() => setSavedProgress({ surah: selectedSurah, wordIndex, surahName: SURAH_NAMES[selectedSurah] ?? '' })} aria-label="حفظ موضعي"
+            className={cn('press w-10 h-10 rounded-2xl flex items-center justify-center', savedProgress?.surah === selectedSurah && savedProgress.wordIndex === wordIndex ? 'noor-btn-gold' : 'noor-btn-ghost')}>
+            <Bookmark className="w-4 h-4" />
+          </button>
+        }>
+        <ChipTabs<Display> value={display} onChange={setDisplay} items={[
+          { id: 'word', label: 'كلمة بكلمة', icon: <Type className="w-4 h-4" /> },
+          { id: 'ayah', label: 'الآية كاملة', icon: <AlignJustify className="w-4 h-4" /> },
+        ]} />
+      </PageHeader>
 
-      {/* Main word display */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 select-none">
-        {/* Previous word */}
-        <div className="h-16 flex items-center" style={{ opacity: 0.25 }}>
-          {prevWord && (
-            <span style={{ color: C.prevNextWord, fontFamily: '"Amiri Quran", "Amiri", serif', fontSize: '1.5rem' }}>
-              {prevWord.word}
-            </span>
-          )}
-        </div>
-
-        {/* Current word — glowing */}
-        <div className="h-40 flex items-center justify-center">
-          {currentWord ? (
-            <span
-              style={{
-                fontFamily: '"Amiri Quran", "Amiri", serif',
-                fontSize: '3.75rem',
-                color: C.wordDisplay,
-                textAlign: 'center',
-                lineHeight: 1.2,
-                textShadow: C.wordGlow,
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {currentWord.word}
-            </span>
+      {/* Stage */}
+      <div className="flex-1 flex items-center justify-center px-5 py-4 min-h-0">
+        <div className="w-full max-w-lg qr-emerald qr-surface rounded-[32px] min-h-[280px] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+          <div className="absolute inset-0 noor-pattern" style={{ opacity: 0.05 }} />
+          {!cur ? <Spinner /> : display === 'word' ? (
+            <>
+              <span className="relative font-quran text-2xl qr-ink opacity-25 h-10">{prev?.word ?? ''}</span>
+              <span key={wordIndex} className="relative font-quran text-[3.6rem] leading-[1.4] text-gold-gradient my-3 animate-fade-up text-center"
+                style={{ filter: 'drop-shadow(0 0 22px hsl(40 80% 60% / .35))' }}>{cur.word}</span>
+              <span className="relative font-quran text-2xl qr-ink opacity-25 h-10">{next?.word ?? ''}</span>
+              <span className="absolute bottom-4"><EightStar n={cur.ayah} size={34} /></span>
+            </>
           ) : (
-            <span style={{ color: C.textSecondary, fontSize: '1.5rem', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-              جاري التحميل...
-            </span>
-          )}
-        </div>
-
-        {/* Next word */}
-        <div className="h-16 flex items-center" style={{ opacity: 0.25 }}>
-          {nextWord && (
-            <span style={{ color: C.prevNextWord, fontFamily: '"Amiri Quran", "Amiri", serif', fontSize: '1.5rem' }}>
-              {nextWord.word}
-            </span>
+            <p className="relative font-quran text-[1.7rem] leading-[2.4] text-center qr-ink">
+              {ayahWords.map(w => (
+                <span key={w.idx} onClick={() => setWordIndex(w.idx)}
+                  className={cn('px-0.5 rounded transition-colors cursor-pointer', w.idx === wordIndex ? 'text-gold-gradient' : w.idx < wordIndex ? 'opacity-90' : 'opacity-40')}>
+                  {w.word}{' '}
+                </span>
+              ))}
+              <EightStar n={cur.ayah} size={32} />
+            </p>
           )}
         </div>
       </div>
 
-      {/* Status bar */}
-      <div className="px-4 py-3 grid grid-cols-3 gap-2 border-t" style={{ borderColor: C.headerBorder, background: C.statBg }}>
-        <div className="text-center">
-          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>الكلمة</p>
-          <p className="font-bold text-sm" style={{ color: C.text, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{wordIndex + 1} / {words.length}</p>
+      {/* Dashboard */}
+      <div className="flex-shrink-0 glass rounded-t-[28px] px-4 pt-4" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
+        <div className="max-w-lg mx-auto">
+          <GoldBar value={words.length ? (wordIndex + 1) / words.length : 0} className="mb-3" />
+          <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+            <div><p className="text-[10px] text-muted-foreground">السرعة</p><p className="font-bold text-primary text-sm tabular-nums">{arNum(wpm)} ك/د</p></div>
+            <div><p className="text-[10px] text-muted-foreground">باقي السورة</p><p className="font-bold text-foreground text-sm">{fmtMins(remaining / wpm)}</p></div>
+            <div><p className="text-[10px] text-muted-foreground">باقي الختمة</p><p className="font-bold text-muted-foreground text-sm">{fmtMins((TOTAL_QURAN_WORDS - wordIndex) / wpm)}</p></div>
+          </div>
+          <div className="flex gap-2 mb-3">
+            {PRESETS.map(p => (
+              <button key={p.wpm} onClick={() => setWpm(p.wpm)} className={cn('press flex-1 h-9 rounded-xl text-xs font-bold', wpm === p.wpm ? 'noor-btn-gold' : 'noor-btn-ghost')}>{p.label}</button>
+            ))}
+          </div>
+          <input type="range" min={20} max={400} step={10} value={wpm} onChange={e => setWpm(Number(e.target.value))} className="w-full mb-3 accent-[hsl(var(--primary))]" />
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => setWordIndex(0)} aria-label="البداية" className="press w-11 h-11 rounded-2xl noor-btn-ghost flex items-center justify-center"><ChevronLast className="w-5 h-5" /></button>
+            <button onClick={() => setWordIndex(i => Math.max(0, i - 1))} aria-label="السابق" className="press w-11 h-11 rounded-2xl noor-btn-ghost flex items-center justify-center"><SkipForward className="w-5 h-5" /></button>
+            <button onClick={() => setIsPlaying(p => !p)} aria-label={isPlaying ? 'إيقاف' : 'تشغيل'} className="press w-16 h-16 rounded-full noor-gold-orb flex items-center justify-center text-background">
+              {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 translate-x-0.5" />}
+            </button>
+            <button onClick={() => setWordIndex(i => Math.min(words.length - 1, i + 1))} aria-label="التالي" className="press w-11 h-11 rounded-2xl noor-btn-ghost flex items-center justify-center"><SkipBack className="w-5 h-5" /></button>
+            <button onClick={() => { setWordIndex(Math.max(0, words.length - 1)); setIsPlaying(false); }} aria-label="النهاية" className="press w-11 h-11 rounded-2xl noor-btn-ghost flex items-center justify-center"><ChevronFirst className="w-5 h-5" /></button>
+          </div>
         </div>
-        <div className="text-center">
-          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>باقي للسورة</p>
-          <p className="font-bold text-sm" style={{ color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{fmtTime(minsToFinishSurah)}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>باقي للختمة</p>
-          <p className="font-bold text-sm" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{fmtTime(minsToFinishQuran)}</p>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-1.5 w-full relative" style={{ background: C.progressBg }}>
-        <div
-          className="absolute top-0 right-0 h-full rounded-full transition-all duration-300"
-          style={{
-            width: words.length ? `${(wordIndex / words.length) * 100}%` : '0%',
-            background: 'linear-gradient(to left, #C19A6B, #8a6a3a)',
-          }}
-        />
-      </div>
-
-      {/* WPM Slider */}
-      <div className="px-4 pt-3 pb-2" style={{ background: C.headerBg }}>
-        <div className="flex items-center gap-3">
-          <span className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>20</span>
-          <input
-            type="range"
-            min={20}
-            max={500}
-            step={10}
-            value={wpm}
-            onChange={e => handleWpmChange(Number(e.target.value))}
-            className="flex-1 h-1 rounded-full"
-            style={{ accentColor: '#C19A6B' }}
-          />
-          <span className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>500</span>
-        </div>
-        <p className="text-center font-bold mt-1" style={{ color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', fontSize: '0.9rem' }}>
-          {wpm} كلمة/دقيقة
-        </p>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-4 px-4 pb-8 pt-3" style={{ background: C.headerBg }}>
-        <button
-          onClick={() => { setWordIndex(0); if (isPlaying) startInterval(wpm); }}
-          className="p-3 rounded-full"
-          style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}` }}
-        >
-          <ChevronFirst className="w-5 h-5" style={{ color: '#C19A6B' }} />
-        </button>
-        <button
-          onClick={() => setWordIndex(i => Math.max(0, i - 1))}
-          className="p-3 rounded-full"
-          style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}`, opacity: wordIndex === 0 ? 0.4 : 1 }}
-          disabled={wordIndex === 0}
-        >
-          <SkipBack className="w-5 h-5" style={{ color: '#C19A6B' }} />
-        </button>
-
-        <button
-          onClick={() => setIsPlaying(p => !p)}
-          className="w-16 h-16 rounded-full flex items-center justify-center transition-transform hover:scale-105"
-          style={{ background: 'linear-gradient(135deg, #C19A6B, #7a5020)', boxShadow: '0 4px 20px rgba(193,154,107,0.4)' }}
-        >
-          {isPlaying
-            ? <Pause className="w-7 h-7" style={{ color: '#07130F' }} />
-            : <Play className="w-7 h-7 translate-x-0.5" style={{ color: '#07130F' }} />
-          }
-        </button>
-
-        <button
-          onClick={() => setWordIndex(i => Math.min(words.length - 1, i + 1))}
-          className="p-3 rounded-full"
-          style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}`, opacity: wordIndex >= words.length - 1 ? 0.4 : 1 }}
-          disabled={wordIndex >= words.length - 1}
-        >
-          <SkipForward className="w-5 h-5" style={{ color: '#C19A6B' }} />
-        </button>
-        <button
-          onClick={() => { setWordIndex(words.length - 1); setIsPlaying(false); }}
-          className="p-3 rounded-full"
-          style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}` }}
-        >
-          <ChevronLast className="w-5 h-5" style={{ color: '#C19A6B' }} />
-        </button>
       </div>
     </div>
   );

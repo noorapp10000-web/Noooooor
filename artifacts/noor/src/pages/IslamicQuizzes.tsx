@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTutorial } from '@/components/TutorialMascotContext';
-import { ChevronLeft, Award, CheckCircle, XCircle, Trophy, RotateCcw, ExternalLink } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, XCircle, RotateCcw, ExternalLink, Timer, Layers } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUserSetting } from '@/hooks/use-user-setting';
+import { PageHeader, GoldBar, ProgressRing, SkeletonList, FooterAyah, NoorImg, GoldBadge, arNum } from '@/components/noor/kit';
+import { recordQuizResult } from '@/lib/stats';
+import { vibrateLight, vibrateReset } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
 
 type Answer = { answer: string; t: number };
 type Question = { id: number; q: string; answers: Answer[]; link?: string };
@@ -11,120 +14,82 @@ type LevelsData = { level1: Question[]; level2: Question[]; level3: Question[] }
 type Topic = { name: string; slug: string; levelsData: LevelsData };
 type Category = { id: number; arabicName: string; englishName: string; description: string; topics: Topic[] };
 type QuizData = { description: string; mainCategories: Category[] };
-
 type Screen = 'categories' | 'topics' | 'levels' | 'quiz' | 'results';
+type LevelKey = keyof LevelsData;
 
-const CAT_GRADS: Record<number, string> = {
-  1: 'linear-gradient(135deg,#1b4332,#0d2b1e)',
-  2: 'linear-gradient(135deg,#123f35,#082219)',
-  3: 'linear-gradient(135deg,#3d3216,#1e1808)',
-  4: 'linear-gradient(135deg,#6b3a0f,#3d2008)',
-  5: 'linear-gradient(135deg,#0F3D32,#06201a)',
-  6: 'linear-gradient(135deg,#1a4a3a,#0d2b1e)',
-};
-
-const LEVEL_NAMES: Record<string, string> = {
-  level1: 'المستوى الأول',
-  level2: 'المستوى الثاني',
-  level3: 'المستوى الثالث',
-};
-
-const LEVEL_COLORS: Record<string, string> = {
-  level1: 'linear-gradient(135deg,#2d6a4f,#1b4332)',
-  level2: 'linear-gradient(135deg,#7a5a1f,#3d2c0d)',
-  level3: 'linear-gradient(135deg,#8a3b2a,#4a1c12)',
-};
+const LEVELS: { id: LevelKey; name: string; hint: string }[] = [
+  { id: 'level1', name: 'المستوى الأول', hint: 'أسئلة أساسية للمبتدئين' },
+  { id: 'level2', name: 'المستوى الثاني', hint: 'تحدٍّ متوسط لمعلوماتك' },
+  { id: 'level3', name: 'المستوى الثالث', hint: 'للمتمكنين وطلاب العلم' },
+];
+const LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
+}
+
+function resultBadge(pct: number) {
+  if (pct === 100) return { title: 'وسام العالِم', note: 'ما شاء الله! إجابات كاملة' };
+  if (pct >= 80) return { title: 'وسام الذهب', note: 'أداء متميز، بارك الله فيك' };
+  if (pct >= 60) return { title: 'وسام الفضة', note: 'جيد جداً، استمر في التعلم' };
+  if (pct >= 40) return { title: 'وسام البرونز', note: 'بداية طيبة، راجع وحاول مجدداً' };
+  return { title: 'طالب علم', note: 'لا بأس، العلم بالتعلّم' };
 }
 
 export function IslamicQuizzes() {
   const [, navigate] = useLocation();
-  const theme = 'dark' as 'light' | 'dark';
-  const dark = theme === 'dark';
-
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [screen, setScreen] = useState<Screen>('categories');
   const [selectedCat, setSelectedCat] = useState<Category | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [selectedLevel, setSelectedLevel] = useState<LevelKey>('level1');
   const { showTutorial } = useTutorial();
 
-  useEffect(() => {
-    if (screen === 'topics') {
-      showTutorial('quiz:topics',
-        `اختار الموضوع الأنسب لك! 📚\n\n• كل موضوع بيغطي جانب معين من المعرفة الإسلامية\n• اضغط على الموضوع اللي تريد الاختبار فيه\n• بعد الموضوع هتختار مستوى الصعوبة`
-      );
-    } else if (screen === 'levels') {
-      showTutorial('quiz:levels',
-        `اختار مستوى الصعوبة! 🎯\n\n• سهل: أسئلة بسيطة للمبتدئين\n• متوسط: تحدٍّ معقول للمتوسطين\n• صعب: للمتمكنين والراغبين في الاختبار الحقيقي 💪\n• كل مستوى = 20 سؤال منتقى بعناية`
-      );
-    } else if (screen === 'quiz') {
-      showTutorial('quiz:playing',
-        `الاختبار بدأ! 🎯\n\n• اقرأ السؤال جيداً قبل الاختيار\n• اضغط على الإجابة التي تعتقد أنها صحيحة\n• ✅ خضراء = إجابة صحيحة / ❌ حمراء = خطأ\n• لا يوجد وقت — خذ وقتك وفكّر بهدوء\n• في نهاية الجلسة تظهر نتيجتك الكاملة 🏆`
-      );
-    } else if (screen === 'results') {
-      showTutorial('quiz:results',
-        `انتهى الاختبار! 🏆\n\n• النتيجة تعكس مستواك في هذا الموضوع\n• يمكنك مراجعة الأسئلة والإجابات الصحيحة\n• اضغط "إعادة" للعب مرة أخرى بأسئلة مختلفة\n• 💡 كرّر الموضوع يومياً لتعزيز معلوماتك!`
-      );
-    }
-  }, [screen, showTutorial]);
-
-  // Quiz state
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
+  const [startedAt, setStartedAt] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    fetch('/data/quizzes.json')
-      .then(r => r.json())
-      .then((d: QuizData) => { setQuizData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    fetch('/data/quizzes.json').then(r => r.json()).then((d: QuizData) => { setQuizData(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  const bg = dark ? '#07130F' : '#FDFBF0';
-  const cardBg = dark ? '#0C1C17' : '#fff';
-  const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-  const textPrimary = dark ? '#d4b483' : '#1F4A3D';
-  const textSec = dark ? '#8B6B3D' : '#9E7B4A';
+  useEffect(() => {
+    if (screen === 'quiz') showTutorial('quiz:playing', `الاختبار بدأ! 🎯\n\n• اقرأ السؤال جيداً ثم اختر إجابتك\n• ✅ الإجابة الصحيحة تتوهج بالأخضر و❌ الخاطئة بالأحمر\n• في النهاية تحصل على وسام بحسب نتيجتك 🏅`);
+  }, [screen, showTutorial]);
 
-  const startQuiz = (level: string) => {
+  useEffect(() => {
+    if (screen !== 'quiz') { if (tickRef.current) clearInterval(tickRef.current); return; }
+    tickRef.current = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, [screen, startedAt]);
+
+  const startQuiz = (level: LevelKey) => {
     if (!selectedTopic) return;
-    const qs = shuffle((selectedTopic.levelsData as any)[level] as Question[]).slice(0, 20);
-    setQuestions(qs);
-    setSelectedLevel(level);
-    setQIndex(0);
-    setSelected(null);
-    setScore(0);
-    setAnswers([]);
-    setScreen('quiz');
+    const qs = shuffle(selectedTopic.levelsData[level] ?? []).slice(0, 20).map(q => ({ ...q, answers: shuffle(q.answers) }));
+    setQuestions(qs); setSelectedLevel(level); setQIndex(0); setSelected(null); setAnswers([]);
+    setStartedAt(Date.now()); setElapsed(0); setScreen('quiz');
   };
 
   const handleAnswer = (idx: number) => {
     if (selected !== null) return;
     setSelected(idx);
     const correct = questions[qIndex].answers[idx].t === 1;
-    if (correct) setScore(s => s + 1);
+    (correct ? vibrateLight() : vibrateReset()).catch(() => {});
     setAnswers(a => [...a, correct]);
   };
 
   const handleNext = () => {
     if (qIndex + 1 >= questions.length) {
+      recordQuizResult(answers.filter(Boolean).length, questions.length);
       setScreen('results');
-    } else {
-      setQIndex(i => i + 1);
-      setSelected(null);
-    }
+    } else { setQIndex(i => i + 1); setSelected(null); }
   };
 
   const handleBack = () => {
@@ -134,195 +99,109 @@ export function IslamicQuizzes() {
     else navigate('/more');
   };
 
-  const restartQuiz = () => {
-    startQuiz(selectedLevel);
-  };
+  const score = answers.filter(Boolean).length;
+  const pct = questions.length ? Math.round((score / questions.length) * 100) : 0;
+  const levelName = LEVELS.find(l => l.id === selectedLevel)?.name ?? '';
+  const mm = `${arNum(Math.floor(elapsed / 60))}:${arNum(String(elapsed % 60).padStart(2, '0'))}`;
 
-  // Header title
-  const headerTitle = screen === 'categories' ? 'الاختبارات الإسلامية'
-    : screen === 'topics' ? selectedCat?.arabicName ?? ''
-    : screen === 'levels' ? selectedTopic?.name ?? ''
-    : screen === 'quiz' ? `${LEVEL_NAMES[selectedLevel]}`
-    : 'نتيجتك';
+  const title = screen === 'categories' ? 'المسابقات الإسلامية' : screen === 'topics' ? selectedCat?.arabicName ?? '' : screen === 'levels' ? selectedTopic?.name ?? '' : screen === 'quiz' ? levelName : 'نتيجتك';
+  const q = questions[qIndex];
 
   return (
-    <div className="min-h-screen pb-32" dir="rtl" style={{ background: bg }}>
-      {/* Header */}
-      <div className="sticky top-0 z-40 px-4 pt-4 pb-3" style={{ background: bg, borderBottom: `1px solid ${border}` }}>
-        <div className="flex items-center gap-3 max-w-lg mx-auto">
-          <button onClick={handleBack} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(193,154,107,0.12)' }}>
-            <ChevronLeft size={20} className="text-[#C19A6B]" style={{ transform: 'rotate(180deg)' }} />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>{headerTitle}</h1>
-            {screen === 'quiz' && (
-              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
-                السؤال {qIndex + 1} من {questions.length}
-              </p>
-            )}
-          </div>
-          <Award size={22} className="text-[#C19A6B] flex-shrink-0" />
-        </div>
-        {/* Progress bar for quiz */}
-        {screen === 'quiz' && (
-          <div className="max-w-lg mx-auto mt-2">
-            <div className="h-1.5 rounded-full" style={{ background: dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg,#C19A6B,#8B6340)' }}
-                animate={{ width: `${((qIndex + 1) / questions.length) * 100}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen pb-32" dir="rtl">
+      <PageHeader title={title} back={handleBack} icon="star"
+        subtitle={screen === 'quiz' ? `السؤال ${arNum(qIndex + 1)} من ${arNum(questions.length)}` : screen === 'categories' ? 'اختبر معلوماتك واجمع الأوسمة' : undefined}
+        right={screen === 'quiz' ? <GoldBadge><Timer className="w-3 h-3" /> {mm}</GoldBadge> : undefined}>
+        {screen === 'quiz' && <GoldBar value={(qIndex + (selected !== null ? 1 : 0)) / Math.max(1, questions.length)} />}
+      </PageHeader>
 
       <div className="max-w-lg mx-auto px-4 pt-4">
-        {loading && (
-          <div className="grid grid-cols-2 gap-3">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-32 rounded-2xl animate-pulse" style={{ background: dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)' }} />)}
-          </div>
-        )}
+        {loading && <SkeletonList rows={4} h="h-28" />}
 
         <AnimatePresence mode="wait">
-          {/* Categories */}
           {screen === 'categories' && !loading && (
-            <motion.div key="cats" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <p className="text-xs mb-4 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
-                اختر التخصص الذي تريد اختبار معلوماتك فيه
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {quizData?.mainCategories.map(cat => (
-                  <motion.button
-                    key={cat.id}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => { setSelectedCat(cat); setScreen('topics'); }}
-                    className="rounded-2xl p-4 text-right flex flex-col justify-between min-h-[120px]"
-                    style={{ background: CAT_GRADS[cat.id] }}
-                  >
-                    <span className="text-lg font-bold text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{cat.arabicName}</span>
-                    <span className="text-xs text-white/70 leading-snug mt-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                      {cat.topics.length} موضوع
-                    </span>
-                  </motion.button>
-                ))}
-              </div>
+            <motion.div key="cats" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="grid grid-cols-2 gap-3">
+              {quizData?.mainCategories.map((cat, i) => (
+                <motion.button key={cat.id} whileTap={{ scale: 0.96 }} onClick={() => { setSelectedCat(cat); setScreen('topics'); }}
+                  className={cn('relative rounded-3xl p-4 text-right flex flex-col min-h-[140px] overflow-hidden', i % 3 === 0 ? 'noor-card-hero' : 'noor-card')}>
+                  <div className="absolute inset-0 noor-pattern" style={{ opacity: 0.07 }} />
+                  <NoorImg name={(['quran', 'hadith', 'mosque', 'star', 'prayer', 'dua'] as const)[i % 6]} size={38} className="relative mb-2" />
+                  <span className="relative text-base font-bold text-foreground leading-snug">{cat.arabicName}</span>
+                  <span className="relative mt-auto pt-2"><GoldBadge><Layers className="w-3 h-3" /> {arNum(cat.topics.length)} موضوع</GoldBadge></span>
+                </motion.button>
+              ))}
             </motion.div>
           )}
 
-          {/* Topics */}
           {screen === 'topics' && selectedCat && (
             <motion.div key="topics" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <div className="mb-3 p-3 rounded-2xl" style={{ background: CAT_GRADS[selectedCat.id] }}>
-                <p className="text-xs text-white/80 leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{selectedCat.description}</p>
-              </div>
+              <div className="noor-card-hero rounded-3xl p-4 mb-4"><p className="text-xs text-foreground/80 leading-relaxed">{selectedCat.description}</p></div>
               <div className="flex flex-col gap-2.5">
                 {selectedCat.topics.map((topic, i) => (
-                  <motion.button
-                    key={topic.slug ?? i}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => { setSelectedTopic(topic); setScreen('levels'); }}
-                    className="w-full text-right p-4 rounded-2xl flex items-center justify-between"
-                    style={{ background: cardBg, border: `1px solid ${border}` }}
-                  >
-                    <div>
-                      <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>{topic.name}</p>
-                      <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>3 مستويات</p>
-                    </div>
-                    <ChevronLeft size={16} className="text-[#C19A6B]/60" />
+                  <motion.button key={topic.slug ?? i} whileTap={{ scale: 0.98 }} onClick={() => { setSelectedTopic(topic); setScreen('levels'); }}
+                    className="w-full text-right p-4 rounded-3xl noor-card flex items-center gap-3">
+                    <span className="w-9 h-9 rounded-xl noor-emerald-orb flex items-center justify-center text-sm font-bold text-primary">{arNum(i + 1)}</span>
+                    <div className="flex-1"><p className="font-bold text-sm text-foreground">{topic.name}</p><p className="text-[11px] text-muted-foreground mt-0.5">٣ مستويات</p></div>
+                    <ChevronLeft className="w-4 h-4 text-primary/60" />
                   </motion.button>
                 ))}
               </div>
             </motion.div>
           )}
 
-          {/* Levels */}
           {screen === 'levels' && selectedTopic && (
-            <motion.div key="levels" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <p className="text-sm font-bold mb-4 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>اختر مستوى الاختبار</p>
-              <div className="flex flex-col gap-3">
-                {(['level1', 'level2', 'level3'] as const).map(lvl => {
-                  const count = (selectedTopic.levelsData[lvl] ?? []).length;
-                  return (
-                    <motion.button
-                      key={lvl}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => startQuiz(lvl)}
-                      className="w-full text-right p-5 rounded-2xl"
-                      style={{ background: LEVEL_COLORS[lvl] }}
-                    >
-                      <p className="font-bold text-lg text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{LEVEL_NAMES[lvl]}</p>
-                      <p className="text-sm text-white/70 mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                        {Math.min(count, 20)} سؤال • الإجابات من موقع الدرر السنية
-                      </p>
-                    </motion.button>
-                  );
-                })}
-              </div>
+            <motion.div key="levels" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="flex flex-col gap-3">
+              {LEVELS.map((lvl, i) => {
+                const count = Math.min(20, (selectedTopic.levelsData[lvl.id] ?? []).length);
+                return (
+                  <motion.button key={lvl.id} whileTap={{ scale: 0.97 }} onClick={() => startQuiz(lvl.id)} disabled={!count}
+                    className={cn('w-full text-right p-5 rounded-3xl flex items-center gap-4 disabled:opacity-40', i === 0 ? 'noor-card' : i === 1 ? 'noor-card-hero' : 'noor-card noor-card-active')}>
+                    <div className="flex gap-0.5">{[0, 1, 2].map(s => <span key={s} className={cn('w-2 h-6 rounded-full', s <= i ? 'bg-gradient-gold' : 'bg-primary/15')} />)}</div>
+                    <div className="flex-1">
+                      <p className="font-bold text-lg text-foreground">{lvl.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{lvl.hint} · {arNum(count)} سؤال</p>
+                    </div>
+                    <ChevronLeft className="w-5 h-5 text-primary" />
+                  </motion.button>
+                );
+              })}
+              <p className="text-[11px] text-muted-foreground text-center mt-2">الإجابات موثّقة من موقع الدرر السنية</p>
             </motion.div>
           )}
 
-          {/* Quiz */}
-          {screen === 'quiz' && questions.length > 0 && (
-            <motion.div key={`quiz-${qIndex}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              {/* Question */}
-              <div className="p-5 rounded-2xl mb-5" style={{ background: cardBg, border: `1px solid ${border}` }}>
-                <p className="text-base font-bold leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
-                  {questions[qIndex].q}
-                </p>
+          {screen === 'quiz' && q && (
+            <motion.div key={`quiz-${qIndex}`} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <div className="noor-card-hero rounded-3xl p-5 mb-5 relative overflow-hidden">
+                <div className="absolute inset-0 noor-pattern" />
+                <p className="relative text-[11px] text-primary font-bold mb-2">السؤال {arNum(qIndex + 1)}</p>
+                <p className="relative text-[1.05rem] font-bold leading-relaxed text-foreground">{q.q}</p>
               </div>
-
-              {/* Answers */}
               <div className="flex flex-col gap-3">
-                {questions[qIndex].answers.map((ans, idx) => {
+                {q.answers.map((ans, idx) => {
                   const isCorrect = ans.t === 1;
-                  let bg2 = cardBg;
-                  let border2 = border;
-                  let textColor = textPrimary;
-                  if (selected !== null) {
-                    if (isCorrect) { bg2 = 'rgba(34,197,94,0.12)'; border2 = 'rgba(34,197,94,0.5)'; textColor = dark ? '#4ade80' : '#166534'; }
-                    else if (idx === selected) { bg2 = 'rgba(239,68,68,0.12)'; border2 = 'rgba(239,68,68,0.5)'; textColor = dark ? '#f87171' : '#991b1b'; }
-                  }
+                  const state = selected === null ? 'idle' : isCorrect ? 'correct' : idx === selected ? 'wrong' : 'dim';
                   return (
-                    <motion.button
-                      key={idx}
-                      whileTap={selected === null ? { scale: 0.98 } : {}}
-                      onClick={() => handleAnswer(idx)}
-                      className="w-full text-right p-4 rounded-2xl flex items-center justify-between transition-all"
-                      style={{ background: bg2, border: `1.5px solid ${border2}`, cursor: selected !== null ? 'default' : 'pointer' }}
-                    >
-                      <p className="text-sm font-medium flex-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>
-                        {ans.answer}
-                      </p>
-                      {selected !== null && isCorrect && <CheckCircle size={18} className="text-green-500 flex-shrink-0" />}
-                      {selected !== null && idx === selected && !isCorrect && <XCircle size={18} className="text-red-500 flex-shrink-0" />}
+                    <motion.button key={idx} whileTap={selected === null ? { scale: 0.98 } : {}} onClick={() => handleAnswer(idx)}
+                      className={cn('w-full text-right p-4 rounded-2xl flex items-center gap-3 border transition-all noor-card',
+                        state === 'correct' && 'noor-success noor-pop', state === 'wrong' && 'noor-danger noor-shake', state === 'dim' && 'opacity-45')}>
+                      <span className={cn('w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
+                        state === 'correct' ? 'bg-success text-background' : state === 'wrong' ? 'bg-destructive text-foreground' : 'noor-emerald-orb text-primary')}>
+                        {state === 'correct' ? <CheckCircle2 className="w-4 h-4" /> : state === 'wrong' ? <XCircle className="w-4 h-4" /> : LETTERS[idx]}
+                      </span>
+                      <p className="text-sm font-medium flex-1 text-foreground">{ans.answer}</p>
                     </motion.button>
                   );
                 })}
               </div>
-
-              {/* Next button */}
               <AnimatePresence>
                 {selected !== null && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-5 flex flex-col gap-3">
-                    {questions[qIndex].link && (
-                      <a
-                        href={questions[qIndex].link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 py-2"
-                        style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A', fontSize: 12 }}
-                      >
-                        <ExternalLink size={12} />
-                        <span>مصدر الإجابة - الدرر السنية</span>
+                    {q.link && (
+                      <a href={q.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-1 text-xs text-muted-foreground">
+                        <ExternalLink className="w-3 h-3" /> مصدر الإجابة — الدرر السنية
                       </a>
                     )}
-                    <button
-                      onClick={handleNext}
-                      className="w-full py-4 rounded-2xl font-bold text-white text-base"
-                      style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
-                    >
+                    <button onClick={handleNext} className="press w-full h-14 rounded-2xl noor-btn-gold text-base">
                       {qIndex + 1 >= questions.length ? 'عرض النتيجة' : 'السؤال التالي'}
                     </button>
                   </motion.div>
@@ -331,79 +210,37 @@ export function IslamicQuizzes() {
             </motion.div>
           )}
 
-          {/* Results */}
           {screen === 'results' && (
             <motion.div key="results" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-
-              {/* Correct / Wrong stats — above score */}
-              <div className="flex gap-3 mb-5 mt-2">
-                <div className="flex-1 rounded-2xl py-4 flex flex-col items-center gap-1"
-                  style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                  <span className="text-2xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>{score}</span>
-                  <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>إجابات صحيحة</span>
+              <div className="noor-card-hero rounded-[28px] p-6 mb-5 relative overflow-hidden">
+                <div className="absolute inset-0 noor-pattern" />
+                <div className="relative mx-auto w-32 h-32 rounded-full noor-gold-orb flex items-center justify-center mb-4 noor-glow">
+                  <ProgressRing value={pct / 100} size={112} stroke={6} track="hsl(26 50% 20% / .5)">
+                    <div><p className="text-3xl font-black text-background tabular-nums leading-none">{arNum(pct)}٪</p></div>
+                  </ProgressRing>
                 </div>
-                <div className="flex-1 rounded-2xl py-4 flex flex-col items-center gap-1"
-                  style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
-                  <span className="text-2xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>{questions.length - score}</span>
-                  <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>إجابات خاطئة</span>
+                <p className="relative text-xl font-bold text-gold-gradient">{resultBadge(pct).title}</p>
+                <p className="relative text-sm text-muted-foreground mt-1">{resultBadge(pct).note}</p>
+                <div className="relative flex justify-center gap-2 mt-4">
+                  <GoldBadge tone="emerald"><CheckCircle2 className="w-3 h-3" /> {arNum(score)} صحيحة</GoldBadge>
+                  <GoldBadge tone="muted"><XCircle className="w-3 h-3" /> {arNum(questions.length - score)} خاطئة</GoldBadge>
+                  <GoldBadge><Timer className="w-3 h-3" /> {mm}</GoldBadge>
                 </div>
               </div>
-
-              <div className="mb-6">
-                <Trophy size={56} className="text-[#C19A6B] mx-auto mb-3" />
-                <p className="text-3xl font-bold mb-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
-                  {score} / {questions.length}
-                </p>
-                <p className="text-lg font-bold mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6340' }}>
-                  {score === questions.length ? 'ممتاز! أحسنت' : score >= questions.length * 0.7 ? 'جيد جداً' : score >= questions.length * 0.5 ? 'جيد، استمر في التعلم' : 'لا بأس، حاول مجدداً'}
-                </p>
-                <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
-                  نسبة النجاح: {Math.round((score / questions.length) * 100)}٪
-                </p>
-              </div>
-
-              {/* Answer summary bubbles */}
-              <div className="flex justify-center gap-2 flex-wrap mb-8">
-                {answers.map((correct, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: correct ? '#22c55e' : '#ef4444' }}
-                  >
-                    {i + 1}
-                  </div>
+              <div className="flex justify-center gap-2 flex-wrap mb-6">
+                {answers.map((c, i) => (
+                  <span key={i} className={cn('w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold', c ? 'bg-success/20 text-success border border-success/50' : 'bg-destructive/15 text-[hsl(0_80%_70%)] border border-destructive/50')}>{arNum(i + 1)}</span>
                 ))}
               </div>
-
               <div className="flex flex-col gap-3">
-                <button
-                  onClick={restartQuiz}
-                  className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
-                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
-                >
-                  <RotateCcw size={18} />
-                  أعد الاختبار
-                </button>
-                <button
-                  onClick={() => setScreen('levels')}
-                  className="w-full py-4 rounded-2xl font-bold"
-                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.12)', color: dark ? '#C19A6B' : '#8B6340', border: `1px solid ${border}` }}
-                >
-                  اختر مستوى آخر
-                </button>
+                <button onClick={() => startQuiz(selectedLevel)} className="press w-full h-14 rounded-2xl noor-btn-gold flex items-center justify-center gap-2"><RotateCcw className="w-4 h-4" /> أعد الاختبار</button>
+                <button onClick={() => setScreen('levels')} className="press w-full h-14 rounded-2xl noor-btn-ghost">اختر مستوى آخر</button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {screen === 'categories' && !loading && (
-          <div className="mt-8 mb-4 text-center px-2">
-            <div className="h-px mb-4" style={{ background: `linear-gradient(to left, transparent, rgba(193,154,107,0.3), transparent)` }} />
-            <p className="text-sm leading-loose" style={{ fontFamily: '"Amiri", serif', color: dark ? '#8B6B3D' : '#B8946A' }}>
-              قُلْ هَلْ يَسْتَوِي الَّذِينَ يَعْلَمُونَ وَالَّذِينَ لَا يَعْلَمُونَ ۝ الزمر: 9
-            </p>
-          </div>
-        )}
+        {screen === 'categories' && !loading && <FooterAyah text="قُلْ هَلْ يَسْتَوِي الَّذِينَ يَعْلَمُونَ وَالَّذِينَ لَا يَعْلَمُونَ" source="الزمر: ٩" />}
       </div>
     </div>
   );

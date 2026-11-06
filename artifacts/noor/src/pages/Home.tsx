@@ -6,7 +6,8 @@ import { getProfileCache, updateProfileInRTDB, getCurrentUid } from '@/lib/rtdb'
 import { EGYPT_GOVERNORATES } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
-import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
+import { Coordinates, PrayerTimes } from 'adhan';
+import { getCalcParams } from '@/lib/prayer-calc';
 import NoorWidget from '@/lib/widget-bridge';
 import { getTodayAyah, type DailyAyah } from '@/lib/daily-ayahs';
 import { Link } from 'wouter';
@@ -142,7 +143,7 @@ const WIDGET_PRAYERS: Array<{ key: keyof PrayerTimes; name: string }> = [
 
 function buildWidgetPayload(lat: number, lng: number) {
   const coords = new Coordinates(lat, lng);
-  const params = CalculationMethod.Egyptian();
+  const params = getCalcParams();
   const entries: Array<{ name: string; timeMs: number; timeStr: string }> = [];
   for (let offset = 0; offset <= 2; offset++) {
     const d = new Date();
