@@ -103,7 +103,7 @@ function ResetConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; on
 }
 
 export function Tasbih() {
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const [typeIndex, setTypeIndex] = useState<number>(() => getCacheValue<number>('tasbih_type_idx', 0));

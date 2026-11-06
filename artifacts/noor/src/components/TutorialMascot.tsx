@@ -300,7 +300,7 @@ export function TutorialMascot() {
                   height: 0,
                   borderTop: '9px solid transparent',
                   borderBottom: '9px solid transparent',
-                  borderRight: '11px solid #fffef9',
+                  borderRight: '11px solid hsl(165 26% 11%)',
                 }}
               />
 
@@ -308,7 +308,7 @@ export function TutorialMascot() {
               <div
                 className="rounded-2xl px-4 pt-3 pb-3 relative overflow-hidden"
                 style={{
-                  background: 'linear-gradient(150deg, #fffef9 0%, #fef3d6 100%)',
+                  background: 'linear-gradient(150deg, hsl(165 26% 11%) 0%, hsl(166 30% 7%) 100%)',
                   border: '1.5px solid rgba(193,154,107,0.45)',
                   boxShadow: '0 12px 40px rgba(193,154,107,0.22), 0 2px 8px rgba(0,0,0,0.07)',
                 }}
@@ -327,7 +327,7 @@ export function TutorialMascot() {
                   className="font-black text-[13px] leading-snug mb-1.5 relative"
                   style={{
                     fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-                    color: '#3d2a0e',
+                    color: '#F2E3C2',
                     direction: 'rtl',
                     textAlign: 'right',
                   }}
@@ -341,7 +341,7 @@ export function TutorialMascot() {
                     className="text-[11px] leading-[1.8] whitespace-pre-line relative"
                     style={{
                       fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-                      color: '#6b4d22',
+                      color: 'rgba(242,234,216,0.82)',
                       direction: 'rtl',
                       textAlign: 'right',
                     }}
@@ -353,7 +353,7 @@ export function TutorialMascot() {
                 {/* dismiss hint */}
                 <p
                   className="text-[9px] mt-2 opacity-40 text-center relative"
-                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8a6030' }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C9A979' }}
                 >
                   اضغط في أي مكان للمتابعة
                 </p>

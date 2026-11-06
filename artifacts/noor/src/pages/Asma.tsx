@@ -15,8 +15,8 @@ export function Asma() {
   );
 
   return (
-    <div className="h-screen flex flex-col max-w-lg mx-auto bg-background" dir="rtl">
-      <div className="pt-safe px-4 py-4 flex items-center gap-4 bg-card shadow-sm relative z-10 border-b border-border">
+    <div className="h-screen flex flex-col max-w-lg mx-auto" dir="rtl">
+      <div className="pt-safe px-4 py-4 flex items-center gap-4 relative z-10 border-b border-border" style={{ background: 'hsl(168 32% 5% / .6)', backdropFilter: 'blur(16px)' }}>
         <Link href="/more" className="p-2 bg-secondary rounded-full">
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -38,17 +38,25 @@ export function Asma() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
+        {!search && (() => { const d = new Date(); const daily = filtered[(d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % filtered.length]; return daily ? (
+          <button onClick={() => setSelected(daily)} className="relative w-full mb-4 rounded-3xl p-5 overflow-hidden text-center"
+            style={{ background: 'linear-gradient(135deg, #123f35, #06201a)', border: '1px solid rgba(232,192,96,0.4)', boxShadow: '0 16px 40px rgba(0,0,0,0.45)' }}>
+            <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/images/islamic-pattern.webp)', backgroundSize: '150px' }} />
+            <p className="relative text-[11px] font-bold mb-1" style={{ color: 'rgba(242,227,194,0.7)' }}>اسم اليوم · تأمّل معناه</p>
+            <h2 className="relative text-5xl font-serif leading-relaxed" style={{ color: '#F7DC94', textShadow: '0 0 24px rgba(232,192,96,0.45)' }}>{daily.name}</h2>
+            <p className="relative text-xs mt-1 line-clamp-2" style={{ color: 'rgba(242,234,216,0.8)' }}>{daily.meaning}</p>
+          </button>) : null; })()}
         <div className="grid grid-cols-2 gap-3 pb-8">
           {filtered.map((item) => (
             <button
               key={item.number}
               onClick={() => setSelected(item)}
-              className="bg-card border border-border/50 rounded-2xl p-4 text-center shadow-sm hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 text-right"
+              className="relative rounded-2xl p-4 text-center transition-all duration-200 active:scale-95" style={{ background: 'linear-gradient(160deg, hsl(165 24% 10% / .9), hsl(166 30% 6% / .9))', border: '1px solid rgba(232,192,96,0.18)', boxShadow: 'inset 0 1px 0 rgba(232,192,96,0.08), 0 8px 20px rgba(0,0,0,0.3)' }}
             >
               <div className="w-8 h-8 bg-primary/10 text-primary font-bold rounded-full flex items-center justify-center mx-auto mb-3 text-xs">
                 {item.number}
               </div>
-              <h2 className="text-2xl font-serif text-primary mb-1 leading-relaxed">{item.name}</h2>
+              <h2 className="text-[1.7rem] font-serif mb-1 leading-relaxed" style={{ background: 'linear-gradient(180deg,#F7DC94,#B8862F)', WebkitBackgroundClip: 'text', color: 'transparent' }}>{item.name}</h2>
               <p className="text-xs text-muted-foreground">{item.transliteration}</p>
             </button>
           ))}

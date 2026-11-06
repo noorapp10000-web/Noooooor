@@ -330,7 +330,7 @@ function VintageBtn({ status }: { status: Status | 'inactive' }) {
         boxShadow: isActive
           ? 'inset 2px 2px 6px rgba(0,0,0,0.5), inset -1px -1px 4px rgba(255,200,100,0.2)'
           : '3px 3px 8px rgba(0,0,0,0.4), -1px -1px 5px rgba(255,220,120,0.3)',
-        border: `1px solid ${isActive ? '#3a1a00' : '#6B4500'}`,
+        border: `1px solid ${isActive ? '#3a1a00' : '#5E7F6F'}`,
       }}
     >
       {status === 'loading' ? (
@@ -359,7 +359,7 @@ export function EgyptianRadio() {
   const [status,   setStatus]     = useState<Status>('idle');
   const audioRef                  = useRef<HTMLAudioElement | null>(null);
   const retryTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [theme]                   = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const isDark                    = theme === 'dark';
 
   useEffect(() => {
@@ -419,10 +419,10 @@ export function EgyptianRadio() {
 
   /* Theme-aware colors */
   const pageBg = isDark
-    ? 'linear-gradient(170deg, #2C1A06 0%, #1A0D02 40%, #0F0800 100%)'
+    ? 'linear-gradient(170deg, #0E2A22 0%, #09201A 40%, #061511 100%)'
     : 'linear-gradient(170deg, #FAF4E4 0%, #F5EDD5 50%, #EDE2C4 100%)';
   const cardBg = (active: boolean) => isDark
-    ? active ? 'linear-gradient(135deg, #3a1f00 0%, #2a1500 50%, #1f0f00 100%)' : 'linear-gradient(135deg, #2a1500 0%, #1e0e00 100%)'
+    ? active ? 'linear-gradient(135deg, #143A2F 0%, #0F2C24 50%, #0A211B 100%)' : 'linear-gradient(135deg, #0F2C24 0%, #0B231C 100%)'
     : active ? 'linear-gradient(135deg, #FFF8E8 0%, #FDF2D4 100%)' : 'linear-gradient(135deg, #FDFBF0 0%, #F8F2DC 100%)';
   const cardBorder = (active: boolean) => isDark
     ? active ? 'rgba(201,160,90,0.5)' : 'rgba(201,160,90,0.15)'
@@ -431,15 +431,15 @@ export function EgyptianRadio() {
     ? active ? '#E8C060' : '#C9A05A'
     : active ? '#8B6340' : '#6B4A20';
   const stationSubColor = (active: boolean) => isDark
-    ? active ? '#a08040' : '#5a4020'
+    ? active ? '#C9A979' : '#7C9A8B'
     : active ? '#7a5a30' : '#9a7a50';
-  const freqColor = isDark ? '#6B4500' : '#B08050';
-  const sectionLabelColor = isDark ? '#7a6030' : '#8B6340';
+  const freqColor = isDark ? '#5E7F6F' : '#B08050';
+  const sectionLabelColor = isDark ? '#9C8A62' : '#8B6340';
   const brandPlateStyle = isDark
-    ? { background: 'linear-gradient(135deg, #2a1500 0%, #1a0d00 100%)', border: '1px solid rgba(201,160,90,0.25)', boxShadow: 'inset 0 1px 0 rgba(255,220,100,0.08), 0 2px 8px rgba(0,0,0,0.4)' }
+    ? { background: 'linear-gradient(135deg, #0F2C24 0%, #081C16 100%)', border: '1px solid rgba(201,160,90,0.25)', boxShadow: 'inset 0 1px 0 rgba(255,220,100,0.08), 0 2px 8px rgba(0,0,0,0.4)' }
     : { background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)) 100%)', border: '1px solid rgba(193,154,107,0.35)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' };
   const brandTitleColor = isDark ? '#E8C060' : '#6B4A20';
-  const brandSubColor   = isDark ? '#7a6030' : '#9a7050';
+  const brandSubColor   = isDark ? '#9C8A62' : '#9a7050';
   const backBtnStyle    = isDark
     ? { background: 'rgba(201,160,90,0.15)', border: '1px solid rgba(201,160,90,0.3)' }
     : { background: 'rgba(193,154,107,0.12)', border: '1px solid rgba(193,154,107,0.35)' };
@@ -591,7 +591,7 @@ export function EgyptianRadio() {
         <div className="mt-6 text-center pb-2">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className="h-px w-16" style={{ background: 'rgba(201,160,90,0.2)' }} />
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" style={{ color: '#7a6030' }}>
+            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" style={{ color: '#9C8A62' }}>
               <path d="M12 2 Q8 2 6 6 L6 14 L18 14 L18 6 Q16 2 12 2Z" stroke="currentColor" strokeWidth="1" fill="none"/>
               <rect x="9" y="14" width="6" height="6" stroke="currentColor" strokeWidth="1" fill="none"/>
               <line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" strokeWidth="1"/>
@@ -599,7 +599,7 @@ export function EgyptianRadio() {
             <div className="h-px w-16" style={{ background: 'rgba(201,160,90,0.2)' }} />
           </div>
           <p className="text-[10px]"
-            style={{ color: '#5a4020', fontFamily: '"Courier New", monospace', letterSpacing: '1px', opacity: 0.6 }}>
+            style={{ color: '#7C9A8B', fontFamily: '"Courier New", monospace', letterSpacing: '1px', opacity: 0.6 }}>
             QURAN RADIO · بث مستمر ٢٤/٧
           </p>
         </div>

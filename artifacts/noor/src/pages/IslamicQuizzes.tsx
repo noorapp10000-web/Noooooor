@@ -16,10 +16,10 @@ type Screen = 'categories' | 'topics' | 'levels' | 'quiz' | 'results';
 
 const CAT_GRADS: Record<number, string> = {
   1: 'linear-gradient(135deg,#1b4332,#0d2b1e)',
-  2: 'linear-gradient(135deg,#1e3a6e,#0f2040)',
-  3: 'linear-gradient(135deg,#4a2040,#2a1030)',
+  2: 'linear-gradient(135deg,#123f35,#082219)',
+  3: 'linear-gradient(135deg,#3d3216,#1e1808)',
   4: 'linear-gradient(135deg,#6b3a0f,#3d2008)',
-  5: 'linear-gradient(135deg,#0F3D32,#1e0d30)',
+  5: 'linear-gradient(135deg,#0F3D32,#06201a)',
   6: 'linear-gradient(135deg,#1a4a3a,#0d2b1e)',
 };
 
@@ -31,8 +31,8 @@ const LEVEL_NAMES: Record<string, string> = {
 
 const LEVEL_COLORS: Record<string, string> = {
   level1: 'linear-gradient(135deg,#2d6a4f,#1b4332)',
-  level2: 'linear-gradient(135deg,#1e4d7b,#0f2d4d)',
-  level3: 'linear-gradient(135deg,#5c2d7a,#3a1a52)',
+  level2: 'linear-gradient(135deg,#7a5a1f,#3d2c0d)',
+  level3: 'linear-gradient(135deg,#8a3b2a,#4a1c12)',
 };
 
 function shuffle<T>(arr: T[]): T[] {
@@ -46,7 +46,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 export function IslamicQuizzes() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const [quizData, setQuizData] = useState<QuizData | null>(null);

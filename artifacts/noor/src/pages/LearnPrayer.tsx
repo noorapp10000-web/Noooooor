@@ -258,7 +258,7 @@ const PRAYERS: Prayer[] = [
 
 export function LearnPrayer() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
   const [step, setStep] = useState(0);
   const [selectedPrayer, setSelectedPrayer] = useState<number | null>(null);

@@ -601,7 +601,7 @@ function PrayerGuardSection({
 
 
 export function Settings() {
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const { bgType, bgPreset, bgCustom, appFontScale, hasBg, cardOpacity, setBgType, setBgPreset, setBgCustom, setAppFontScale, setCardOpacity } = useAppSettings();

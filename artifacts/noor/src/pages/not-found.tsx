@@ -22,13 +22,13 @@ export default function NotFound() {
         </div>
         <h1
           className="text-2xl font-bold mb-2"
-          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#173A30' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#F2EAD8' }}
         >
           الصفحة غير موجودة
         </h1>
         <p
           className="text-sm mb-6"
-          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#9B7043' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C9A979' }}
         >
           الصفحة اللي بتدور عليها مش موجودة
         </p>

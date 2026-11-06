@@ -24,7 +24,7 @@ function fmtTime(mins: number): string {
 
 export function SpeedReader() {
   const { data: surahs } = useQuranSurahs();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const [selectedSurah, setSelectedSurah] = useState(1);

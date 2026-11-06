@@ -333,7 +333,7 @@ function ayahAudioUrl(reciterId: string, surah: number, ayah: number): string {
 export function Quran() {
   const [, navigate] = useLocation();
   const { data: surahs, isLoading: loadingList } = useQuranSurahs();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const { showTutorial } = useTutorial();
@@ -823,19 +823,25 @@ export function Quran() {
                   <button
                     key={s.number}
                     onClick={() => { trackSurahSelection(s.number); setSelectedSurah(s.number); setMode('normal'); setSelectedAyah(null); setActiveAyah(null); }}
-                    className="w-full p-4 rounded-2xl flex items-center justify-between transition-all"
-                    style={{ background: C.itemBg, border: `1px solid ${C.itemBorder}` }}
+                    className="w-full p-3.5 rounded-2xl flex items-center justify-between transition-all active:scale-[0.985]"
+                    style={{ background: `linear-gradient(135deg, ${C.itemBg}, rgba(6,20,16,0.6))`, border: `1px solid ${C.itemBorder}`, boxShadow: '0 6px 18px rgba(0,0,0,0.25), inset 0 1px 0 rgba(232,192,96,0.06)' }}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
-                        style={{ background: 'rgba(193,154,107,0.15)', border: '1px solid rgba(193,154,107,0.3)', color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                        {s.number}
+                      <div className="relative w-11 h-11 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 44 44" className="absolute inset-0 w-full h-full">
+                          <rect x="7" y="7" width="30" height="30" rx="4" fill="rgba(193,154,107,0.10)" stroke="rgba(232,192,96,0.55)" strokeWidth="1.2"/>
+                          <rect x="7" y="7" width="30" height="30" rx="4" transform="rotate(45 22 22)" fill="none" stroke="rgba(232,192,96,0.55)" strokeWidth="1.2"/>
+                        </svg>
+                        <span className="relative text-[13px] font-bold" style={{ color: '#E8C060', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{s.number}</span>
                       </div>
                       <div className="text-right">
-                        <h3 className="font-bold text-base" style={{ fontFamily: '"Amiri", serif', color: C.itemText }}>{SURAH_NAMES[s.number] ?? s.name}</h3>
-                        <p className="text-xs mt-0.5" style={{ color: C.subtleText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
-                          {s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'} • {s.numberOfAyahs} آية
-                        </p>
+                        <h3 className="font-bold text-lg leading-tight" style={{ fontFamily: '"Amiri", serif', color: C.itemText }}>{SURAH_NAMES[s.number] ?? s.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: s.revelationType === 'Meccan' ? 'rgba(232,192,96,0.14)' : 'rgba(110,231,183,0.12)', color: s.revelationType === 'Meccan' ? '#E8C060' : '#8EE0BF', fontFamily: '"IBM Plex Sans Arabic", sans-serif' }}>
+                            {s.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
+                          </span>
+                          <span className="text-xs" style={{ color: C.subtleText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{s.numberOfAyahs} آية</span>
+                        </div>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4" style={{ color: 'rgba(193,154,107,0.4)' }} />

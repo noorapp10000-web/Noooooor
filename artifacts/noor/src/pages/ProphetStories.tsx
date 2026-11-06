@@ -141,7 +141,7 @@ const EventCard = ({
 
 export function ProphetStories() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const [prophets, setProphets] = useState<ProphetMeta[]>([]);

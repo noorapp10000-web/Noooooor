@@ -8,7 +8,7 @@ import type { CSSProperties } from 'react';
 interface P { className?: string; size?: number; style?: CSSProperties }
 
 /* ── Prayer beads / Misbaha ───────────────────────────────── */
-export function TasbihIcon({ className = '', size = 24, style }: P) {
+export function TasbihIconSvg({ className = '', size = 24, style }: P) {
   const cx = 12, cy = 14, r = 6.5;
   const beads = Array.from({ length: 12 }, (_, i) => {
     const deg = 15 + i * 30;
@@ -135,7 +135,7 @@ export function SleepIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Raised hands (dua / after prayer) ───────────────────── */
-export function DuaHandsIcon({ className = '', size = 24 }: P) {
+export function DuaHandsIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Left hand shadow */}
@@ -177,7 +177,7 @@ export function DuaHandsIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Mosque / Minaret ─────────────────────────────────────── */
-export function MosqueIcon({ className = '', size = 24 }: P) {
+export function MosqueIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Shadow layer */}
@@ -226,7 +226,7 @@ export function MosqueIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Open Quran Book ──────────────────────────────────────── */
-export function QuranBookIcon({ className = '', size = 24 }: P) {
+export function QuranBookIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Book shadow */}
@@ -323,7 +323,7 @@ export function SmartReaderIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Islamic 8-pointed star (Asma Al-Husna) ──────────────── */
-export function IslamicStarIcon({ className = '', size = 24 }: P) {
+export function IslamicStarIconSvg({ className = '', size = 24 }: P) {
   const pts: string[] = [];
   for (let i = 0; i < 8; i++) {
     const outerAngle = (i * 45 - 90) * (Math.PI / 180);
@@ -393,7 +393,7 @@ export function MoonIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Scroll / Tafsir ─────────────────────────────────────── */
-export function ScrollIcon({ className = '', size = 24 }: P) {
+export function ScrollIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Shadow */}
@@ -419,7 +419,7 @@ export function ScrollIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Headphones / Listening ───────────────────────────────── */
-export function HeadphonesIcon({ className = '', size = 24 }: P) {
+export function HeadphonesIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Band shadow */}
@@ -446,7 +446,7 @@ export function HeadphonesIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Radio / Broadcast ────────────────────────────────────── */
-export function RadioIcon({ className = '', size = 24 }: P) {
+export function RadioIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Antenna */}
@@ -485,7 +485,7 @@ export function RadioIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Map Pin with Mosque ──────────────────────────────────── */
-export function MosqueMapIcon({ className = '', size = 24 }: P) {
+export function MosqueMapIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Pin shadow */}
@@ -663,7 +663,7 @@ export function ProphetIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Supplication hands with light rays ───────────────────── */
-export function SupplicationIcon({ className = '', size = 24 }: P) {
+export function SupplicationIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Light rays */}
@@ -699,7 +699,7 @@ export function SupplicationIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Hadith / Prophetic narration ─────────────────────────── */
-export function HadithIcon({ className = '', size = 24 }: P) {
+export function HadithIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Shadow */}
@@ -735,7 +735,7 @@ export function HadithIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Qibla Compass ────────────────────────────────────────── */
-export function QiblaCompassIcon({ className = '', size = 24 }: P) {
+export function QiblaCompassIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Outer ring shadow */}
@@ -770,7 +770,7 @@ export function QiblaCompassIcon({ className = '', size = 24 }: P) {
 }
 
 /* ── Hifz / Quran Memorisation ────────────────────────────── */
-export function HifzIcon({ className = '', size = 24, style }: P) {
+export function HifzIconSvg({ className = '', size = 24, style }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={style}>
       {/* Shadow */}
@@ -839,7 +839,7 @@ export function QuranVideoIcon({ className = '', size = 24 }: P) {
   );
 }
 
-export function WuduIcon({ className = '', size = 24 }: P) {
+export function WuduIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Water drop shadow */}
@@ -859,7 +859,7 @@ export function WuduIcon({ className = '', size = 24 }: P) {
   );
 }
 
-export function PrayerStepsIcon({ className = '', size = 24 }: P) {
+export function PrayerStepsIconSvg({ className = '', size = 24 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
       {/* Person standing shadow */}
@@ -882,3 +882,35 @@ export function PrayerStepsIcon({ className = '', size = 24 }: P) {
     </svg>
   );
 }
+
+/* ── AI-generated gold & emerald icons (dark identity) ───────── */
+function NoorImg({ name, className = '', size = 24, style }: P & { name: string }) {
+  return (
+    <img
+      src={`${import.meta.env.BASE_URL}images/icons/${name}.webp`}
+      alt=""
+      aria-hidden="true"
+      width={size}
+      height={size}
+      draggable={false}
+      loading="lazy"
+      className={className}
+      style={{ width: size, height: size, objectFit: 'contain', filter: 'drop-shadow(0 4px 10px hsl(37 60% 40% / 0.35))', ...style }}
+    />
+  );
+}
+export function QuranBookIcon(p: P) { return <NoorImg name="quran" {...p} />; }
+export function TasbihIcon(p: P) { return <NoorImg name="tasbih" {...p} />; }
+export function QiblaCompassIcon(p: P) { return <NoorImg name="qibla" {...p} />; }
+export function DuaHandsIcon(p: P) { return <NoorImg name="dua" {...p} />; }
+export function SupplicationIcon(p: P) { return <NoorImg name="dua" {...p} />; }
+export function MosqueIcon(p: P) { return <NoorImg name="mosque" {...p} />; }
+export function MosqueMapIcon(p: P) { return <NoorImg name="mosque" {...p} />; }
+export function HadithIcon(p: P) { return <NoorImg name="hadith" {...p} />; }
+export function ScrollIcon(p: P) { return <NoorImg name="hadith" {...p} />; }
+export function HeadphonesIcon(p: P) { return <NoorImg name="headphones" {...p} />; }
+export function RadioIcon(p: P) { return <NoorImg name="radio" {...p} />; }
+export function IslamicStarIcon(p: P) { return <NoorImg name="star" {...p} />; }
+export function PrayerStepsIcon(p: P) { return <NoorImg name="prayer" {...p} />; }
+export function HifzIcon(p: P) { return <NoorImg name="hifz" {...p} />; }
+export function WuduIcon(p: P) { return <NoorImg name="wudu" {...p} />; }

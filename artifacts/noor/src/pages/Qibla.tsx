@@ -4,7 +4,8 @@ import { getProfileCache } from '@/lib/rtdb';
 import { ArrowLeft, MapPin, RotateCcw } from 'lucide-react';
 import { Link } from 'wouter';
 import { useEffect, useRef } from 'react';
-const kaabaImg = '/images/kaaba.webp';
+const kaabaImg = import.meta.env.BASE_URL + 'images/kaaba-3d.webp';
+const dialImg = import.meta.env.BASE_URL + 'images/qibla-dial.webp';
 
 
 /* ── Islamic Geometric Background ───────────────────────────── */
@@ -186,72 +187,27 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
   );
 }
 
-function CompassNeedle({ isAligned, isSearching }: { isAligned: boolean; isSearching: boolean }) {
-  const northColor = '#4ade80';
-  const glowStr    = isAligned
-    ? 'drop-shadow(0 0 10px rgba(74,222,128,1)) drop-shadow(0 0 24px rgba(74,222,128,0.7)) drop-shadow(0 0 40px rgba(74,222,128,0.35))'
-    : 'drop-shadow(0 0 8px rgba(74,222,128,0.8)) drop-shadow(0 0 18px rgba(74,222,128,0.4))';
-
+function CompassNeedle({ isAligned }: { isAligned: boolean; isSearching: boolean }) {
+  const glow = isAligned
+    ? 'drop-shadow(0 0 10px rgba(110,231,183,0.95)) drop-shadow(0 0 26px rgba(52,211,153,0.6))'
+    : 'drop-shadow(0 6px 10px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(232,192,96,0.45))';
   return (
-    <svg
-      width="80"
-      height="220"
-      viewBox="0 0 80 220"
-      style={{
-        overflow: 'visible',
-        filter: glowStr,
-        transition: 'filter 0.5s',
-      }}
-    >
+    <svg width="64" height="230" viewBox="0 0 64 230" style={{ overflow: 'visible', filter: glow, transition: 'filter .5s' }}>
       <defs>
-        <linearGradient id="nNorth" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#a7f3d0" stopOpacity="1"/>
-          <stop offset="40%"  stopColor="#4ade80" stopOpacity="0.95"/>
-          <stop offset="100%" stopColor="#22c55e" stopOpacity="0.6"/>
+        <linearGradient id="gN" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#8a5a1c"/><stop offset="48%" stopColor="#F7DC94"/><stop offset="52%" stopColor="#C9933F"/><stop offset="100%" stopColor="#6e4512"/>
         </linearGradient>
-        <linearGradient id="nSouth" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#22c55e" stopOpacity="0.5"/>
-          <stop offset="100%" stopColor="#166534" stopOpacity="0.4"/>
+        <linearGradient id="gS" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#0b2a22"/><stop offset="50%" stopColor="#1f5a48"/><stop offset="100%" stopColor="#082019"/>
         </linearGradient>
-        <filter id="needleGlow">
-          <feGaussianBlur stdDeviation="4" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
       </defs>
-      <polygon
-        points="40,4  58,106  40,112  22,106"
-        fill="url(#nNorth)"
-        filter="url(#needleGlow)"
-      />
-      <polygon
-        points="40,6  30,70  40,112  22,106"
-        fill="white" opacity="0.25"
-      />
-      <polygon
-        points="40,110  58,114  40,216  22,114"
-        fill="url(#nSouth)"
-      />
-      <polygon
-        points="56,106  76,110  56,114"
-        fill={northColor} opacity="0.55"
-      />
-      <polygon
-        points="24,106  4,110  24,114"
-        fill={northColor} opacity="0.55"
-      />
-      <circle cx="40" cy="110" r="6"
-        fill="#0d150d" stroke={northColor} strokeWidth="1.5" opacity="0.9"
-      />
-      <circle cx="40" cy="110" r="3"
-        fill={northColor} opacity="0.8"
-      />
+      <path d="M32 0 L44 108 L32 118 L20 108 Z" fill={isAligned ? '#6EE7B7' : 'url(#gN)'} stroke="#3b2608" strokeOpacity=".5" strokeWidth=".8"/>
+      <path d="M32 230 L42 124 L32 116 L22 124 Z" fill="url(#gS)" stroke="#C9A05A" strokeOpacity=".45" strokeWidth=".8"/>
+      <circle cx="32" cy="116" r="11" fill="#0b1f19" stroke="#E8C060" strokeWidth="2"/>
+      <path d="M32 109 l2 5 5 .4 -4 3.2 1.4 5 -4.4-2.8 -4.4 2.8 1.4-5 -4-3.2 5-.4z" fill="#E8C060"/>
     </svg>
   );
 }
-
 
 /* ── Main Qibla Page ────────────────────────────────────────── */
 export function Qibla() {
@@ -291,8 +247,8 @@ export function Qibla() {
         height: 82,
         objectFit: 'contain',
         filter: isAligned
-          ? 'drop-shadow(0 0 14px rgba(74,222,128,0.9))'
-          : 'drop-shadow(0 3px 10px rgba(0,0,0,0.9))',
+          ? 'drop-shadow(0 0 18px rgba(110,231,183,0.9))'
+          : 'drop-shadow(0 8px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(232,192,96,0.35))',
         transition: 'filter 0.5s',
       }}
     />
@@ -419,7 +375,10 @@ export function Qibla() {
         </div>
 
         <div className="relative" style={{ width: SIZE, height: SIZE }}>
-          <PremiumCompassFace isAligned={isAligned}/>
+          <div className="absolute inset-0 rounded-full" style={{ boxShadow: isAligned ? '0 0 0 2px rgba(110,231,183,0.55), 0 0 60px rgba(52,211,153,0.45)' : '0 0 0 1px rgba(201,160,90,0.35), 0 20px 60px rgba(0,0,0,0.65), 0 0 50px rgba(201,160,90,0.18)', transition: 'box-shadow .5s' }}/>
+          <img src={dialImg} alt="" width={SIZE} height={SIZE} className="absolute inset-0 w-full h-full select-none"
+            style={{ transform: `rotate(${-(heading ?? 0)}deg)`, transition: heading !== null ? 'transform 0.15s ease-out' : 'none' }}/>
+          <div className="absolute rounded-full pointer-events-none" style={{ inset: '22%', background: 'radial-gradient(circle, rgba(6,20,16,0.35) 0%, transparent 70%)' }}/>
 
           <div
             className="absolute pointer-events-none z-10"

@@ -154,7 +154,7 @@ const TYPE_COLOR: Record<string, string> = {
 
 export function WuduGuide() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
   const [step, setStep] = useState(0);
   const [completed, setCompleted] = useState<Set<number>>(new Set());

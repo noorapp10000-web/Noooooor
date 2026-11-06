@@ -162,7 +162,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
                 <IslamicCard isDone={isDone}>
                   <div className="text-[#C19A6B] mb-3"><IslamicOrnament/></div>
 
-                  <p className="text-lg leading-loose whitespace-pre-wrap text-center mb-1"
+                  <p className="text-[1.2rem] leading-[2.3] whitespace-pre-wrap text-center mb-1" onClick={() => !isDone && handleTap(item.id, item.count)}
                     style={{ fontFamily: '"Amiri Quran", "Amiri", "Scheherazade New", serif' }}>
                     {item.text}
                   </p>
@@ -172,22 +172,25 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       {isDone
-                        ? <span className="text-green-600 font-bold">✓ مكتمل</span>
+                        ? <span className="font-bold" style={{ color: '#6EE7B7' }}>✓ مكتمل</span>
                         : <span>متبقي: <strong>{item.count - cur}</strong> / {item.count}</span>
                       }
                     </div>
-                    <button
-                      onClick={() => handleTap(item.id, item.count)}
+                    {(() => { const pct = Math.min(cur / item.count, 1); const R = 30, L = 2 * Math.PI * R; return (
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => { handleTap(item.id, item.count); navigator.vibrate?.(15); }}
                       disabled={isDone}
-                      className={cn(
-                        'w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl transition-all duration-300 shadow-md',
-                        isDone ? 'bg-green-500 text-white scale-105 shadow-green-500/30 cursor-not-allowed'
-                               : 'text-primary-foreground hover:scale-105 active:scale-95 cursor-pointer'
-                      )}
-                      style={!isDone ? { background: 'linear-gradient(135deg, #C19A6B, #a07a4a)', boxShadow: '0 4px 15px rgba(193,154,107,0.4)' } : {}}
+                      className="relative w-[72px] h-[72px] rounded-full flex items-center justify-center font-bold text-xl"
+                      style={{ background: isDone ? 'radial-gradient(circle, #1f7a5a, #0f4a37)' : 'radial-gradient(circle at 35% 30%, #F7DC94, #B8862F 70%, #7a5418)', boxShadow: isDone ? '0 0 22px rgba(52,211,153,0.45)' : '0 6px 20px rgba(193,154,107,0.45), inset 0 2px 0 rgba(255,255,255,0.35)', color: isDone ? '#E8FFF5' : '#1a1206' }}
                     >
-                      {isDone ? <Check className="w-7 h-7"/> : <span style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{item.count - cur}</span>}
-                    </button>
+                      <svg viewBox="0 0 72 72" className="absolute inset-0 -rotate-90">
+                        <circle cx="36" cy="36" r={R} fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="3"/>
+                        <circle cx="36" cy="36" r={R} fill="none" stroke={isDone ? '#6EE7B7' : '#0b1f19'} strokeWidth="3" strokeLinecap="round" strokeDasharray={L} strokeDashoffset={L * (1 - pct)} style={{ transition: 'stroke-dashoffset .35s' }}/>
+                      </svg>
+                      {isDone ? <Check className="w-7 h-7 relative"/> : <span className="relative" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{item.count - cur}</span>}
+                    </motion.button>
+                    ); })()}
                   </div>
 
                   <div className="w-full bg-secondary h-1.5 rounded-full mt-4 overflow-hidden">
@@ -377,6 +380,31 @@ function CategoriesView({ onSelect }: { onSelect: (cat: HisnCategory) => void })
           من حصن المسلم — تتجدد الأذكار تلقائياً كل يوم
         </p>
       </div>
+
+      {(() => {
+        const h = new Date().getHours();
+        const isMorning = h >= 3 && h < 15;
+        const feat = HISN_CATEGORIES.find(c => c.id === (isMorning ? 27 : 9001));
+        if (!feat) return null;
+        return (
+          <motion.button
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} whileTap={{ scale: 0.98 }}
+            onClick={() => onSelect(feat)}
+            className="relative w-full h-40 mb-4 rounded-3xl overflow-hidden text-right"
+            style={{ border: '1px solid rgba(232,192,96,0.35)', boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}
+          >
+            <img src={`${import.meta.env.BASE_URL}images/art/${isMorning ? 'azkar-morning' : 'azkar-evening'}.webp`} alt="" width={760} height={425} className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to left, rgba(5,16,13,0.92) 0%, rgba(5,16,13,0.55) 55%, transparent 100%)' }} />
+            <div className="relative h-full flex flex-col justify-end p-4">
+              <span className="self-start text-[10px] font-bold px-2.5 py-1 rounded-full mb-2" style={{ background: 'rgba(232,192,96,0.18)', color: '#F7DC94', border: '1px solid rgba(232,192,96,0.4)' }}>وقتها الآن</span>
+              <h2 className="text-2xl font-bold" style={{ fontFamily: '"Reem Kufi", "IBM Plex Sans Arabic", sans-serif', color: '#F7DC94' }}>{feat.title}</h2>
+              <p className="text-xs mt-1" style={{ color: 'rgba(242,234,216,0.8)', fontFamily: '"IBM Plex Sans Arabic", sans-serif' }}>
+                {(HISN_ITEMS[feat.id]?.length ?? 0)} ذكر · ابدأ وِردك {isMorning ? 'الصباحي' : 'المسائي'}
+              </p>
+            </div>
+          </motion.button>
+        );
+      })()}
 
       <div className="grid grid-cols-2 gap-3">
         {HISN_CATEGORIES.map((cat, idx) => (

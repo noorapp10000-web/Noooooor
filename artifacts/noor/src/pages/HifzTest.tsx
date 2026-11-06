@@ -464,7 +464,7 @@ function LinenBg({ dark }: { dark: boolean }) {
 ═══════════════════════════════════════════════════════════════ */
 export function HifzTest() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   // Quran data

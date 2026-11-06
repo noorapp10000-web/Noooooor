@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, type ReactNode, type ComponentType } from 'react';
 import { Link } from 'wouter';
 import {
-  ChevronLeft, Sun, Moon, Share2,
+  ChevronLeft, Share2,
   Star, Copy, X, Check, Mail, MessageSquare, Settings2, Pencil, Search,
 } from 'lucide-react';
-import { useUserSetting } from '@/hooks/use-user-setting';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProfileCache, updateProfileInRTDB, getCurrentUid, getOrCreateLocalUid } from '@/lib/rtdb';
 import {
@@ -424,19 +423,12 @@ function RowIcon({ children }: { children: ReactNode }) {
 }
 
 export function MoreMenu() {
-  const [theme, setTheme] = useUserSetting<'light' | 'dark'>('theme', 'light');
-  const [showShareSheet, setShowShareSheet] = useState(false);
+    const [showShareSheet, setShowShareSheet] = useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
   const [query, setQuery] = useState('');
 
   void profileVersion;
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-  };
 
   const handleSaveName = async (newName: string) => {
     const uid = getCurrentUid() || getOrCreateLocalUid();
@@ -560,13 +552,6 @@ export function MoreMenu() {
           <div className="flex-1"><p className="font-semibold text-sm">الإعدادات</p><p className="text-xs text-muted-foreground">الخلفية وحجم الخط والتنبيهات</p></div>
           <ChevronLeft className="w-4 h-4 text-muted-foreground/50" />
         </Link>
-        <button onClick={toggleTheme} className="w-full flex items-center gap-3.5 p-3.5 text-right" data-testid="button-toggle-theme">
-          <RowIcon>{theme === 'dark' ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}</RowIcon>
-          <div className="flex-1"><p className="font-semibold text-sm">{theme === 'dark' ? 'الوضع الليلي' : 'الوضع النهاري'}</p><p className="text-xs text-muted-foreground">اضغط للتبديل</p></div>
-          <span className="relative w-12 h-7 rounded-full transition-colors" style={{ background: theme === 'dark' ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.25)' }}>
-            <span className="absolute top-[3px] w-[22px] h-[22px] rounded-full bg-card shadow transition-all" style={{ left: theme === 'dark' ? 23 : 3, background: 'hsl(0 0% 100%)' }} />
-          </span>
-        </button>
       </div>
 
       {/* About App Section */}

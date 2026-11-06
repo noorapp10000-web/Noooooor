@@ -201,7 +201,7 @@ function VideoPlayer({
 
 export function IslamicTV() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
 

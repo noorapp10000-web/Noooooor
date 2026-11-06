@@ -97,7 +97,7 @@ function SunnahCard({ item, dark }: { item: SunnahItem; dark: boolean }) {
 
 export function Sunnah() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const [data, setData] = useState<SunnahData | null>(null);

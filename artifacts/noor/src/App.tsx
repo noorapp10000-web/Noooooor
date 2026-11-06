@@ -1,3 +1,4 @@
+import { ScreenArt } from '@/components/ScreenArt';
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -86,7 +87,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <div
       className={`min-h-[100dvh] ${hasBg ? 'bg-transparent' : 'bg-background'} text-foreground selection:bg-primary/30 relative`}
     >
-      <div className="relative z-10">{children}</div>
+      <ScreenArt />
+      <div className="relative z-10 noor-page">{children}</div>
       <MiniPlayer />
       <BottomNav />
     </div>
@@ -99,7 +101,8 @@ function FullScreenShell({ children }: { children: React.ReactNode }) {
     <div
       className={`min-h-[100dvh] ${hasBg ? 'bg-transparent' : 'bg-background'} text-foreground selection:bg-primary/30 relative`}
     >
-      <div className="relative z-10">{children}</div>
+      <ScreenArt />
+      <div className="relative z-10 noor-page">{children}</div>
     </div>
   );
 }
@@ -239,7 +242,7 @@ function App() {
   const handleLoginComplete = useCallback(() => {
     const uid = getOrCreateLocalUid();
     initUserSyncFast(uid);
-    const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
+    const theme = ('dark' as 'light' | 'dark');
     document.documentElement.classList.toggle('dark', theme === 'dark');
     setIsLoggedIn(true);
     if (Capacitor.isNativePlatform()) {
@@ -263,7 +266,7 @@ function App() {
       initUserSyncFast(uid);
       const profile = getProfileCache();
       if (profile?.governorateId) {
-        const theme = getSettingCache<'light' | 'dark'>('theme', 'light');
+        const theme = ('dark' as 'light' | 'dark');
         document.documentElement.classList.toggle('dark', theme === 'dark');
         setIsLoggedIn(true);
         if (Capacitor.isNativePlatform()) {

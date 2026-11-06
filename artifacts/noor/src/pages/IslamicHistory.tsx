@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronLeft, BookOpen, Search, X, Calendar, ChevronDown } from 'lucide-react';
+import { ChevronLeft, BookOpen, Search, X, Calendar, ChevronDown, Shuffle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useLocation } from 'wouter';
 import { useUserSetting } from '@/hooks/use-user-setting';
 
@@ -149,7 +150,7 @@ const HistoryCard = ({
 
 export function IslamicHistory() {
   const [, navigate] = useLocation();
-  const [theme] = useUserSetting<'light' | 'dark'>('theme', 'light');
+  const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
 
   const [items, setItems] = useState<HistoryItem[]>([]);
@@ -279,23 +280,49 @@ export function IslamicHistory() {
 
       <div className="max-w-lg mx-auto px-4">
 
-        <div className="flex gap-2 overflow-x-auto py-3 no-scrollbar">
-          {ERAS.map(era => (
-            <button
-              key={era.id}
-              onClick={() => handleEraChange(era.id)}
-              className="flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-bold transition-all"
-              style={{
-                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-                background: selectedEra === era.id ? era.grad : (dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)'),
-                color: selectedEra === era.id ? '#fff' : (dark ? '#C19A6B' : '#8B6B3D'),
-                border: selectedEra === era.id ? 'none' : `1px solid ${border}`,
-              }}
-            >
-              {era.label}
-            </button>
-          ))}
+        {/* Interactive era timeline */}
+        <div className="relative overflow-x-auto no-scrollbar pt-5 pb-3 -mx-4 px-4">
+          <div className="relative flex gap-0 min-w-max">
+            <div className="absolute right-6 left-6 top-[13px] h-[2px] rounded-full" style={{ background: 'linear-gradient(to left, rgba(232,192,96,0.7), rgba(232,192,96,0.15))' }} />
+            {ERAS.map((era, i) => {
+              const on = selectedEra === era.id;
+              return (
+                <button key={era.id} onClick={() => handleEraChange(era.id)} className="relative flex flex-col items-center w-[92px] flex-shrink-0">
+                  <motion.span
+                    animate={{ scale: on ? 1.25 : 1 }}
+                    className="relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold"
+                    style={{ background: on ? 'linear-gradient(135deg,#F7DC94,#B8862F)' : '#0C1C17', color: on ? '#0b1f19' : '#C19A6B', border: '2px solid rgba(232,192,96,0.6)', boxShadow: on ? '0 0 18px rgba(232,192,96,0.6)' : 'none' }}
+                  >{i + 1}</motion.span>
+                  <span className="mt-2 text-[12px] font-bold leading-tight text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: on ? '#F2E3C2' : '#8B6B3D' }}>{era.label}</span>
+                  <span className="text-[10px] mt-0.5" style={{ color: '#6f5a3a' }}>{ERA_CONFIG[era.id].total.toLocaleString()} حدث</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {(() => { const era = ERAS.find(e => e.id === selectedEra)!; return (
+          <motion.div key={era.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-3xl p-4 mb-4"
+            style={{ background: era.grad, border: '1px solid rgba(232,192,96,0.3)', boxShadow: '0 14px 40px rgba(0,0,0,0.45)' }}>
+            <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/images/islamic-pattern.webp)', backgroundSize: '160px' }} />
+            <div className="relative flex items-center gap-3">
+              <div className="flex-1">
+                <p className="text-[11px] tracking-wide" style={{ color: 'rgba(242,227,194,0.65)' }}>الحقبة المختارة</p>
+                <h2 className="text-2xl font-bold" style={{ fontFamily: '"Reem Kufi", "IBM Plex Sans Arabic", sans-serif', color: '#F7DC94' }}>{era.label}</h2>
+                <p className="text-xs mt-1" style={{ color: 'rgba(242,227,194,0.8)' }}>{era.sub}</p>
+              </div>
+              <button
+                disabled={loading || filtered.length === 0}
+                onClick={() => filtered.length && handleSelect(filtered[Math.floor(Math.random() * filtered.length)])}
+                className="flex flex-col items-center gap-1 px-3 py-2.5 rounded-2xl active:scale-95 transition"
+                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(232,192,96,0.4)', color: '#F7DC94' }}
+              >
+                <Shuffle size={18} />
+                <span className="text-[10px] font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", sans-serif' }}>حدث عشوائي</span>
+              </button>
+            </div>
+          </motion.div>
+        ); })()}
 
         {!loading && (
           <div className="mb-3 px-1 flex items-center justify-between">
@@ -323,8 +350,11 @@ export function IslamicHistory() {
           </div>
         )}
 
-        <div className="flex flex-col gap-2.5">
-          {visible.map(item => (
+        <div className="relative flex flex-col gap-2.5 pr-5">
+          <div className="absolute right-[7px] top-2 bottom-2 w-[2px] rounded-full" style={{ background: 'linear-gradient(to bottom, rgba(232,192,96,0.6), rgba(232,192,96,0.05))' }} />
+          {visible.map((item, idx) => (
+            <motion.div key={item.id} className="relative" initial={{ opacity: 0, x: -14 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-30px' }} transition={{ duration: 0.35, delay: Math.min(idx % PAGE_SIZE, 6) * 0.04 }}>
+            <span className="absolute -right-[19px] top-5 w-3 h-3 rounded-full" style={{ background: '#E8C060', boxShadow: '0 0 0 3px #07130F, 0 0 10px rgba(232,192,96,0.7)' }} />
             <HistoryCard
               key={item.id}
               item={item}
@@ -333,6 +363,7 @@ export function IslamicHistory() {
               border={border}
               onSelect={handleSelect}
             />
+            </motion.div>
           ))}
         </div>
 
