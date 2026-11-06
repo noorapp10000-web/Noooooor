@@ -60,13 +60,13 @@ function ResetDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
         <svg width="32" height="32" viewBox="0 0 40 40" className="mx-auto mb-3 text-primary opacity-60">
           <polygon points="20,2 24,14 37,14 27,22 31,35 20,27 9,35 13,22 3,14 16,14" fill="currentColor"/>
         </svg>
-        <h3 className="font-bold text-lg mb-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>تصفير الأذكار</h3>
-        <p className="text-muted-foreground text-sm mb-5" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+        <h3 className="font-bold text-lg mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تصفير الأذكار</h3>
+        <p className="text-muted-foreground text-sm mb-5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
           هل تريد تصفير هذا القسم لليوم؟
         </p>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>إلغاء</button>
-          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl font-bold text-sm" style={{ background: 'linear-gradient(135deg, #C19A6B, #a07a4a)', color: '#fff', fontFamily: '"Tajawal", sans-serif' }}>تصفير</button>
+          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl bg-secondary text-foreground font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>إلغاء</button>
+          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl font-bold text-sm" style={{ background: 'linear-gradient(135deg, #C19A6B, #a07a4a)', color: '#fff', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تصفير</button>
         </div>
       </motion.div>
     </div>
@@ -98,7 +98,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
   };
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-lg mx-auto" dir="rtl">
+    <div className="pb-32 pt-4 px-4 max-w-lg mx-auto" dir="rtl">
       <AnimatePresence>
         {showReset && (
           <ResetDialog
@@ -115,7 +115,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <button onClick={onBack} className="flex items-center gap-1 text-muted-foreground text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+        <button onClick={onBack} className="flex items-center gap-1 text-muted-foreground text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
           <ChevronRight className="w-5 h-5"/>
           الأقسام
         </button>
@@ -124,7 +124,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
         </button>
       </div>
 
-      <h1 className="text-xl font-bold mb-3 text-center" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+      <h1 className="text-xl font-bold mb-3 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
         {category.title}
       </h1>
 
@@ -135,10 +135,10 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
             <div className="w-32 h-2 bg-secondary rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(totalDone / items.length) * 100}%` }}/>
             </div>
-            <span className="text-sm text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{totalDone}/{items.length}</span>
+            <span className="text-sm text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{totalDone}/{items.length}</span>
           </div>
           {allDone && (
-            <span className="text-green-600 text-sm font-bold flex items-center gap-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <span className="text-green-600 text-sm font-bold flex items-center gap-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               <Check className="w-4 h-4"/>أحسنت!
             </span>
           )}
@@ -146,7 +146,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
       )}
 
       {items.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+        <div className="text-center py-12 text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
           لا توجد أذكار في هذا القسم.
         </div>
       )}
@@ -170,7 +170,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
                   <div className="text-[#C19A6B] mt-2 mb-4"><IslamicOrnament/></div>
 
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <div className="text-sm text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       {isDone
                         ? <span className="text-green-600 font-bold">✓ مكتمل</span>
                         : <span>متبقي: <strong>{item.count - cur}</strong> / {item.count}</span>
@@ -186,7 +186,7 @@ function ItemsView({ category, onBack }: { category: HisnCategory; onBack: () =>
                       )}
                       style={!isDone ? { background: 'linear-gradient(135deg, #C19A6B, #a07a4a)', boxShadow: '0 4px 15px rgba(193,154,107,0.4)' } : {}}
                     >
-                      {isDone ? <Check className="w-7 h-7"/> : <span style={{ fontFamily: '"Tajawal", sans-serif' }}>{item.count - cur}</span>}
+                      {isDone ? <Check className="w-7 h-7"/> : <span style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{item.count - cur}</span>}
                     </button>
                   </div>
 
@@ -316,7 +316,7 @@ function CategoryCard({
         <p
           className="font-bold text-foreground leading-snug mt-1"
           style={{
-            fontFamily: '"Tajawal", sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
             fontSize: cat.title.length > 16 ? '0.68rem' : cat.title.length > 11 ? '0.75rem' : '0.85rem',
             lineHeight: 1.5,
             direction: 'rtl',
@@ -330,7 +330,7 @@ function CategoryCard({
             className="mt-1.5 text-[10px] font-semibold"
             style={{
               color: allDone ? '#22c55e' : 'rgba(193,154,107,0.75)',
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
             }}
           >
             {allDone ? 'مكتمل' : `${items.length} ذكر`}
@@ -359,21 +359,21 @@ function CategoriesView({ onSelect }: { onSelect: (cat: HisnCategory) => void })
   const todayKey = getTodayKey();
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-lg mx-auto" dir="rtl">
+    <div className="pb-32 pt-4 px-4 max-w-lg mx-auto" dir="rtl">
       {/* Header */}
       <div className="text-center mb-5">
         <div className="flex items-center justify-center gap-2 mb-0.5">
           <svg width="14" height="14" viewBox="0 0 20 20" style={{ opacity: 0.5 }}>
             <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,14 4.5,18 6.5,11 1,7 8,7" fill="#C19A6B"/>
           </svg>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             الأذكار والأدعية
           </h1>
           <svg width="14" height="14" viewBox="0 0 20 20" style={{ opacity: 0.5 }}>
             <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,14 4.5,18 6.5,11 1,7 8,7" fill="#C19A6B"/>
           </svg>
         </div>
-        <p className="text-[11px] text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+        <p className="text-[11px] text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
           من حصن المسلم — تتجدد الأذكار تلقائياً كل يوم
         </p>
       </div>

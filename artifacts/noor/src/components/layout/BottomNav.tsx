@@ -231,45 +231,45 @@ function MoreNav3D({ color }: { color: string }) {
 type NavIconComp = React.ComponentType<{ color: string }>;
 
 const NAV_ITEMS: { id: string; path: string; Icon: NavIconComp; label: string }[] = [
-  { id: "home",         path: "/",             Icon: HomeNav3D,    label: "الرئيسية" },
-  { id: "quran",        path: "/quran",        Icon: QuranNav3D,   label: "القرآن"   },
-  { id: "azkar",        path: "/azkar",        Icon: AzkarNav3D,   label: "الأذكار"  },
-  { id: "tasbih",       path: "/tasbih",       Icon: TasbihNav3D,  label: "التسبيح"  },
-  { id: "ranking",      path: "/ranking",      Icon: RankingNav3D, label: "إحصائياتي" },
-  { id: "more",         path: "/more",         Icon: MoreNav3D,    label: "المزيد"   },
+  { id: "home",    path: "/",        Icon: HomeNav3D,    label: "الرئيسية" },
+  { id: "quran",   path: "/quran",   Icon: QuranNav3D,   label: "القرآن"   },
+  { id: "azkar",   path: "/azkar",   Icon: AzkarNav3D,   label: "الأذكار"  },
+  { id: "tasbih",  path: "/tasbih",  Icon: TasbihNav3D,  label: "التسبيح"  },
+  { id: "ranking", path: "/ranking", Icon: RankingNav3D, label: "إنجازاتي" },
+  { id: "more",    path: "/more",    Icon: MoreNav3D,    label: "اكتشف"   },
 ];
 
-const ACTIVE_COLOR   = "#C19A6B";
-const INACTIVE_COLOR = "var(--color-muted-foreground, #9c8670)";
+const ACTIVE_COLOR   = "hsl(var(--primary))";
+const INACTIVE_COLOR = "hsl(var(--muted-foreground))";
 
 export function BottomNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border/50 pb-safe">
-      <div className="flex items-center justify-around px-1 h-16">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 px-3 pointer-events-none"
+      style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+    >
+      <div className="glass shadow-lift pointer-events-auto mx-auto max-w-lg rounded-[26px] flex items-stretch justify-around px-1.5 h-[64px]">
         {NAV_ITEMS.map((item) => {
           const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
           const Icon = item.Icon;
           const color = isActive ? ACTIVE_COLOR : INACTIVE_COLOR;
 
           return (
-            <Link key={item.id} href={item.path} className="flex-1 h-full">
-              <div className="flex flex-col items-center justify-center h-full gap-0.5 transition-all duration-300">
-                <div
-                  className="p-1.5 rounded-xl transition-all duration-300"
-                  style={{
-                    background: isActive ? "rgba(193,154,107,0.12)" : "transparent",
-                    transform: isActive ? "scale(1.08)" : "scale(1)",
-                  }}
-                >
+            <Link key={item.id} href={item.path} className="flex-1 h-full press" aria-label={item.label}>
+              <div className="relative flex flex-col items-center justify-center h-full gap-1">
+                {isActive && (
+                  <span
+                    className="absolute top-1.5 inset-x-1.5 bottom-1.5 rounded-[18px]"
+                    style={{ background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.18)" }}
+                  />
+                )}
+                <div className="relative transition-transform duration-300" style={{ transform: isActive ? "translateY(-1px) scale(1.06)" : "none" }}>
                   <Icon color={color} />
                 </div>
                 <span
-                  className={cn(
-                    "text-[10px] transition-all duration-300",
-                    isActive ? "font-bold" : "font-medium opacity-60"
-                  )}
+                  className={cn("relative text-[10px] leading-none transition-all duration-300", isActive ? "font-bold" : "font-medium opacity-70")}
                   style={{ color }}
                 >
                   {item.label}

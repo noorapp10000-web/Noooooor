@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, type ReactNode, type ComponentType } from 
 import { Link } from 'wouter';
 import {
   ChevronLeft, Sun, Moon, Share2,
-  Star, Copy, X, Check, Mail, MessageSquare, Settings2, Pencil,
+  Star, Copy, X, Check, Mail, MessageSquare, Settings2, Pencil, Search,
 } from 'lucide-react';
 import { useUserSetting } from '@/hooks/use-user-setting';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -267,7 +267,7 @@ function ShareChooserSheet({ onClose }: { onClose: () => void }) {
         <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
 
         <div className="flex items-center justify-between mb-2 px-5">
-          <h3 className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <h3 className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             الدال على الخير كفاعله
           </h3>
           <button onClick={onClose} className="p-1.5 bg-secondary rounded-full">
@@ -275,7 +275,7 @@ function ShareChooserSheet({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <p className="text-xs text-muted-foreground mb-4 px-5" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+        <p className="text-xs text-muted-foreground mb-4 px-5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
           اختر التطبيق وشاركنا الأجر والثواب
         </p>
 
@@ -296,7 +296,7 @@ function ShareChooserSheet({ onClose }: { onClose: () => void }) {
                 </div>
                 <span
                   className="text-[10px] font-medium text-foreground/80 text-center leading-tight"
-                  style={{ fontFamily: '"Tajawal", sans-serif' }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
                 >
                   {opt.label}
                 </span>
@@ -346,7 +346,7 @@ function EditNameDialog({
           <button onClick={onCancel} className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary/60">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
-          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif' }}>تعديل الاسم</p>
+          <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تعديل الاسم</p>
           <div className="w-8" />
         </div>
 
@@ -358,7 +358,7 @@ function EditNameDialog({
             onChange={e => setValue(e.target.value)}
             maxLength={30}
             className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-base font-bold text-center outline-none focus:ring-2 focus:ring-primary/40 mb-4"
-            style={{ fontFamily: '"Tajawal", sans-serif', direction: 'rtl' }}
+            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', direction: 'rtl' }}
             placeholder="أدخل اسمك"
             onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
           />
@@ -367,7 +367,7 @@ function EditNameDialog({
             disabled={!value.trim() || value.trim() === currentName}
             className="w-full py-3 rounded-xl font-bold text-sm transition-all"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
               background: (!value.trim() || value.trim() === currentName)
                 ? 'rgba(193,154,107,0.2)'
                 : 'linear-gradient(135deg, #C19A6B, #8B5E3C)',
@@ -386,9 +386,41 @@ function FeatureChip({ Icon, text }: { Icon: ComponentType<{ className?: string;
   return (
     <div className="flex items-center gap-2 bg-secondary/40 rounded-xl px-3 py-2.5">
       <Icon className="w-4 h-4 flex-shrink-0 text-primary" size={16} />
-      <span className="text-xs text-foreground/80 leading-tight" style={{ fontFamily: '"Tajawal", sans-serif' }}>{text}</span>
+      <span className="text-xs text-foreground/80 leading-tight" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{text}</span>
     </div>
   );
+}
+
+type MenuItem = {
+  Icon: ComponentType<{ className?: string; size?: number }>;
+  label: string; path: string; desc: string;
+  cat: 'worship' | 'quran' | 'knowledge' | 'listen';
+};
+
+const CATEGORIES = [
+  { id: 'worship',   title: 'العبادة',           kicker: 'صلاتك وطهارتك وقبلتك', image: '/images/art/cover-worship.webp' },
+  { id: 'quran',     title: 'القرآن الكريم',     kicker: 'استمع واحفظ وتدبّر',    image: '/images/art/cover-quran.webp' },
+  { id: 'knowledge', title: 'العلم والمعرفة',    kicker: 'حديث وسيرة وتاريخ',     image: '/images/art/cover-knowledge.webp' },
+  { id: 'listen',    title: 'استمع وشاهد',       kicker: 'بث مباشر على مدار اليوم', image: '/images/art/cover-listen.webp' },
+] as const;
+
+function FeatureTile({ item }: { item: MenuItem }) {
+  const Icon = item.Icon;
+  return (
+    <Link href={item.path} className="press surface rounded-[22px] p-3.5 flex flex-col gap-3 min-h-[118px]">
+      <span className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-brand shadow-soft">
+        <Icon className="text-white" size={22} />
+      </span>
+      <span>
+        <span className="block font-bold text-[14px] leading-snug">{item.label}</span>
+        <span className="block text-[11px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</span>
+      </span>
+    </Link>
+  );
+}
+
+function RowIcon({ children }: { children: ReactNode }) {
+  return <span className="w-10 h-10 rounded-xl flex items-center justify-center text-primary" style={{ background: 'hsl(var(--primary) / 0.12)' }}>{children}</span>;
 }
 
 export function MoreMenu() {
@@ -396,6 +428,7 @@ export function MoreMenu() {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = useState(false);
   const [profileVersion, setProfileVersion] = useState(0);
+  const [query, setQuery] = useState('');
 
   void profileVersion;
 
@@ -415,25 +448,28 @@ export function MoreMenu() {
 
   const userProfile = getProfileCache();
 
-  const MENU_ITEMS = [
-    { Icon: PrayerStepsIcon,   label: 'تعلم الصلاة',         path: '/learn-prayer', desc: 'خطوات الصلاة كاملة بالنص والتشكيل والشرح • 14 خطوة', grad: 'linear-gradient(145deg, #2d6a4f, #1b4332)' },
-    { Icon: WuduIcon,          label: 'الوضوء',               path: '/wudu',         desc: 'دليل مفصل لأركان وسنن الوضوء • 10 خطوات',           grad: 'linear-gradient(145deg, #1e4d7b, #0a2d5c)' },
-    { Icon: HifzIcon,          label: 'اختبار الحفظ',        path: '/hifz-test',    desc: 'اختبر حفظك لكل آيات القرآن الكريم • 6236 آية', grad: 'linear-gradient(145deg, #1e4d2b, #0d2b16)' },
-    { Icon: HadithIcon,        label: 'الأحاديث الشريفة',   path: '/hadith',       desc: 'أحاديث النبي ﷺ من كبار المصادر',                grad: 'linear-gradient(145deg, #2d6a4f, #1b4332)' },
-    { Icon: ScrollIcon,        label: 'التاريخ الإسلامي',   path: '/history',      desc: 'من السيرة النبوية حتى الدولة العثمانية',         grad: 'linear-gradient(145deg, #6b3a0f, #3d2008)' },
-    { Icon: IslamicStarIcon,   label: 'قصص الأنبياء',       path: '/prophets',     desc: 'قصص الأنبياء لابن كثير • تحقيق د. مصطفى عبد الواحد', grad: 'linear-gradient(145deg, #1b4332, #0d2b1e)' },
-    { Icon: DuaHandsIcon,      label: 'سنن النبي ﷺ',        path: '/sunnah',       desc: 'اقتداءً بهدي المصطفى في يومك',                  grad: 'linear-gradient(145deg, #1b4332, #0d2b1e)' },
-    { Icon: QuranBookIcon,     label: 'الاختبارات الإسلامية', path: '/quizzes',    desc: '5820 سؤال في 6 تخصصات شرعية',                   grad: 'linear-gradient(145deg, #3a1a5c, #1e0d30)' },
-    { Icon: QiblaCompassIcon,  label: 'تحديد القبلة',        path: '/qibla',        desc: 'بوصلة ذكية لاتجاه الكعبة المشرفة',              grad: 'linear-gradient(145deg, #1e4d7b, #0f2d4d)' },
-    { Icon: RadioIcon,         label: 'الإذاعات الإسلامية', path: '/radio',        desc: 'إذاعة القرآن الكريم وكبار القراء',               grad: 'linear-gradient(145deg, #5c3a7a, #3a1f52)' },
-    { Icon: MoonIcon,          label: 'القنوات الإسلامية',  path: '/tv',           desc: 'بث مباشر لقناة القرآن والسنة وغيرها',            grad: 'linear-gradient(145deg, #0f3d2e, #072218)' },
-    { Icon: IslamicStarIcon,   label: 'أسماء الله الحسنى',  path: '/asma',         desc: '99 اسماً مع معانيها وشرحها',                     grad: 'linear-gradient(145deg, #8B6340, #5c3e1e)' },
-    { Icon: HeadphonesIcon,    label: 'القراء والاستماع',   path: '/reciters',     desc: '50+ قارئ للقرآن الكريم',                         grad: 'linear-gradient(145deg, #1a5c5c, #0d3b3b)' },
-    { Icon: SmartReaderIcon,   label: 'قارئ التدبر الذكي',  path: '/speed-reader', desc: 'تدبر القرآن كلمةً بكلمة',                        grad: 'linear-gradient(145deg, #7a3a1e, #4d2310)' },
+  const MENU_ITEMS: MenuItem[] = [
+    { Icon: PrayerStepsIcon,   label: 'تعلم الصلاة',         path: '/learn-prayer', desc: '14 خطوة بالشرح والتشكيل',   cat: 'worship' },
+    { Icon: WuduIcon,          label: 'الوضوء',               path: '/wudu',         desc: 'الأركان والسنن خطوة بخطوة', cat: 'worship' },
+    { Icon: QiblaCompassIcon,  label: 'اتجاه القبلة',        path: '/qibla',        desc: 'بوصلة ذكية نحو الكعبة',      cat: 'worship' },
+    { Icon: DuaHandsIcon,      label: 'سنن النبي ﷺ',        path: '/sunnah',       desc: 'اقتداءً بهديه في يومك',      cat: 'worship' },
+    { Icon: HeadphonesIcon,    label: 'القرّاء والاستماع',  path: '/reciters',     desc: 'أكثر من 50 قارئًا',          cat: 'quran' },
+    { Icon: HifzIcon,          label: 'اختبار الحفظ',        path: '/hifz-test',    desc: '6236 آية لاختبار حفظك',      cat: 'quran' },
+    { Icon: SmartReaderIcon,   label: 'قارئ التدبّر',        path: '/speed-reader', desc: 'تدبّر القرآن كلمةً بكلمة',    cat: 'quran' },
+    { Icon: IslamicStarIcon,   label: 'أسماء الله الحسنى',  path: '/asma',         desc: '99 اسمًا بمعانيها',           cat: 'quran' },
+    { Icon: HadithIcon,        label: 'الأحاديث الشريفة',   path: '/hadith',       desc: 'من الكتب الستة',             cat: 'knowledge' },
+    { Icon: IslamicStarIcon,   label: 'قصص الأنبياء',       path: '/prophets',     desc: 'لابن كثير رحمه الله',         cat: 'knowledge' },
+    { Icon: ScrollIcon,        label: 'التاريخ الإسلامي',   path: '/history',      desc: 'من السيرة حتى العثمانيين',    cat: 'knowledge' },
+    { Icon: QuranBookIcon,     label: 'المسابقات',           path: '/quizzes',      desc: '5820 سؤالًا في 6 علوم',       cat: 'knowledge' },
+    { Icon: RadioIcon,         label: 'الإذاعات',            path: '/radio',        desc: 'إذاعة القرآن وكبار القرّاء',  cat: 'listen' },
+    { Icon: MoonIcon,          label: 'القنوات المباشرة',   path: '/tv',           desc: 'بث القرآن والسنة مباشرة',    cat: 'listen' },
   ];
 
+  const q = query.trim();
+  const filtered = q ? MENU_ITEMS.filter(i => i.label.includes(q) || i.desc.includes(q)) : null;
+
   return (
-    <div className="pb-24 pt-6 px-4 max-w-lg mx-auto" dir="rtl">
+    <div className="pb-32 pt-[max(1.25rem,env(safe-area-inset-top))] px-4 max-w-lg mx-auto" dir="rtl">
       <AnimatePresence>
         {showShareSheet && (
           <ShareChooserSheet onClose={() => setShowShareSheet(false)} />
@@ -447,201 +483,89 @@ export function MoreMenu() {
         )}
       </AnimatePresence>
 
-      <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: '"Tajawal", sans-serif' }}>المزيد</h1>
-
-      {/* User profile card */}
-      {userProfile && (
-        <div className="mb-3 bg-card border border-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
-          {userProfile.photo ? (
-            <img src={userProfile.photo} alt={userProfile.name} className="w-10 h-10 rounded-full border-2 border-primary/30" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-primary font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+      {/* Header */}
+      <div className="flex items-end justify-between mb-4 animate-fade-up">
+        <div>
+          <p className="text-xs text-muted-foreground font-medium mb-0.5">كل كنوز نور في مكان واحد</p>
+          <h1 className="font-display text-[2rem] leading-none text-foreground">اكتشف</h1>
+        </div>
+        {userProfile && (
+          <button onClick={() => setShowEditNameDialog(true)} className="press flex items-center gap-2 surface rounded-full ps-1 pe-3 py-1" data-testid="button-edit-name">
+            {userProfile.photo ? (
+              <img src={userProfile.photo} alt={userProfile.name} className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="w-8 h-8 rounded-full bg-gradient-gold text-primary-foreground flex items-center justify-center font-bold text-sm">
                 {(userProfile.name ?? '?')[0]}
               </span>
-            </div>
+            )}
+            <span className="text-sm font-semibold max-w-[110px] truncate" data-testid="text-username">{userProfile.name}</span>
+            <Pencil className="w-3 h-3 text-primary/70" />
+          </button>
+        )}
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-6 animate-fade-up" style={{ animationDelay: '60ms' }}>
+        <Search className="absolute top-1/2 -translate-y-1/2 right-4 w-4 h-4 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="ابحث عن ميزة… مثل: القبلة، الحديث"
+          className="w-full surface rounded-2xl h-12 pr-11 pl-4 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/70"
+        />
+      </div>
+
+      {filtered ? (
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {filtered.length === 0 && (
+            <p className="col-span-2 text-center text-sm text-muted-foreground py-10">لا توجد نتائج مطابقة</p>
           )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="font-bold text-base truncate" style={{ fontFamily: '"Tajawal", sans-serif' }} data-testid="text-username">{userProfile.name}</p>
-              <button
-                onClick={() => setShowEditNameDialog(true)}
-                className="w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                style={{ background: 'rgba(193,154,107,0.12)' }}
-                title="تعديل الاسم"
-                data-testid="button-edit-name"
-              >
-                <Pencil className="w-3 h-3 text-primary/70" />
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground truncate" style={{ fontFamily: '"Tajawal", sans-serif' }} data-testid="text-user-governorate">{userProfile.governorateName}</p>
-          </div>
+          {filtered.map(item => <FeatureTile key={item.path} item={item} />)}
+        </div>
+      ) : (
+        <div className="space-y-7">
+          {CATEGORIES.map((cat, ci) => (
+            <section key={cat.id} className="animate-fade-up" style={{ animationDelay: `${100 + ci * 60}ms` }}>
+              <div className="relative h-28 rounded-[24px] overflow-hidden mb-3 shadow-lift">
+                <img src={cat.image} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(270deg, hsl(168 55% 5% / 0.88) 0%, hsl(168 55% 5% / 0.45) 55%, transparent 100%)' }} />
+                <div className="relative h-full flex flex-col justify-center px-5">
+                  <p className="text-[11px] font-semibold mb-1" style={{ color: 'hsl(var(--gold-soft))' }}>{cat.kicker}</p>
+                  <h2 className="font-display text-2xl leading-tight" style={{ color: 'hsl(var(--brand-foreground))' }}>{cat.title}</h2>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {MENU_ITEMS.filter(i => i.cat === cat.id).map(item => <FeatureTile key={item.path} item={item} />)}
+              </div>
+            </section>
+          ))}
         </div>
       )}
 
-
-      <div className="space-y-2.5">
-        {MENU_ITEMS.map((item, idx) => {
-          const Icon = item.Icon;
-          return (
-            <Link
-              key={idx}
-              href={item.path}
-              className="flex items-center justify-between bg-card p-3.5 rounded-2xl border border-border/40 hover-elevate"
-            >
-              <div className="flex items-center gap-3.5">
-                {/* iOS-style gradient icon container */}
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                  style={{ background: item.grad }}
-                >
-                  <Icon className="text-white" size={24} />
-                </div>
-                <div>
-                  <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>{item.label}</span>
-                  <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{item.desc}</span>
-                </div>
-              </div>
-              <ChevronLeft className="w-4 h-4 text-muted-foreground/50" />
-            </Link>
-          );
-        })}
-
-        {/* Share App Card */}
-        <button
-          onClick={() => setShowShareSheet(true)}
-          className="w-full flex items-center justify-between bg-card p-3.5 rounded-2xl border border-border/40 hover-elevate"
-          data-testid="button-share-app"
-        >
-          <div className="flex items-center gap-3.5">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
-              style={{ background: 'linear-gradient(145deg, #10b981, #047857)' }}
-            >
-              <Share2 className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-right">
-              <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>الدال على الخير كفاعله</span>
-              <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>أرسل التطبيق لأحبابك لكي نتشارك الأجر</span>
-            </div>
-          </div>
-          <ChevronLeft className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+      {/* App section */}
+      <h2 className="font-display text-xl mt-8 mb-3 px-1">التطبيق</h2>
+      <div className="surface rounded-[24px] overflow-hidden divide-y divide-border/60">
+        <button onClick={() => setShowShareSheet(true)} className="w-full flex items-center gap-3.5 p-3.5 text-right" data-testid="button-share-app">
+          <RowIcon><Share2 className="w-[18px] h-[18px]" /></RowIcon>
+          <div className="flex-1"><p className="font-semibold text-sm">شارك التطبيق</p><p className="text-xs text-muted-foreground">الدال على الخير كفاعله</p></div>
+          <ChevronLeft className="w-4 h-4 text-muted-foreground/50" />
         </button>
-
-        {/* Rate App Card */}
-        <a
-          href="https://noor-web-api-server.vercel.app/#reviews"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-between bg-card p-3.5 rounded-2xl border border-border/40 hover-elevate"
-          data-testid="link-rate-app"
-        >
-          <div className="flex items-center gap-3.5">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
-              style={{ background: 'linear-gradient(145deg, #f59e0b, #b45309)' }}
-            >
-              <Star className="w-5 h-5 text-white fill-white" />
-            </div>
-            <div className="text-right">
-              <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>قيّمنا وادعمنا</span>
-              <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>رأيك يساعدنا على تطوير "Noor App"</span>
-            </div>
-          </div>
-          <ChevronLeft className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+        <a href="https://noor-web-api-server.vercel.app/#reviews" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3.5 p-3.5" data-testid="link-rate-app">
+          <RowIcon><Star className="w-[18px] h-[18px]" /></RowIcon>
+          <div className="flex-1"><p className="font-semibold text-sm">قيّمنا وادعمنا</p><p className="text-xs text-muted-foreground">رأيك يساعدنا على التطوير</p></div>
+          <ChevronLeft className="w-4 h-4 text-muted-foreground/50" />
         </a>
-
-        {/* Settings Card */}
-        <Link href="/settings">
-          <button
-            className="w-full flex items-center justify-between bg-card p-3.5 rounded-2xl border border-border/40 hover-elevate"
-            data-testid="button-settings"
-          >
-            <div className="flex items-center gap-3.5">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm"
-                style={{ background: 'linear-gradient(145deg, #5a4a8a, #3a2d6a)' }}
-              >
-                <Settings2 className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-right">
-                <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>الخصائص</span>
-                <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>الخلفية وحجم الخط وإعدادات التطبيق</span>
-              </div>
-            </div>
-            <ChevronLeft className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-          </button>
+        <Link href="/settings" className="flex items-center gap-3.5 p-3.5" data-testid="button-settings">
+          <RowIcon><Settings2 className="w-[18px] h-[18px]" /></RowIcon>
+          <div className="flex-1"><p className="font-semibold text-sm">الإعدادات</p><p className="text-xs text-muted-foreground">الخلفية وحجم الخط والتنبيهات</p></div>
+          <ChevronLeft className="w-4 h-4 text-muted-foreground/50" />
         </Link>
-
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="w-full flex items-center justify-between bg-card p-3.5 rounded-2xl border border-border/40 hover-elevate"
-          data-testid="button-toggle-theme"
-        >
-          <div className="flex items-center gap-3.5">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md relative overflow-hidden"
-              style={{
-                background: theme === 'dark'
-                  ? 'linear-gradient(145deg, #0f172a, #1e1b4b)'
-                  : 'linear-gradient(145deg, #f59e0b, #b45309)',
-              }}
-            >
-              {theme === 'dark' ? (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="white" fillOpacity="0.95" />
-                  <circle cx="19" cy="5" r="1" fill="white" fillOpacity="0.7" />
-                  <circle cx="22" cy="9" r="0.7" fill="white" fillOpacity="0.5" />
-                  <circle cx="20" cy="2" r="0.6" fill="white" fillOpacity="0.6" />
-                </svg>
-              ) : (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="4.5" fill="white" fillOpacity="0.95" />
-                  {[0,45,90,135,180,225,270,315].map((deg,i) => {
-                    const rad=deg*Math.PI/180;
-                    return <line key={i} x1={12+6.2*Math.cos(rad)} y1={12+6.2*Math.sin(rad)} x2={12+(i%2===0?8.5:7.8)*Math.cos(rad)} y2={12+(i%2===0?8.5:7.8)*Math.sin(rad)} stroke="white" strokeWidth={i%2===0?1.8:1.2} strokeOpacity="0.85" strokeLinecap="round"/>;
-                  })}
-                </svg>
-              )}
-            </div>
-            <div className="text-right">
-              <span className="font-bold text-base block" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-                {theme === 'dark' ? 'الوضع الليلي' : 'الوضع النهاري'}
-              </span>
-              <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-                {theme === 'dark' ? 'اضغط للتبديل إلى النهاري' : 'اضغط للتبديل إلى الليلي'}
-              </span>
-            </div>
-          </div>
-          <div
-            className="w-13 h-7 rounded-full relative transition-all duration-300 flex-shrink-0 flex-shrink-0"
-            style={{
-              width: 52,
-              height: 28,
-              background: theme === 'dark'
-                ? 'linear-gradient(90deg, #6366f1, #8b5cf6)'
-                : 'rgba(0,0,0,0.12)',
-              border: theme === 'dark' ? 'none' : '1.5px solid rgba(0,0,0,0.1)',
-              position: 'relative',
-            }}
-          >
-            <div
-              className="absolute top-0.5 w-6 h-6 rounded-full shadow-md transition-all duration-300 flex items-center justify-center"
-              style={{
-                width: 22,
-                height: 22,
-                top: 3,
-                left: theme === 'dark' ? 27 : 3,
-                background: theme === 'dark' ? 'white' : 'white',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-              }}
-            >
-              {theme === 'dark'
-                ? <Moon className="w-3 h-3" style={{ color: '#6366f1' }} />
-                : <Sun className="w-3 h-3" style={{ color: '#f59e0b' }} />}
-            </div>
-          </div>
+        <button onClick={toggleTheme} className="w-full flex items-center gap-3.5 p-3.5 text-right" data-testid="button-toggle-theme">
+          <RowIcon>{theme === 'dark' ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}</RowIcon>
+          <div className="flex-1"><p className="font-semibold text-sm">{theme === 'dark' ? 'الوضع الليلي' : 'الوضع النهاري'}</p><p className="text-xs text-muted-foreground">اضغط للتبديل</p></div>
+          <span className="relative w-12 h-7 rounded-full transition-colors" style={{ background: theme === 'dark' ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.25)' }}>
+            <span className="absolute top-[3px] w-[22px] h-[22px] rounded-full bg-card shadow transition-all" style={{ left: theme === 'dark' ? 23 : 3, background: 'hsl(0 0% 100%)' }} />
+          </span>
         </button>
       </div>
 
@@ -677,7 +601,7 @@ export function MoreMenu() {
               نُـور
             </p>
             <p className="text-muted-foreground text-xs mt-1 tracking-widest uppercase"
-              style={{ fontFamily: '"Tajawal", sans-serif', letterSpacing: '0.12em' }}>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', letterSpacing: '0.12em' }}>
               Noor App · الإصدار 3.3
             </p>
 
@@ -696,7 +620,7 @@ export function MoreMenu() {
         <div className="px-5 pb-6 space-y-4 border-t border-primary/10">
           {/* About text */}
           <div className="pt-4">
-            <p className="text-sm text-foreground/75 leading-loose text-center" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="text-sm text-foreground/75 leading-loose text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               رفيقك الإسلامي الشامل، صُمِّم لمساعدة المسلمين على تعزيز صلتهم بالله وإحياء سنة النبي ﷺ في حياتهم اليومية.
             </p>
           </div>
@@ -704,7 +628,7 @@ export function MoreMenu() {
           {/* Features grid */}
           <div>
             <p className="font-bold text-xs text-primary/70 mb-2.5 text-center tracking-wide"
-              style={{ fontFamily: '"Tajawal", sans-serif', letterSpacing: '0.08em' }}>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', letterSpacing: '0.08em' }}>
               مميزات التطبيق
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -731,7 +655,7 @@ export function MoreMenu() {
                     style={{ background: grad }}>
                     <Icon className="text-white" size={14} />
                   </div>
-                  <span className="text-xs text-foreground/80 leading-tight" style={{ fontFamily: '"Tajawal", sans-serif' }}>{text}</span>
+                  <span className="text-xs text-foreground/80 leading-tight" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{text}</span>
                 </div>
               ))}
             </div>
@@ -739,9 +663,9 @@ export function MoreMenu() {
 
           {/* Developer credit */}
           <div className="text-center pt-1">
-            <p className="text-muted-foreground text-xs" style={{ fontFamily: '"Tajawal", sans-serif' }}>تصميم وتطوير</p>
+            <p className="text-muted-foreground text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تصميم وتطوير</p>
             <p className="text-primary font-black text-lg mt-0.5" style={{ fontFamily: '"Amiri", serif' }}>سيف كامل</p>
-            <p className="text-muted-foreground/60 text-[10px] mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif' }}>مطوّر تطبيق نُور</p>
+            <p className="text-muted-foreground/60 text-[10px] mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>مطوّر تطبيق نُور</p>
             <div className="mt-3 flex items-center justify-center gap-3">
               <div className="h-px flex-1 max-w-12" style={{ background: 'rgba(193,154,107,0.25)' }} />
               <svg viewBox="0 0 20 20" width={12} height={12} fill="rgba(193,154,107,0.45)">
@@ -754,11 +678,11 @@ export function MoreMenu() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block mt-2 text-primary/60 text-[11px] underline underline-offset-2"
-              style={{ fontFamily: '"Tajawal", sans-serif' }}
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
             >
               سياسة الخصوصية
             </a>
-            <p className="text-muted-foreground/40 text-[10px] mt-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="text-muted-foreground/40 text-[10px] mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               جميع الحقوق محفوظة © 2026
             </p>
           </div>

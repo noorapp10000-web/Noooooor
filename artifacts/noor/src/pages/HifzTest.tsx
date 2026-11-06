@@ -445,10 +445,10 @@ function LinenBg({ dark }: { dark: boolean }) {
           />
         </filter>
         <pattern id="linen-warp" width="3" height="1" patternUnits="userSpaceOnUse">
-          <rect width="3" height="0.45" y="0.28" fill={dark ? 'rgba(80,50,20,0.5)' : 'rgba(140,110,70,0.25)'}/>
+          <rect width="3" height="0.45" y="0.28" fill={dark ? 'rgba(12,48,38,0.5)' : 'rgba(140,110,70,0.25)'}/>
         </pattern>
         <pattern id="linen-weft" width="1" height="3" patternUnits="userSpaceOnUse">
-          <rect width="0.45" height="3" x="0.28" fill={dark ? 'rgba(80,50,20,0.3)' : 'rgba(140,110,70,0.16)'}/>
+          <rect width="0.45" height="3" x="0.28" fill={dark ? 'rgba(12,48,38,0.3)' : 'rgba(140,110,70,0.16)'}/>
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill={base}/>
@@ -510,8 +510,8 @@ export function HifzTest() {
   }, []);
 
   // Colors
-  const bg = dark ? '#0f0c07' : '#FDFBF0';
-  const cardBg = dark ? '#1a1208' : '#fff';
+  const bg = dark ? '#07130F' : '#FDFBF0';
+  const cardBg = dark ? '#0C1C17' : '#fff';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
   const textPrimary = dark ? '#d4b483' : '#3d2000';
   const textSec = dark ? '#8B6B3D' : '#9E7B4A';
@@ -647,13 +647,13 @@ export function HifzTest() {
 
   return (
     <div
-      className="min-h-screen pb-24"
+      className="min-h-screen pb-32"
       dir="rtl"
       style={{
         background: screen === 'question' ? (dark ? '#160E05' : '#CCB894') : bg,
         backgroundImage: screen === 'question'
           ? (dark
-            ? 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(55,30,8,0.45) 2px,rgba(55,30,8,0.45) 3px),repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(55,30,8,0.28) 3px,rgba(55,30,8,0.28) 4px)'
+            ? 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(8,30,24,0.45) 2px,rgba(8,30,24,0.45) 3px),repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(8,30,24,0.28) 3px,rgba(8,30,24,0.28) 4px)'
             : 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(120,90,50,0.15) 2px,rgba(120,90,50,0.15) 3px),repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(120,90,50,0.1) 3px,rgba(120,90,50,0.1) 4px)')
           : 'none',
       }}
@@ -678,12 +678,12 @@ export function HifzTest() {
           <div className="flex-1 min-w-0">
             <h1
               className="text-xl font-bold truncate"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}
             >
               {headerTitle}
             </h1>
             {screen === 'question' && (
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                 سؤال {qIndex + 1} من {questions.length} • الاختبار {selectedTest + 1}
               </p>
             )}
@@ -711,7 +711,7 @@ export function HifzTest() {
         {loading && (
           <div className="flex flex-col items-center justify-center pt-20 gap-4">
             <div className="w-12 h-12 border-4 border-[#C19A6B]/20 border-t-[#C19A6B] rounded-full animate-spin" />
-            <p className="text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               جاري تحميل القرآن الكريم...
             </p>
           </div>
@@ -720,13 +720,13 @@ export function HifzTest() {
         {/* Error state */}
         {!loading && loadError && (
           <div className="text-center pt-20 px-4">
-            <p className="text-base mb-4" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+            <p className="text-base mb-4" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
               تعذّر تحميل البيانات. تحقق من الاتصال بالإنترنت.
             </p>
             <button
               onClick={() => { setLoading(true); setLoadError(''); fetchQuranData().then(d => { setQuranData(d); setLoading(false); }).catch(e => { setLoadError(e.message); setLoading(false); }); }}
               className="px-6 py-3 rounded-2xl text-white font-bold"
-              style={{ background: 'linear-gradient(135deg,#8B6340,#C19A6B)', fontFamily: '"Tajawal", sans-serif' }}
+              style={{ background: 'linear-gradient(135deg,#8B6340,#C19A6B)', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
             >
               إعادة المحاولة
             </button>
@@ -742,7 +742,7 @@ export function HifzTest() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <p className="text-xs mb-4 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+              <p className="text-xs mb-4 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                 اختر السورة التي تريد اختبار حفظها
               </p>
 
@@ -766,7 +766,7 @@ export function HifzTest() {
                         style={{
                           background: 'rgba(193,154,107,0.12)',
                           color: '#C19A6B',
-                          fontFamily: '"Tajawal", sans-serif',
+                          fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                         }}
                       >
                         {surahNum}
@@ -789,7 +789,7 @@ export function HifzTest() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+                        <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                           {surah.count} آية • {stats.total} اختبار
                           {stats.done > 0 && ` • أكملت ${stats.done} من ${stats.total}`}
                         </p>
@@ -810,7 +810,7 @@ export function HifzTest() {
                 >
                   وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ
                 </p>
-                <p className="text-xs mt-1" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>القمر: 17</p>
+                <p className="text-xs mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>القمر: 17</p>
               </div>
             </motion.div>
           )}
@@ -830,7 +830,7 @@ export function HifzTest() {
                 >
                   سورة {SURAH_INFO[selectedSurah - 1]?.name}
                 </p>
-                <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+                <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                   {SURAH_INFO[selectedSurah - 1]?.count} آية •{' '}
                   {getTestCount(selectedSurah)} اختبار
                 </p>
@@ -854,7 +854,7 @@ export function HifzTest() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <p
                             className="font-bold text-base"
-                            style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}
+                            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}
                           >
                             الاختبار {i + 1}
                           </p>
@@ -867,7 +867,7 @@ export function HifzTest() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs mt-1" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+                        <p className="text-xs mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                           الآيات {rangeStart} – {rangeEnd} •{' '}
                           {rangeEnd - rangeStart + 1} سؤال
                           {rating && ' • اضغط لإعادة الاختبار'}
@@ -896,10 +896,10 @@ export function HifzTest() {
             >
               {/* Verse info */}
               <div className="mb-3 flex items-center justify-between px-1">
-                <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? 'rgba(193,154,107,0.65)' : 'rgba(70,45,15,0.7)' }}>
+                <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? 'rgba(193,154,107,0.65)' : 'rgba(10,40,32,0.7)' }}>
                   {SURAH_INFO[questions[qIndex].surahNum - 1]?.name} : {questions[qIndex].verseNum}
                 </span>
-                <span className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? 'rgba(193,154,107,0.5)' : 'rgba(70,45,15,0.5)' }}>
+                <span className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? 'rgba(193,154,107,0.5)' : 'rgba(10,40,32,0.5)' }}>
                   {questions[qIndex].verseKey}
                 </span>
               </div>
@@ -919,7 +919,7 @@ export function HifzTest() {
                   {/* Decorative rule */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <div style={{ flex: 1, height: 1, background: dark ? 'rgba(193,154,107,0.22)' : 'rgba(100,70,30,0.22)' }}/>
-                    <span style={{ fontSize: 10, fontFamily: '"Tajawal", sans-serif', color: dark ? 'rgba(193,154,107,0.6)' : 'rgba(80,50,20,0.6)', letterSpacing: '0.06em' }}>أكمل الآية الكريمة</span>
+                    <span style={{ fontSize: 10, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? 'rgba(193,154,107,0.6)' : 'rgba(12,48,38,0.6)', letterSpacing: '0.06em' }}>أكمل الآية الكريمة</span>
                     <div style={{ flex: 1, height: 1, background: dark ? 'rgba(193,154,107,0.22)' : 'rgba(100,70,30,0.22)' }}/>
                   </div>
                   <VerseWithBlank
@@ -934,9 +934,9 @@ export function HifzTest() {
                     <div className="flex items-center justify-center gap-2 mt-3">
                       {audioPlaying
                         ? <Volume2 size={15} className="text-[#C19A6B] animate-pulse" />
-                        : <VolumeX size={15} style={{ color: dark ? 'rgba(193,154,107,0.4)' : 'rgba(80,50,20,0.3)' }} />
+                        : <VolumeX size={15} style={{ color: dark ? 'rgba(193,154,107,0.4)' : 'rgba(12,48,38,0.3)' }} />
                       }
-                      <span style={{ fontFamily: '"Tajawal", sans-serif', fontSize: 11, color: dark ? 'rgba(193,154,107,0.55)' : 'rgba(80,50,20,0.5)' }}>
+                      <span style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', fontSize: 11, color: dark ? 'rgba(193,154,107,0.55)' : 'rgba(12,48,38,0.5)' }}>
                         {audioPlaying ? currentReciter.name : 'انتهت التلاوة'}
                       </span>
                     </div>
@@ -955,9 +955,9 @@ export function HifzTest() {
                   onClick={() => setReciterPickerOpen(o => !o)}
                   className="flex items-center gap-1.5 mx-auto rounded-full px-3 py-1"
                   style={{
-                    fontFamily: '"Tajawal", sans-serif',
+                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                     fontSize: 12,
-                    color: dark ? 'rgba(193,154,107,0.8)' : 'rgba(80,50,20,0.7)',
+                    color: dark ? 'rgba(193,154,107,0.8)' : 'rgba(12,48,38,0.7)',
                     background: dark ? 'rgba(193,154,107,0.08)' : 'rgba(100,70,30,0.07)',
                     border: `1px solid ${dark ? 'rgba(193,154,107,0.2)' : 'rgba(100,70,30,0.2)'}`,
                   }}
@@ -996,11 +996,11 @@ export function HifzTest() {
                           onClick={() => selectReciter(r.id)}
                           className="w-full text-right px-4 py-2.5 flex items-center justify-between gap-2"
                           style={{
-                            fontFamily: '"Tajawal", sans-serif',
+                            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                             fontSize: 13,
                             color: r.id === reciterId
                               ? (dark ? '#e0c080' : '#5a3800')
-                              : (dark ? 'rgba(193,154,107,0.8)' : 'rgba(80,50,20,0.8)'),
+                              : (dark ? 'rgba(193,154,107,0.8)' : 'rgba(12,48,38,0.8)'),
                             background: r.id === reciterId
                               ? (dark ? 'rgba(193,154,107,0.14)' : 'rgba(193,154,107,0.12)')
                               : 'transparent',
@@ -1045,7 +1045,7 @@ export function HifzTest() {
                   } else {
                     bgStyle = dark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.28)';
                     borderStyle = dark ? 'rgba(193,154,107,0.12)' : 'rgba(100,70,30,0.15)';
-                    textColor = dark ? 'rgba(193,154,107,0.45)' : 'rgba(80,50,20,0.45)';
+                    textColor = dark ? 'rgba(193,154,107,0.45)' : 'rgba(12,48,38,0.45)';
                   }
 
                   return (
@@ -1096,7 +1096,7 @@ export function HifzTest() {
                       onClick={handleNext}
                       className="w-full py-4 rounded-2xl font-bold text-white text-base transition-opacity"
                       style={{
-                        fontFamily: '"Tajawal", sans-serif',
+                        fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                         background: 'linear-gradient(135deg,#8B6340,#C19A6B)',
                       }}
                       data-testid="button-next"
@@ -1123,10 +1123,10 @@ export function HifzTest() {
                   className="flex-1 rounded-2xl py-5 flex flex-col items-center gap-1"
                   style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)' }}
                 >
-                  <span className="text-3xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>
+                  <span className="text-3xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>
                     {finalScore}
                   </span>
-                  <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>
+                  <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>
                     صحيح
                   </span>
                 </div>
@@ -1134,10 +1134,10 @@ export function HifzTest() {
                   className="flex-1 rounded-2xl py-5 flex flex-col items-center gap-1"
                   style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
                 >
-                  <span className="text-3xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>
+                  <span className="text-3xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>
                     {questions.length - finalScore}
                   </span>
-                  <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>
+                  <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>
                     خطأ
                   </span>
                 </div>
@@ -1146,7 +1146,7 @@ export function HifzTest() {
               {/* Trophy & Rating */}
               <div className="mb-6 p-6 rounded-2xl" style={{ background: cardBg, border: `1px solid ${border}` }}>
                 <Trophy size={52} className="text-[#C19A6B] mx-auto mb-4" />
-                <p className="text-4xl font-bold mb-2" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+                <p className="text-4xl font-bold mb-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
                   {finalScore} / {questions.length}
                 </p>
                 {(() => {
@@ -1160,7 +1160,7 @@ export function HifzTest() {
                     </span>
                   );
                 })()}
-                <p className="text-sm mt-2" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+                <p className="text-sm mt-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                   {finalRating === 'ممتاز' ? 'ما شاء الله، أحسنت!' :
                    finalRating === 'متوسط' ? 'جيد، استمر في المراجعة' :
                    'لا بأس، راجع الآيات وأعد الاختبار'}
@@ -1185,7 +1185,7 @@ export function HifzTest() {
                 <button
                   onClick={() => startTest(selectedSurah, selectedTest)}
                   className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
                   data-testid="button-restart"
                 >
                   <RotateCcw size={18} />
@@ -1195,7 +1195,7 @@ export function HifzTest() {
                   onClick={() => setScreen('tests')}
                   className="w-full py-4 rounded-2xl font-bold"
                   style={{
-                    fontFamily: '"Tajawal", sans-serif',
+                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                     background: dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)',
                     color: dark ? '#C19A6B' : '#8B6340',
                     border: `1px solid ${border}`,

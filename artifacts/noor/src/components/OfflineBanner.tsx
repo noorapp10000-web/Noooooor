@@ -45,7 +45,7 @@ export function OfflineBanner() {
               ? 'linear-gradient(135deg, #1a0e00 0%, #2c1a04 100%)'
               : 'linear-gradient(135deg, #2c1a04 0%, #3d2507 100%)',
             borderBottom: '1px solid rgba(193,154,107,0.35)',
-            fontFamily: '"Tajawal", sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
           }}
           dir="rtl"
         >
@@ -67,7 +67,7 @@ export function OfflineBanner() {
           style={{
             background: 'linear-gradient(135deg, #0a2010 0%, #0d2e16 100%)',
             borderBottom: '1px solid rgba(34,197,94,0.3)',
-            fontFamily: '"Tajawal", sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
           }}
           dir="rtl"
         >

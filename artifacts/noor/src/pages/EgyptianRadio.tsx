@@ -34,9 +34,9 @@ function IslamicOverlay() {
       <defs>
         <pattern id="islamicTile" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
           <path d="M40 4 L44 20 L60 16 L56 32 L72 36 L56 40 L60 56 L44 52 L40 68 L36 52 L20 56 L24 40 L8 36 L24 32 L20 16 L36 20 Z"
-            fill="none" stroke="#C8991A" strokeWidth="0.7"/>
-          <circle cx="40" cy="40" r="8" fill="none" stroke="#C8991A" strokeWidth="0.4"/>
-          <circle cx="40" cy="40" r="2" fill="#C8991A" opacity="0.3"/>
+            fill="none" stroke="#C9A05A" strokeWidth="0.7"/>
+          <circle cx="40" cy="40" r="8" fill="none" stroke="#C9A05A" strokeWidth="0.4"/>
+          <circle cx="40" cy="40" r="2" fill="#C9A05A" opacity="0.3"/>
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#islamicTile)" />
@@ -425,10 +425,10 @@ export function EgyptianRadio() {
     ? active ? 'linear-gradient(135deg, #3a1f00 0%, #2a1500 50%, #1f0f00 100%)' : 'linear-gradient(135deg, #2a1500 0%, #1e0e00 100%)'
     : active ? 'linear-gradient(135deg, #FFF8E8 0%, #FDF2D4 100%)' : 'linear-gradient(135deg, #FDFBF0 0%, #F8F2DC 100%)';
   const cardBorder = (active: boolean) => isDark
-    ? active ? 'rgba(200,153,26,0.5)' : 'rgba(200,153,26,0.15)'
+    ? active ? 'rgba(201,160,90,0.5)' : 'rgba(201,160,90,0.15)'
     : active ? 'rgba(193,154,107,0.7)' : 'rgba(193,154,107,0.3)';
   const stationNameColor = (active: boolean) => isDark
-    ? active ? '#E8C060' : '#C8991A'
+    ? active ? '#E8C060' : '#C9A05A'
     : active ? '#8B6340' : '#6B4A20';
   const stationSubColor = (active: boolean) => isDark
     ? active ? '#a08040' : '#5a4020'
@@ -436,14 +436,14 @@ export function EgyptianRadio() {
   const freqColor = isDark ? '#6B4500' : '#B08050';
   const sectionLabelColor = isDark ? '#7a6030' : '#8B6340';
   const brandPlateStyle = isDark
-    ? { background: 'linear-gradient(135deg, #2a1500 0%, #1a0d00 100%)', border: '1px solid rgba(200,153,26,0.25)', boxShadow: 'inset 0 1px 0 rgba(255,220,100,0.08), 0 2px 8px rgba(0,0,0,0.4)' }
+    ? { background: 'linear-gradient(135deg, #2a1500 0%, #1a0d00 100%)', border: '1px solid rgba(201,160,90,0.25)', boxShadow: 'inset 0 1px 0 rgba(255,220,100,0.08), 0 2px 8px rgba(0,0,0,0.4)' }
     : { background: 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)) 100%)', border: '1px solid rgba(193,154,107,0.35)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' };
   const brandTitleColor = isDark ? '#E8C060' : '#6B4A20';
   const brandSubColor   = isDark ? '#7a6030' : '#9a7050';
   const backBtnStyle    = isDark
-    ? { background: 'rgba(200,153,26,0.15)', border: '1px solid rgba(200,153,26,0.3)' }
+    ? { background: 'rgba(201,160,90,0.15)', border: '1px solid rgba(201,160,90,0.3)' }
     : { background: 'rgba(193,154,107,0.12)', border: '1px solid rgba(193,154,107,0.35)' };
-  const backBtnColor    = isDark ? '#C8991A' : '#8B6340';
+  const backBtnColor    = isDark ? '#C9A05A' : '#8B6340';
 
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto relative" dir="rtl"
@@ -487,7 +487,7 @@ export function EgyptianRadio() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-black text-base leading-tight"
-                    style={{ fontFamily: '"Tajawal", sans-serif', color: brandTitleColor,
+                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: brandTitleColor,
                       textShadow: isDark ? '0 0 8px rgba(232,192,96,0.5)' : 'none' }}>
                     الإذاعات الإسلامية
                   </p>
@@ -498,7 +498,7 @@ export function EgyptianRadio() {
                 </div>
                 {/* Vintage speaker icon */}
                 <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 flex-shrink-0"
-                  style={{ color: isDark ? '#C8991A' : '#8B6340', opacity: 0.7 }}>
+                  style={{ color: isDark ? '#C9A05A' : '#8B6340', opacity: 0.7 }}>
                   <rect x="3" y="8" width="5" height="8" rx="0.5" fill="currentColor" fillOpacity="0.4" stroke="currentColor" strokeWidth="1.2"/>
                   <path d="M8 8L17 4V20L8 16" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="1.2"/>
                   <path d="M19 9 Q22 12 19 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
@@ -514,12 +514,12 @@ export function EgyptianRadio() {
 
         {/* Section label */}
         <div className="flex items-center gap-3 px-5 mb-2">
-          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,153,26,0.3))' }} />
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, transparent, rgba(201,160,90,0.3))' }} />
           <span className="text-[9px] font-bold tracking-widest"
             style={{ color: sectionLabelColor, fontFamily: '"Courier New", monospace', letterSpacing: '3px' }}>
             اختر المحطة
           </span>
-          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(200,153,26,0.3), transparent)' }} />
+          <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(201,160,90,0.3), transparent)' }} />
         </div>
       </div>
 
@@ -557,12 +557,12 @@ export function EgyptianRadio() {
                     <div className="flex items-center justify-end gap-2">
                       {isPlaying && <AnalogEq />}
                       <p className="font-bold text-base leading-tight truncate"
-                        style={{ fontFamily: '"Tajawal", sans-serif', color: stationNameColor(isActive) }}>
+                        style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: stationNameColor(isActive) }}>
                         {s.name}
                       </p>
                     </div>
                     <p className="text-xs mt-0.5"
-                      style={{ fontFamily: '"Tajawal", sans-serif', color: stationSubColor(isActive), opacity: 0.9 }}>
+                      style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: stationSubColor(isActive), opacity: 0.9 }}>
                       {s.subtitle}
                     </p>
                     <p className="text-[9px] mt-1"
@@ -579,7 +579,7 @@ export function EgyptianRadio() {
                 {isActive && (
                   <div
                     className="h-px mx-3 mb-1 rounded-full"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(200,153,26,0.4), transparent)' }}
+                    style={{ background: 'linear-gradient(90deg, transparent, rgba(201,160,90,0.4), transparent)' }}
                   />
                 )}
               </button>
@@ -590,13 +590,13 @@ export function EgyptianRadio() {
         {/* Footer note */}
         <div className="mt-6 text-center pb-2">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="h-px w-16" style={{ background: 'rgba(200,153,26,0.2)' }} />
+            <div className="h-px w-16" style={{ background: 'rgba(201,160,90,0.2)' }} />
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" style={{ color: '#7a6030' }}>
               <path d="M12 2 Q8 2 6 6 L6 14 L18 14 L18 6 Q16 2 12 2Z" stroke="currentColor" strokeWidth="1" fill="none"/>
               <rect x="9" y="14" width="6" height="6" stroke="currentColor" strokeWidth="1" fill="none"/>
               <line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" strokeWidth="1"/>
             </svg>
-            <div className="h-px w-16" style={{ background: 'rgba(200,153,26,0.2)' }} />
+            <div className="h-px w-16" style={{ background: 'rgba(201,160,90,0.2)' }} />
           </div>
           <p className="text-[10px]"
             style={{ color: '#5a4020', fontFamily: '"Courier New", monospace', letterSpacing: '1px', opacity: 0.6 }}>

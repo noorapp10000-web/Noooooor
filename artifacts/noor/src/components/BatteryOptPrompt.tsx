@@ -76,13 +76,13 @@ export function BatteryOptPrompt() {
                 <div>
                   <h2
                     className="text-xl font-bold mb-1"
-                    style={{ fontFamily: '"Tajawal", sans-serif', color: '#2C1E16' }}
+                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#10241E' }}
                   >
                     اسمح لنُور بالعمل دائماً
                   </h2>
                   <p
                     className="text-sm leading-relaxed"
-                    style={{ fontFamily: '"Tajawal", sans-serif', color: '#7A5230' }}
+                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#7A5230' }}
                   >
                     بعض الأجهزة (HONOR · Huawei) بتوقف التطبيق في الخلفية.
                     <br />
@@ -98,7 +98,7 @@ export function BatteryOptPrompt() {
               >
                 <p
                   className="text-xs font-bold mb-2"
-                  style={{ fontFamily: '"Tajawal", sans-serif', color: '#8B6035' }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8B6035' }}
                 >
                   كيف تفعل ذلك؟
                 </p>
@@ -116,7 +116,7 @@ export function BatteryOptPrompt() {
                     </div>
                     <p
                       className="text-xs"
-                      style={{ fontFamily: '"Tajawal", sans-serif', color: '#5A3A1A' }}
+                      style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#5A3A1A' }}
                     >
                       {step}
                     </p>
@@ -129,7 +129,7 @@ export function BatteryOptPrompt() {
                   onClick={handleAllow}
                   className="w-full py-4 rounded-2xl font-bold text-base transition-all active:scale-95"
                   style={{
-                    fontFamily: '"Tajawal", sans-serif',
+                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                     background: 'linear-gradient(135deg, #C19A6B 0%, #d4aa7d 50%, #b8894f 100%)',
                     color: '#1a0e00',
                     boxShadow: '0 4px 20px rgba(193,154,107,0.4)',
@@ -141,7 +141,7 @@ export function BatteryOptPrompt() {
                   onClick={dismiss}
                   className="w-full py-3 rounded-2xl text-sm transition-all active:scale-95"
                   style={{
-                    fontFamily: '"Tajawal", sans-serif',
+                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                     color: '#9B7043',
                     background: 'rgba(193,154,107,0.12)',
                     border: '1px solid rgba(193,154,107,0.25)',

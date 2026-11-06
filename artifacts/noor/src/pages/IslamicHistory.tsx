@@ -27,7 +27,7 @@ const ERAS: { id: Era; label: string; sub: string; grad: string }[] = [
   { id: 'seerah',   label: 'السيرة النبوية',    sub: 'من المولد الشريف حتى الوفاة الشريفة', grad: 'linear-gradient(135deg,#1b4332,#0d2b1e)' },
   { id: 'rashidun', label: 'الخلفاء الراشدون', sub: 'من 11 إلى 40 هـ',                       grad: 'linear-gradient(135deg,#1e3a6e,#0f2040)' },
   { id: 'umayyad',  label: 'الدولة الأموية',    sub: 'من 41 إلى 132 هـ',                      grad: 'linear-gradient(135deg,#6b3a0f,#3d2008)' },
-  { id: 'abbasid',  label: 'الدولة العباسية',   sub: 'من 132 إلى 656 هـ',                     grad: 'linear-gradient(135deg,#3a1a5c,#1e0d30)' },
+  { id: 'abbasid',  label: 'الدولة العباسية',   sub: 'من 132 إلى 656 هـ',                     grad: 'linear-gradient(135deg,#0F3D32,#1e0d30)' },
   { id: 'ayyubid',  label: 'الدولة الأيوبية',    sub: 'من 567 إلى 648 هـ',                     grad: 'linear-gradient(135deg,#5c2a0f,#2e1408)' },
   { id: 'mamluk',   label: 'دولة المماليك',      sub: 'من 648 إلى 923 هـ',                     grad: 'linear-gradient(135deg,#4a3010,#241608)' },
   { id: 'ottoman',  label: 'الدولة العثمانية',  sub: 'من 699 إلى 1342 هـ',                    grad: 'linear-gradient(135deg,#0f3d2e,#072218)' },
@@ -52,7 +52,7 @@ function EventSheet({ item, onClose, dark }: { item: HistoryItem | null; onClose
 
   if (!item) return null;
 
-  const bg = dark ? '#1a1208' : '#fdfbf0';
+  const bg = dark ? '#0C1C17' : '#fdfbf0';
   const border = dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.25)';
 
   return (
@@ -78,20 +78,20 @@ function EventSheet({ item, onClose, dark }: { item: HistoryItem | null; onClose
           </button>
           <div className="flex items-center gap-2">
             <Calendar size={14} className="text-[#C19A6B]" />
-            <span className="text-xs text-[#8B6B3D]" style={{ fontFamily: '"Tajawal", sans-serif' }}>{item.date}</span>
+            <span className="text-xs text-[#8B6B3D]" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{item.date}</span>
           </div>
         </div>
         <div className="overflow-y-auto px-5 py-4 flex-1">
           <h2
             className="text-lg font-bold mb-4 leading-relaxed"
-            style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}
+            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}
           >
             {item.title}
           </h2>
           <p
             className="text-sm leading-loose"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
               color: dark ? '#b0956a' : '#6D4C41',
               paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
             }}
@@ -123,20 +123,20 @@ const HistoryCard = ({
       <div className="flex-1 min-w-0">
         <p
           className="font-bold text-sm leading-snug mb-1.5"
-          style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}
         >
           {item.title}
         </p>
         <div className="flex items-center gap-1.5">
           <Calendar size={11} className="text-[#C19A6B] flex-shrink-0" />
-          <span className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>
+          <span className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>
             {item.date}
           </span>
         </div>
         {item.text && item.text !== item.title && (
           <p
             className="text-xs mt-1.5 line-clamp-2"
-            style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#7a6040' : '#A08060' }}
+            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#7a6040' : '#A08060' }}
           >
             {item.text.substring(0, 120)}...
           </p>
@@ -225,10 +225,10 @@ export function IslamicHistory() {
     setPage(1);
   };
 
-  const bg = dark ? '#0f0c07' : '#FDFBF0';
-  const cardBg = dark ? '#1a1208' : '#fff';
+  const bg = dark ? '#07130F' : '#FDFBF0';
+  const cardBg = dark ? '#0C1C17' : '#fff';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-  const textPrimary = dark ? '#d4b483' : '#5D4037';
+  const textPrimary = dark ? '#d4b483' : '#1F4A3D';
   const textSec = dark ? '#8B6B3D' : '#9E7B4A';
 
   const remainingCount = (() => {
@@ -250,10 +250,10 @@ export function IslamicHistory() {
             <ChevronLeft size={20} className="text-[#C19A6B]" style={{ transform: 'rotate(180deg)' }} />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+            <h1 className="text-xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
               التاريخ الإسلامي
             </h1>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               {loading ? 'جارٍ التحميل...' : `${filtered.length} حدث محمّل`}
             </p>
           </div>
@@ -268,8 +268,8 @@ export function IslamicHistory() {
             placeholder="ابحث في الأحداث..."
             className="w-full pr-9 pl-4 py-2.5 rounded-2xl text-sm outline-none"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
-              background: dark ? '#1a1208' : '#f5edd8',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
+              background: dark ? '#0C1C17' : '#f5edd8',
               color: textPrimary,
               border: `1px solid ${border}`,
             }}
@@ -286,7 +286,7 @@ export function IslamicHistory() {
               onClick={() => handleEraChange(era.id)}
               className="flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-bold transition-all"
               style={{
-                fontFamily: '"Tajawal", sans-serif',
+                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                 background: selectedEra === era.id ? era.grad : (dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)'),
                 color: selectedEra === era.id ? '#fff' : (dark ? '#C19A6B' : '#8B6B3D'),
                 border: selectedEra === era.id ? 'none' : `1px solid ${border}`,
@@ -299,10 +299,10 @@ export function IslamicHistory() {
 
         {!loading && (
           <div className="mb-3 px-1 flex items-center justify-between">
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               {ERAS.find(e => e.id === selectedEra)?.sub}
             </p>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               الإجمالي: {cfg.total.toLocaleString()} حدث
             </p>
           </div>
@@ -319,7 +319,7 @@ export function IslamicHistory() {
         {!loading && filtered.length === 0 && (
           <div className="text-center py-16 opacity-50">
             <BookOpen size={32} className="text-[#C19A6B] mx-auto mb-3" />
-            <p className="text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6B3D' }}>لا توجد نتائج</p>
+            <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6B3D' }}>لا توجد نتائج</p>
           </div>
         )}
 
@@ -342,7 +342,7 @@ export function IslamicHistory() {
             disabled={loadingMore}
             className="w-full mt-4 py-3 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
               background: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.12)',
               color: dark ? '#C19A6B' : '#8B6340',
               border: `1px solid ${border}`,

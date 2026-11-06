@@ -1,16 +1,11 @@
 import { useAudio } from '@/contexts/AudioContext';
 import { useLocation } from 'wouter';
+import { X } from 'lucide-react';
 
 function fmtTime(s: number) {
   if (!s || isNaN(s) || !isFinite(s)) return '0:00';
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 }
-
-const STAR8_PTS = Array.from({ length: 16 }, (_, i) => {
-  const r = i % 2 === 0 ? 12 : 7;
-  const a = (i * 22.5 - 90) * Math.PI / 180;
-  return `${(20 + r * Math.cos(a)).toFixed(2)},${(20 + r * Math.sin(a)).toFixed(2)}`;
-}).join(' ');
 
 export function MiniPlayer() {
   const audio = useAudio();
@@ -21,67 +16,67 @@ export function MiniPlayer() {
   const progress = audio.duration ? audio.currentTime / audio.duration : 0;
 
   return (
-    <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pb-1 max-w-lg mx-auto" dir="rtl">
+    <div className="fixed bottom-[86px] left-0 right-0 z-40 px-3 max-w-lg mx-auto" dir="rtl">
       <div
-        className="rounded-2xl overflow-hidden cursor-pointer"
-        style={{
-          background: 'linear-gradient(135deg, #1a1208 0%, #130e06 100%)',
-          border: '1px solid rgba(193,154,107,0.3)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
-        }}
+        className="relative rounded-[22px] overflow-hidden cursor-pointer shadow-lift bg-gradient-brand"
+        style={{ border: '1px solid hsl(var(--primary) / 0.28)', color: 'hsl(var(--brand-foreground))' }}
         onClick={() => navigate('/reciters')}
       >
-        {/* RTL progress bar — fills from right to left */}
-        <div className="h-0.5 w-full relative" style={{ background: 'rgba(193,154,107,0.15)' }}>
-          <div
-            className="absolute top-0 right-0 h-full rounded-full transition-all duration-300"
-            style={{ width: `${progress * 100}%`, background: 'linear-gradient(to left, #C19A6B, #8a6a3a)' }}
-          />
-        </div>
-
-        <div className="flex items-center gap-3 px-4 py-2.5">
-          {/* Mini Islamic disc icon */}
-          <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
-            style={{ background: 'rgba(193,154,107,0.12)', border: '1px solid rgba(193,154,107,0.25)' }}>
-            <svg viewBox="0 0 40 40" width="28" height="28">
-              <circle cx="20" cy="20" r="20" fill="#1a1208" />
-              <circle cx="20" cy="20" r="18" fill="none" stroke="#C19A6B" strokeWidth="0.8" opacity="0.4" />
-              <polygon points={STAR8_PTS} fill="rgba(193,154,107,0.15)" stroke="#C19A6B" strokeWidth="0.8" opacity="0.7" />
-              <circle cx="20" cy="20" r="6" fill="rgba(193,154,107,0.2)" stroke="#C19A6B" strokeWidth="0.8" />
-              <text x="20" y="22" textAnchor="middle" dominantBaseline="middle"
-                style={{ fontFamily: 'serif', fontSize: '7px', fill: '#d4b483' }}>ق</text>
-            </svg>
+        <div className="flex items-center gap-3 p-2 pe-3">
+          <div className="relative w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0">
+            <img src="/images/art/cover-quran.webp" alt="" className={`w-full h-full object-cover ${audio.isPlaying ? 'animate-[float_6s_ease-in-out_infinite]' : ''}`} />
+            {audio.isPlaying && (
+              <span className="absolute bottom-1 left-1 flex items-end gap-[2px] h-3">
+                {[0, 1, 2].map(i => (
+                  <span key={i} className="w-[3px] rounded-full animate-pulse" style={{ height: `${6 + i * 3}px`, background: 'hsl(var(--gold-soft))', animationDelay: `${i * 150}ms` }} />
+                ))}
+              </span>
+            )}
           </div>
 
-          {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm truncate" style={{ color: '#e8d9b8', fontFamily: '"Tajawal", sans-serif' }}>
-              سورة {audio.surahName}
-            </p>
-            <p className="text-xs truncate" style={{ color: 'rgba(193,154,107,0.6)', fontFamily: '"Tajawal", sans-serif' }}>
-              {audio.reciterName}
-            </p>
+            <p className="font-bold text-[14px] truncate">سورة {audio.surahName}</p>
+            <p className="text-[11px] truncate opacity-70">{audio.reciterName} · <span className="tabular-nums">{fmtTime(audio.currentTime)}</span></p>
           </div>
 
-          {/* Current time */}
-          <p className="text-xs flex-shrink-0" style={{ color: 'rgba(193,154,107,0.5)', fontFamily: '"Tajawal", sans-serif' }}>
-            {fmtTime(audio.currentTime)}
-          </p>
-
-          {/* Play/Pause */}
+          <button
+            onClick={e => { e.stopPropagation(); audio.seekPrev(); }}
+            aria-label="السابق"
+            className="press w-8 h-8 rounded-full flex items-center justify-center opacity-80"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z" /></svg>
+          </button>
           <button
             onClick={e => { e.stopPropagation(); audio.togglePlay(); }}
-            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #C19A6B, #7a5020)', boxShadow: '0 2px 8px rgba(193,154,107,0.3)' }}
+            aria-label={audio.isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
+            className="press w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-gold shadow-gold"
+            style={{ color: 'hsl(var(--primary-foreground))' }}
           >
             {audio.isLoading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
             ) : audio.isPlaying ? (
-              <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4 translate-x-0.5"><path d="M8 5v14l11-7z" /></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 -translate-x-0.5"><path d="M8 5v14l11-7z" /></svg>
             )}
           </button>
+          <button
+            onClick={e => { e.stopPropagation(); audio.seekNext(); }}
+            aria-label="التالي"
+            className="press w-8 h-8 rounded-full flex items-center justify-center opacity-80"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); audio.stop(); }}
+            aria-label="إغلاق"
+            className="press w-7 h-7 rounded-full flex items-center justify-center opacity-60"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="h-[3px] w-full relative" style={{ background: 'hsl(0 0% 100% / 0.08)' }}>
+          <div className="absolute top-0 right-0 h-full bg-gradient-gold transition-all duration-300" style={{ width: `${progress * 100}%` }} />
         </div>
       </div>
     </div>

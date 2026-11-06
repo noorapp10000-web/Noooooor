@@ -9,6 +9,19 @@ import { Capacitor } from '@capacitor/core';
 import { Coordinates, PrayerTimes, CalculationMethod } from 'adhan';
 import NoorWidget from '@/lib/widget-bridge';
 import { getTodayAyah, type DailyAyah } from '@/lib/daily-ayahs';
+import { Link } from 'wouter';
+import { QiblaCompassIcon, HadithIcon, HeadphonesIcon, RadioIcon, PrayerStepsIcon, IslamicStarIcon, HifzIcon, DuaHandsIcon } from '@/components/NoorIcons';
+
+const QUICK_LINKS = [
+  { path: '/qibla',        label: 'القبلة',        Icon: QiblaCompassIcon },
+  { path: '/reciters',     label: 'القرّاء',       Icon: HeadphonesIcon },
+  { path: '/hadith',       label: 'الأحاديث',      Icon: HadithIcon },
+  { path: '/radio',        label: 'الإذاعة',       Icon: RadioIcon },
+  { path: '/learn-prayer', label: 'تعلم الصلاة',   Icon: PrayerStepsIcon },
+  { path: '/asma',         label: 'الأسماء الحسنى', Icon: IslamicStarIcon },
+  { path: '/hifz-test',    label: 'اختبر حفظك',    Icon: HifzIcon },
+  { path: '/sunnah',       label: 'السنن',         Icon: DuaHandsIcon },
+];
 
 async function shareDailyAyah(ayah: DailyAyah) {
   const text = `${ayah.surah} — الآية ${ayah.ayah}\n\n${ayah.text}\n\n📱 من تطبيق نور`;
@@ -70,12 +83,12 @@ function DailyAyah() {
       <div className="flex items-center justify-between px-4 py-2.5" style={S.header}>
         <div className="flex items-center gap-2">
           <span style={{ fontSize: 16 }}>📖</span>
-          <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: S.titleColor }}>
+          <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: S.titleColor }}>
             آية اليوم
           </span>
         </div>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{
-          fontFamily: '"Tajawal", sans-serif', background: S.badgeBg, color: S.badgeColor,
+          fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: S.badgeBg, color: S.badgeColor,
         }}>
           {ayah.surah} : {ayah.ayah}
         </span>
@@ -97,7 +110,7 @@ function DailyAyah() {
           onClick={handleCopy}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
           style={{
-            fontFamily: '"Tajawal", sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
             background: copied ? (isDark ? 'rgba(34,197,94,0.18)' : 'rgba(34,197,94,0.12)') : (isDark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.1)'),
             border: `1px solid ${copied ? 'rgba(34,197,94,0.4)' : 'rgba(193,154,107,0.3)'}`,
             color: copied ? '#16a34a' : S.titleColor,
@@ -109,7 +122,7 @@ function DailyAyah() {
         <button
           onClick={() => shareDailyAyah(ayah)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-          style={{ fontFamily: '"Tajawal", sans-serif', background: S.shareBg, border: '1px solid rgba(193,154,107,0.4)', color: S.shareColor }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: S.shareBg, border: '1px solid rgba(193,154,107,0.4)', color: S.shareColor }}
         >
           <Share2 className="w-3.5 h-3.5" />
           مشاركة
@@ -364,145 +377,145 @@ export function Home() {
   }).format(displayDate);
 
   return (
-    <div className="pb-24 pt-6 px-4 max-w-lg mx-auto space-y-5" dir="rtl">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-12 -mt-12" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -ml-8 -mb-8" />
+    <div className="pb-32 max-w-lg mx-auto" dir="rtl">
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden rounded-b-[36px] shadow-lift" style={{ minHeight: 470 }}>
+        <img src="/images/art/hero-mosque.webp" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: 'center 70%' }} />
+        <div className="absolute inset-0 bg-hero-fade" />
 
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="flex items-center gap-2 mb-0.5">
-            <button onClick={() => setDateOffset(d => d - 1)} className="p-1.5 bg-white/15 rounded-full hover:bg-white/25 transition-colors">
+        <div className="relative z-10 px-5 flex flex-col" style={{ minHeight: 470, paddingTop: 'max(1.25rem, env(safe-area-inset-top))', color: 'hsl(var(--brand-foreground))' }}>
+          {/* Top bar */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[12px] opacity-75">السلام عليكم{userProfile?.name ? `، ${userProfile.name}` : ''}</p>
+              <h1 className="font-display text-[1.9rem] leading-tight text-gold-gradient">نُور</h1>
+            </div>
+            {userProfile?.governorateName && (
+              <button
+                onClick={() => setShowGovPicker(true)}
+                className="press flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold"
+                style={{ background: 'hsl(0 0% 100% / 0.12)', border: '1px solid hsl(0 0% 100% / 0.18)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' }}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {userProfile.governorateName}
+              </button>
+            )}
+          </div>
+
+          {/* Date strip */}
+          <div className="mt-5 flex items-center gap-2">
+            <button onClick={() => setDateOffset(d => d - 1)} aria-label="اليوم السابق" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'hsl(0 0% 100% / 0.12)' }}>
               <ChevronRight className="w-4 h-4" />
             </button>
-            <div className="flex flex-col items-center gap-0.5">
-              <p className="text-primary-foreground/90 font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>{displayHijriLabel}</p>
-              {/* Hijri adjust buttons */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => changeHijriAdjust(-2)}
-                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
-                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
-                >−2</button>
-                <button
-                  onClick={() => changeHijriAdjust(-1)}
-                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
-                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
-                >−1</button>
-                {hijriAdjust !== 0 && (
-                  <button
-                    onClick={() => { setHijriAdjust(0); try { localStorage.setItem(HIJRI_ADJUST_KEY, '0'); } catch {} }}
-                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
-                    style={{ background: 'rgba(193,154,107,0.4)', color: '#fff', fontFamily: '"Tajawal", sans-serif' }}
-                  >{hijriAdjust > 0 ? `+${hijriAdjust}` : hijriAdjust} ✕</button>
-                )}
-                <button
-                  onClick={() => changeHijriAdjust(+1)}
-                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
-                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
-                >+1</button>
-                <button
-                  onClick={() => changeHijriAdjust(+2)}
-                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-colors"
-                  style={{ background: 'rgba(0,0,0,0.22)', color: 'rgba(255,255,255,0.75)', fontFamily: '"Tajawal", sans-serif' }}
-                >+2</button>
-              </div>
+            <div className="flex-1 text-center">
+              <p className="font-bold text-[15px]">{displayHijriLabel}</p>
+              <p className="text-[11px] opacity-65">{displayGregorianLabel}</p>
             </div>
-            <button onClick={() => setDateOffset(d => d + 1)} className="p-1.5 bg-white/15 rounded-full hover:bg-white/25 transition-colors">
+            <button onClick={() => setDateOffset(d => d + 1)} aria-label="اليوم التالي" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'hsl(0 0% 100% / 0.12)' }}>
               <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-primary-foreground/55 text-xs mb-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-            {displayGregorianLabel}
-          </p>
+          <div className="mt-2 flex items-center justify-center gap-1">
+            <span className="text-[10px] opacity-60 me-1">ضبط الهجري</span>
+            {[-1, +1].map(d => (
+              <button key={d} onClick={() => changeHijriAdjust(d)} className="text-[10px] font-bold w-7 h-5 rounded-md" style={{ background: 'hsl(0 0% 0% / 0.25)' }}>
+                {d > 0 ? '+1' : '−1'}
+              </button>
+            ))}
+            {hijriAdjust !== 0 && (
+              <button onClick={() => { setHijriAdjust(0); try { localStorage.setItem(HIJRI_ADJUST_KEY, '0'); } catch {} }} className="text-[10px] font-bold px-2 h-5 rounded-md" style={{ background: 'hsl(var(--primary) / 0.5)' }}>
+                {hijriAdjust > 0 ? `+${hijriAdjust}` : hijriAdjust} ✕
+              </button>
+            )}
+          </div>
           {dateOffset !== 0 && (
-            <button onClick={() => setDateOffset(0)} className="text-xs text-white/60 underline mb-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-              {dateOffset > 0 ? `+${dateOffset} أيام` : `${dateOffset} أيام`} — العودة لليوم
-            </button>
+            <button onClick={() => setDateOffset(0)} className="text-[11px] underline opacity-70 mt-1 self-center">العودة لليوم</button>
           )}
 
-          <h1 className="text-3xl mb-3" style={{ fontFamily: '"Amiri", "Scheherazade New", serif' }}>تطبيق نُـور</h1>
+          <div className="flex-1" />
 
+          {/* Next prayer */}
           {dateOffset === 0 && nextPrayer ? (
-            <div className="rounded-2xl p-4 w-full border border-white/15" style={{ background: 'rgba(0,0,0,0.30)' }}>
-              <p className="text-xs text-primary-foreground/60 mb-1 tracking-widest" style={{ fontFamily: '"Tajawal", sans-serif' }}>الصلاة القادمة</p>
-              <p className="text-2xl font-bold mb-2" style={{ fontFamily: '"Amiri", serif', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>{nextPrayer.name}</p>
-              <div className="flex items-center justify-center gap-1 mb-1" style={{ direction: 'ltr' }}>
-                {(countdown || '00:00:00').split(':').map((seg, i, arr) => (
-                  <div key={i} className="flex items-center gap-1">
-                    <div className="bg-black/30 rounded-xl px-3 py-1.5 min-w-[52px] text-center">
-                      <span className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: '"Tajawal", monospace', letterSpacing: '-0.02em' }}>{seg}</span>
-                    </div>
-                    {i < arr.length - 1 && <span className="text-white/60 text-2xl font-bold mb-1">:</span>}
-                  </div>
-                ))}
+            <div className="pb-6 animate-fade-up">
+              <p className="text-[12px] font-semibold tracking-wide" style={{ color: 'hsl(var(--gold-soft))' }}>الصلاة القادمة · {fmt12(nextPrayer.time24)}</p>
+              <div className="flex items-end justify-between gap-3 mt-1">
+                <h2 className="font-display text-[3.2rem] leading-none">{nextPrayer.name}</h2>
+                <div className="text-left" style={{ direction: 'ltr' }}>
+                  <p className="text-[10px] opacity-60 text-right mb-0.5">متبقٍ</p>
+                  <p className="font-bold tabular-nums text-[2rem] leading-none tracking-tight">{countdown || '00:00:00'}</p>
+                </div>
               </div>
-              <p className="text-xs text-primary-foreground/60" style={{ fontFamily: '"Tajawal", sans-serif' }}>{fmt12(nextPrayer.time24)}</p>
             </div>
           ) : dateOffset !== 0 ? (
-            <div className="bg-black/20 rounded-2xl p-3 w-full border border-white/10">
-              <p className="text-sm font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <div className="pb-6">
+              <h2 className="font-display text-2xl">
                 {dateOffset > 0 ? `مواقيت بعد ${dateOffset} ${dateOffset === 1 ? 'يوم' : 'أيام'}` : `مواقيت قبل ${Math.abs(dateOffset)} ${Math.abs(dateOffset) === 1 ? 'يوم' : 'أيام'}`}
-              </p>
+              </h2>
             </div>
           ) : (
-            <div className="animate-pulse bg-black/10 rounded-2xl h-28 w-full" />
+            <div className="pb-6"><div className="animate-pulse rounded-2xl h-20" style={{ background: 'hsl(0 0% 100% / 0.08)' }} /></div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Prayer Times Grid */}
-      <div className="bg-card rounded-3xl p-5 shadow-sm border border-border">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg flex items-center gap-2" style={{ fontFamily: '"Tajawal", sans-serif' }}>
-            <span className="text-primary">
-              <Clock3DIcon size={22} />
-            </span>
+      <div className="px-4 space-y-6 -mt-2">
+      {/* ── Prayer times ── */}
+      <section className="surface rounded-[26px] p-4 relative z-10 -mt-6 animate-fade-up">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="font-bold text-[15px] flex items-center gap-2">
+            <span className="text-primary"><Clock3DIcon size={20} /></span>
             مواقيت الصلاة
           </h2>
-          {userProfile?.governorateName && (
-            <button
-              onClick={() => setShowGovPicker(true)}
-              className="text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-full flex items-center gap-1 active:scale-95 transition-transform"
-              style={{ fontFamily: '"Tajawal", sans-serif' }}
-            >
-              <MapPin className="w-3 h-3" />
-              {userProfile.governorateName}
-            </button>
-          )}
+          <span className="text-[11px] text-muted-foreground">حسب الهيئة المصرية</span>
         </div>
-
         {times ? (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-3 gap-2">
             {PRAYERS.map(p => {
               const t24 = (times[p.id] ?? '').substring(0, 5);
               const isNext = dateOffset === 0 && nextPrayer?.name === p.name;
               return (
                 <div
                   key={p.id}
-                  className={`flex justify-between items-center px-4 py-3 rounded-2xl border transition-all ${
-                    isNext ? 'bg-primary/15 border-primary/50 shadow-sm shadow-primary/10' : 'bg-secondary/40 border-border/40'
-                  }`}
+                  className={`rounded-2xl px-2 py-3 text-center transition-all ${isNext ? 'bg-gradient-gold shadow-gold' : ''}`}
+                  style={isNext ? { color: 'hsl(var(--primary-foreground))' } : { background: 'hsl(var(--secondary) / 0.7)' }}
                 >
-                  <span className={`font-medium text-sm ${isNext ? 'text-primary font-bold' : 'text-foreground/70'}`} style={{ fontFamily: '"Tajawal", sans-serif' }}>{p.name}</span>
-                  <span className={`font-bold text-base tabular-nums ${isNext ? 'text-primary' : 'text-foreground/90'}`} style={{ fontFamily: '"Tajawal", sans-serif' }}>{fmt12(t24)}</span>
+                  <p className={`text-[12px] ${isNext ? 'font-bold opacity-95' : 'text-muted-foreground font-medium'}`}>{p.name}</p>
+                  <p className="font-bold text-[15px] tabular-nums mt-0.5">{fmt12(t24)}</p>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <div className="text-center py-8 text-muted-foreground text-sm">
             {!lat ? (
               <div>
                 <p>لم يتم تحديد الموقع</p>
-                <p className="text-xs mt-1">اذهب للمزيد وحدد محافظتك</p>
+                <button onClick={() => setShowGovPicker(true)} className="text-xs mt-2 text-primary font-bold underline">اختر محافظتك</button>
               </div>
             ) : (
               <div className="animate-pulse">جاري تحميل المواقيت...</div>
             )}
           </div>
         )}
-      </div>
+      </section>
+
+      {/* ── Quick access ── */}
+      <section className="animate-fade-up" style={{ animationDelay: '80ms' }}>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="font-display text-xl">وصول سريع</h2>
+          <Link href="/more" className="text-xs font-semibold text-primary">عرض الكل</Link>
+        </div>
+        <div className="grid grid-cols-4 gap-2.5">
+          {QUICK_LINKS.map(({ path, label, Icon }) => (
+            <Link key={path} href={path} className="press flex flex-col items-center gap-2">
+              <span className="w-full aspect-square rounded-[22px] surface flex items-center justify-center text-primary">
+                <Icon size={28} className="text-primary" />
+              </span>
+              <span className="text-[11px] font-semibold text-center leading-tight">{label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* آية اليوم */}
       <DailyAyah />
@@ -516,6 +529,8 @@ export function Home() {
         <p className="text-sm leading-loose text-muted-foreground" style={{ fontFamily: '"Amiri", serif' }}>
           رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ ۝ البقرة: 201
         </p>
+      </div>
+
       </div>
 
       {/* ── Governorate Picker Sheet ── */}
@@ -539,7 +554,7 @@ export function Home() {
               dir="rtl"
             >
               <div className="p-4 pb-2 flex items-center justify-between border-b border-border/40">
-                <h3 className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B' }}>
+                <h3 className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C19A6B' }}>
                   اختر محافظتك
                 </h3>
                 <button
@@ -583,7 +598,7 @@ export function Home() {
                         <div className="w-11 h-7 rounded overflow-hidden flex items-center justify-center" style={{ background: 'rgba(193,154,107,0.08)' }}>
                           <img src={gov.flag} alt={gov.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         </div>
-                        <span className="text-[10px] font-bold text-center leading-tight" style={{ fontFamily: '"Tajawal", sans-serif', color: active ? '#8B6340' : 'var(--foreground)' }}>
+                        <span className="text-[10px] font-bold text-center leading-tight" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: active ? '#8B6340' : 'var(--foreground)' }}>
                           {gov.name}
                         </span>
                         {active && (

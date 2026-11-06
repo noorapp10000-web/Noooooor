@@ -76,11 +76,11 @@ function StatCard({ icon, label, value, sub, isDark, delay = 0 }: {
       <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(193,154,107,0.15)' }}>
         {icon}
       </div>
-      <span className="text-2xl font-black" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>
+      <span className="text-2xl font-black" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
         {typeof value === 'number' ? value.toLocaleString('ar-EG') : value}
       </span>
-      <span className="text-sm font-bold text-center leading-tight" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>{label}</span>
-      {sub && <span className="text-[11px] text-center" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>{sub}</span>}
+      <span className="text-sm font-bold text-center leading-tight" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{label}</span>
+      {sub && <span className="text-[11px] text-center" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{sub}</span>}
     </motion.div>
   );
 }
@@ -95,7 +95,7 @@ export function Rankings() {
   const cardBorder = `rgba(193,154,107,${isDark ? '0.2' : '0.3'})`;
 
   const bg = isDark
-    ? 'radial-gradient(ellipse at center, #1a1208 0%, #0d0a05 60%, #080603 100%)'
+    ? 'radial-gradient(ellipse at center, #0C1C17 0%, #0d0a05 60%, #080603 100%)'
     : 'radial-gradient(ellipse at center, #FAF4EA 0%, #F0E4CF 55%, #E6D5B5 100%)';
 
   // Gather local stats
@@ -197,7 +197,7 @@ export function Rankings() {
         </div>
         <h1 className="text-2xl font-bold" style={{ color: gold, fontFamily: '"Amiri", serif' }}>إحصائياتك الشخصية</h1>
         {profile && (
-          <p className="text-sm mt-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+          <p className="text-sm mt-1" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             {profile.name}
             {profile.governorateName && (
               <span> · <MapPin size={11} className="inline" /> {profile.governorateName}</span>
@@ -255,11 +255,11 @@ export function Rankings() {
           >
             <div className="flex items-center gap-2 mb-3">
               <Trophy size={18} style={{ color: '#FFD700' }} />
-              <p className="font-bold text-base" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>أكثر تسبيح</p>
+              <p className="font-bold text-base" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>أكثر تسبيح</p>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm" style={{ color: subText, fontFamily: '"Amiri", serif' }}>{topDhikrEntry.label}</span>
-              <span className="font-black text-lg" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>
+              <span className="font-black text-lg" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                 {topDhikrEntry.count.toLocaleString('ar-EG')}
               </span>
             </div>
@@ -275,7 +275,7 @@ export function Rankings() {
             className="rounded-2xl p-4 mb-4"
             style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
           >
-            <p className="font-bold text-sm mb-3" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>تفاصيل التسبيح</p>
+            <p className="font-bold text-sm mb-3" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تفاصيل التسبيح</p>
             <div className="space-y-2">
               {TASBIH_TYPES.filter(t => (totals[t.id] ?? 0) > 0)
                 .sort((a, b) => (totals[b.id] ?? 0) - (totals[a.id] ?? 0))
@@ -286,8 +286,8 @@ export function Rankings() {
                   return (
                     <div key={t.id}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>{t.label}</span>
-                        <span className="text-xs font-bold" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>
+                        <span className="text-xs" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{t.label}</span>
+                        <span className="text-xs font-bold" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                           {cnt.toLocaleString('ar-EG')}
                         </span>
                       </div>
@@ -315,12 +315,12 @@ export function Rankings() {
           style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm" style={{ color: gold, fontFamily: '"Tajawal", sans-serif' }}>سجل الأيام</h3>
+            <h3 className="font-bold text-sm" style={{ color: gold, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>سجل الأيام</h3>
             <button
               onClick={() => setShowAllDays(v => !v)}
               className="text-xs px-2.5 py-1 rounded-full transition-all"
               style={{
-                fontFamily: '"Tajawal", sans-serif',
+                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                 background: showAllDays ? 'rgba(197,160,89,0.2)' : 'rgba(197,160,89,0.08)',
                 color: '#c5a059',
                 border: '1px solid rgba(197,160,89,0.25)',
@@ -379,7 +379,7 @@ export function Rankings() {
                     border: '1px solid rgba(197,160,89,0.15)',
                     boxShadow: score === 8 ? '0 0 5px rgba(197,160,89,0.6)' : 'none',
                   }} />
-                  <span className="text-[9px] text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{label}</span>
+                  <span className="text-[9px] text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{label}</span>
                 </div>
               ))}
             </div>
@@ -390,7 +390,7 @@ export function Rankings() {
         {totalTasbeeh === 0 && quranCompletions === 0 && azkarStreak === 0 && (
           <div className="text-center py-8">
             <TasbihIcon size={40} style={{ color: '#C19A6B', opacity: 0.3, margin: '0 auto 12px' }} />
-            <p className="text-sm" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="text-sm" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               ابدأ بالذكر والتسبيح لتظهر إحصائياتك هنا
             </p>
           </div>

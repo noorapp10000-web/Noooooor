@@ -186,15 +186,15 @@ export function WuduGuide() {
           <ChevronRight size={20} />
         </button>
         <div className="text-center">
-          <h1 className="text-lg font-black" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+          <h1 className="text-lg font-black" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
             دليل الوضوء
           </h1>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
             {step + 1} / {total}
           </p>
         </div>
         <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-          style={{ background: 'rgba(96,184,212,0.1)', color: '#60B8D4', fontFamily: '"Tajawal",sans-serif' }}>
+          style={{ background: 'rgba(96,184,212,0.1)', color: '#60B8D4', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
           {completed.size}/{total}
         </div>
       </div>
@@ -271,16 +271,16 @@ export function WuduGuide() {
                   style={{
                     background: TYPE_COLOR[current.type] + '22',
                     color: TYPE_COLOR[current.type],
-                    fontFamily: '"Tajawal",sans-serif',
+                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif',
                     border: `1px solid ${TYPE_COLOR[current.type]}44`,
                   }}>
                   {current.type}
                 </span>
-                <span className="text-xs" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+                <span className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
                   {current.subtitle}
                 </span>
               </div>
-              <h2 className="text-2xl font-black mb-1" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+              <h2 className="text-2xl font-black mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
                 {current.title}
               </h2>
             </div>
@@ -299,7 +299,7 @@ export function WuduGuide() {
                   </p>
                 )}
                 {current.meaning && current.meaning !== current.arabic && (
-                  <p className="text-center text-xs mt-1" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+                  <p className="text-center text-xs mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
                     {current.meaning}
                   </p>
                 )}
@@ -314,7 +314,7 @@ export function WuduGuide() {
                     style={{ background: 'rgba(96,184,212,0.15)', minWidth: 20 }}>
                     <span className="text-xs font-bold" style={{ color: '#60B8D4' }}>{i + 1}</span>
                   </div>
-                  <p className="text-sm leading-relaxed" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+                  <p className="text-sm leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
                     {point}
                   </p>
                 </div>
@@ -329,7 +329,7 @@ export function WuduGuide() {
             className="mt-4 rounded-2xl p-4 text-center"
             style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
             <p className="text-2xl mb-1">✅</p>
-            <p className="font-bold" style={{ fontFamily: '"Tajawal",sans-serif', color: '#16a34a' }}>
+            <p className="font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#16a34a' }}>
               أتممت الوضوء! تقبّل الله منك
             </p>
           </motion.div>
@@ -354,7 +354,7 @@ export function WuduGuide() {
           className="flex-1 h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2 text-white"
           style={{
             background: completed.has(step) ? '#16a34a' : 'linear-gradient(135deg,#60B8D4,#3a8fa8)',
-            fontFamily: '"Tajawal",sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif',
           }}>
           {completed.has(step)
             ? <><CheckCircle size={18} /> تم</>

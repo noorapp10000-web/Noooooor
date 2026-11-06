@@ -49,7 +49,7 @@ export function SplashScreen({ onDone }: SplashScreenProps) {
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(6,8,16,0.55) 0%, rgba(6,8,16,0) 35%, rgba(6,8,16,0) 40%, rgba(6,8,16,0.72) 68%, rgba(6,8,16,0.97) 100%)',
+                'linear-gradient(to bottom, rgba(4,14,11,0.55) 0%, rgba(4,14,11,0) 35%, rgba(4,14,11,0) 40%, rgba(4,14,11,0.72) 68%, rgba(4,14,11,0.97) 100%)',
             }}
           />
 
@@ -117,7 +117,7 @@ export function SplashScreen({ onDone }: SplashScreenProps) {
               animate={{ opacity: phase === 'full' ? 0.7 : 0 }}
               transition={{ duration: 1, delay: 0.2 }}
               style={{
-                fontFamily: '"Tajawal", sans-serif',
+                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                 fontSize: '0.72rem',
                 color: 'rgba(193,154,107,0.9)',
                 letterSpacing: '0.26em',

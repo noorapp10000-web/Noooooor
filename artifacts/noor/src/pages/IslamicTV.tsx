@@ -24,7 +24,7 @@ const CHANNELS: Channel[] = [
     name: 'قناة السنة النبوية',
     url: 'https://win.holol.com/live/sunnah/playlist.m3u8',
     description: 'البث الحي للمحاضرات والدروس من السنة النبوية الشريفة',
-    grad: 'linear-gradient(135deg,#3a1a5c,#1e0d30)',
+    grad: 'linear-gradient(135deg,#0F3D32,#1e0d30)',
   },
 ];
 
@@ -100,7 +100,7 @@ function VideoPlayer({
     };
   }, [channel.url]);
 
-  const bg = dark ? '#0f0c07' : '#0a0a0a';
+  const bg = dark ? '#07130F' : '#0a0a0a';
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: bg }} dir="rtl">
@@ -113,24 +113,24 @@ function VideoPlayer({
           <X size={18} className="text-[#C19A6B]" />
         </button>
         <div className="text-center">
-          <p className="font-bold text-sm text-white" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <p className="font-bold text-sm text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             {channel.name}
           </p>
           <div className="flex items-center justify-center gap-1.5 mt-0.5">
             {status === 'playing' ? (
               <>
                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs text-green-400" style={{ fontFamily: '"Tajawal", sans-serif' }}>بث مباشر</span>
+                <span className="text-xs text-green-400" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>بث مباشر</span>
               </>
             ) : status === 'error' ? (
               <>
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                <span className="text-xs text-red-400" style={{ fontFamily: '"Tajawal", sans-serif' }}>تعذّر التحميل</span>
+                <span className="text-xs text-red-400" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تعذّر التحميل</span>
               </>
             ) : (
               <>
                 <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-                <span className="text-xs text-yellow-400" style={{ fontFamily: '"Tajawal", sans-serif' }}>جارٍ التحميل</span>
+                <span className="text-xs text-yellow-400" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>جارٍ التحميل</span>
               </>
             )}
           </div>
@@ -162,7 +162,7 @@ function VideoPlayer({
               <Tv size={26} className="text-white" />
             </div>
             <div className="w-8 h-8 border-2 border-[#C19A6B]/30 border-t-[#C19A6B] rounded-full animate-spin mb-3" />
-            <p className="text-sm text-white/60" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="text-sm text-white/60" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               جارٍ تحميل البث...
             </p>
           </div>
@@ -173,10 +173,10 @@ function VideoPlayer({
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'rgba(239,68,68,0.15)' }}>
               <WifiOff size={28} className="text-red-400" />
             </div>
-            <p className="font-bold text-white mb-2" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="font-bold text-white mb-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               تعذّر تشغيل البث
             </p>
-            <p className="text-sm text-white/50 mb-6" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="text-sm text-white/50 mb-6" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               قد يكون البث غير متاح حالياً أو يتطلب اتصالاً أقوى
             </p>
             <button
@@ -188,7 +188,7 @@ function VideoPlayer({
                 }
               }}
               className="px-6 py-3 rounded-2xl font-bold text-sm"
-              style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)', color: '#fff' }}
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)', color: '#fff' }}
             >
               إعادة المحاولة
             </button>
@@ -208,10 +208,10 @@ export function IslamicTV() {
   const handleChannel = useCallback((ch: Channel) => setActiveChannel(ch), []);
   const handleClose = useCallback(() => setActiveChannel(null), []);
 
-  const bg = dark ? '#0f0c07' : '#FDFBF0';
-  const cardBg = dark ? '#1a1208' : '#fff';
+  const bg = dark ? '#07130F' : '#FDFBF0';
+  const cardBg = dark ? '#0C1C17' : '#fff';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-  const textPrimary = dark ? '#d4b483' : '#5D4037';
+  const textPrimary = dark ? '#d4b483' : '#1F4A3D';
   const textSec = dark ? '#8B6B3D' : '#9E7B4A';
 
   return (
@@ -226,10 +226,10 @@ export function IslamicTV() {
             <ChevronLeft size={20} className="text-[#C19A6B]" style={{ transform: 'rotate(180deg)' }} />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+            <h1 className="text-xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
               القنوات الإسلامية
             </h1>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               {CHANNELS.length} قنوات بث مباشر
             </p>
           </div>
@@ -243,7 +243,7 @@ export function IslamicTV() {
           style={{ background: dark ? 'rgba(193,154,107,0.07)' : 'rgba(193,154,107,0.1)', border: `1px solid ${border}` }}
         >
           <Wifi size={16} className="text-[#C19A6B] flex-shrink-0" />
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
             تأكد من الاتصال بالإنترنت لمشاهدة البث المباشر بجودة عالية
           </p>
         </div>
@@ -263,15 +263,15 @@ export function IslamicTV() {
                 <Tv size={22} className="text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-base leading-tight" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+                <p className="font-bold text-base leading-tight" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
                   {ch.name}
                 </p>
-                <p className="text-xs mt-1 line-clamp-2" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+                <p className="text-xs mt-1 line-clamp-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                   {ch.description}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-xs font-medium text-red-500" style={{ fontFamily: '"Tajawal", sans-serif' }}>بث مباشر</span>
+                  <span className="text-xs font-medium text-red-500" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>بث مباشر</span>
                 </div>
               </div>
               <div

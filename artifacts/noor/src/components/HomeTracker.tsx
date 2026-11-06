@@ -166,12 +166,12 @@ function MaghribIcon({ done }: { done: boolean }) {
 
 function IshaIcon({ done }: { done: boolean }) {
   const stars = [{ cx: 22, cy: 6, r: 1.1 }, { cx: 25, cy: 13, r: 0.7 }, { cx: 20, cy: 3.5, r: 0.7 }, { cx: 24, cy: 19, r: 0.5 }];
-  const col = done ? '#22c55e' : '#8b5cf6';
+  const col = done ? '#22c55e' : '#D4B483';
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
       <defs>
         <linearGradient id={`ishaBg${done}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={done ? '#14532d' : '#1e1b4b'} />
+          <stop offset="0%" stopColor={done ? '#14532d' : '#0C1C17'} />
           <stop offset="100%" stopColor={done ? '#166534' : '#2e1065'} />
         </linearGradient>
         <radialGradient id={`ishaMoon${done}`} cx="30%" cy="28%" r="72%">
@@ -394,11 +394,11 @@ export function HomeTracker() {
                 <defs><clipPath id="starTopHalf"><rect x="0" y="0" width="24" height="12" /></clipPath></defs>
               </svg>
             </div>
-            <h2 className="font-bold text-base text-primary" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <h2 className="font-bold text-base text-primary" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               المتتبع اليومي
             </h2>
           </div>
-          <span className="text-xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: progressColor }}>
+          <span className="text-xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: progressColor }}>
             {progressPct}%
           </span>
         </div>
@@ -413,7 +413,7 @@ export function HomeTracker() {
           />
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <span className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             {doneTasks} / 9 مهام
           </span>
           <AnimatePresence>
@@ -422,7 +422,7 @@ export function HomeTracker() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="text-xs font-bold text-green-500 flex items-center gap-1"
-                style={{ fontFamily: '"Tajawal", sans-serif' }}
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
               >
                 <Check className="w-3 h-3" /> يوم مثالي!
               </motion.span>
@@ -440,7 +440,7 @@ export function HomeTracker() {
               style={{ background: 'rgba(197,160,89,0.12)' }}>
               <MosqueIcon3D />
             </div>
-            <span className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <span className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               الصلوات الخمس
             </span>
           </div>
@@ -449,7 +449,7 @@ export function HomeTracker() {
               <div key={p.key} className="w-2 h-2 rounded-full transition-all duration-300"
                 style={{ background: state.prayers[p.key] ? '#c5a059' : 'rgba(197,160,89,0.2)' }} />
             ))}
-            <span className="text-xs text-muted-foreground mr-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <span className="text-xs text-muted-foreground mr-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               {prayersDone}/5
             </span>
           </div>
@@ -490,7 +490,7 @@ export function HomeTracker() {
                   <span
                     className="font-bold text-[11px] leading-tight text-center"
                     style={{
-                      fontFamily: '"Tajawal", sans-serif',
+                      fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                       color: done ? '#c5a059' : 'var(--foreground)',
                     }}
                   >
@@ -530,8 +530,8 @@ export function HomeTracker() {
                 <DuaIcon3D />
               </div>
               <div>
-                <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>أذكار الصباح</p>
-                <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: 'var(--muted-foreground)' }}>
+                <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>أذكار الصباح</p>
+                <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: 'var(--muted-foreground)' }}>
                   {morningDone ? 'مكتمل ✓' : morningDoneCount > 0
                     ? `${morningDoneCount} / ${MORNING_ITEMS.length} ذكر`
                     : 'لم يبدأ بعد'}
@@ -545,7 +545,7 @@ export function HomeTracker() {
             ) : (
               <Link href="/azkar">
                 <div className="px-3 py-2 rounded-xl text-xs font-bold"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
                   ابدأ
                 </div>
               </Link>
@@ -565,8 +565,8 @@ export function HomeTracker() {
                 <DuaIcon3D />
               </div>
               <div>
-                <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>أذكار المساء</p>
-                <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: 'var(--muted-foreground)' }}>
+                <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>أذكار المساء</p>
+                <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: 'var(--muted-foreground)' }}>
                   {eveningDone ? 'مكتمل ✓' : eveningDoneCount > 0
                     ? `${eveningDoneCount} / ${EVENING_ITEMS.length} ذكر`
                     : 'لم يبدأ بعد'}
@@ -580,7 +580,7 @@ export function HomeTracker() {
             ) : (
               <Link href="/azkar">
                 <div className="px-3 py-2 rounded-xl text-xs font-bold"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
                   ابدأ
                 </div>
               </Link>
@@ -603,13 +603,13 @@ export function HomeTracker() {
                   <QuranBookIcon3D />
                 </div>
                 <div>
-                  <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>الورد القرآني</p>
+                  <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>الورد القرآني</p>
                   {bookmark ? (
-                    <p className="text-xs mt-0.5 text-primary" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <p className="text-xs mt-0.5 text-primary" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       من: {SURAH_NAMES[bookmark.surah]} آية {bookmark.ayah}
                     </p>
                   ) : (
-                    <p className="text-xs mt-0.5 text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <p className="text-xs mt-0.5 text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       ضع علامة حفظ في المصحف أولاً
                     </p>
                   )}
@@ -632,7 +632,7 @@ export function HomeTracker() {
 
             {!state.quranWird && (
               <button onClick={toggleQuranWird} className="w-full mt-3 py-2 rounded-xl text-xs font-bold text-center transition-all"
-                style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
                 أكملت وردي ✓
               </button>
             )}
@@ -640,7 +640,7 @@ export function HomeTracker() {
             {!bookmark && (
               <Link href="/quran">
                 <div className="mt-3 py-2 rounded-xl text-xs font-bold text-center"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'rgba(197,160,89,0.1)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.25)' }}>
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'rgba(197,160,89,0.1)', color: '#c5a059', border: '1px solid rgba(197,160,89,0.25)' }}>
                   اذهب للمصحف وضع علامة حفظ →
                 </div>
               </Link>
@@ -662,8 +662,8 @@ export function HomeTracker() {
                 <TasbihIcon3D />
               </div>
               <div>
-                <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>٥٠٠ تسبيحة يومياً</p>
-                <p className="text-xs mt-0.5 text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>٥٠٠ تسبيحة يومياً</p>
+                <p className="text-xs mt-0.5 text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                   {tasbih500Done ? 'مكتمل ✓' : `${dailyTasbihCount.toLocaleString('ar-EG')} / ${TASBIH_DAILY_GOAL.toLocaleString('ar-EG')} تسبيحة`}
                 </p>
               </div>
@@ -675,7 +675,7 @@ export function HomeTracker() {
             ) : (
               <Link href="/tasbih">
                 <div className="px-3 py-2 rounded-xl text-xs font-bold"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg, #c5a059, #9a7430)', color: '#fff' }}>
                   سبّح
                 </div>
               </Link>

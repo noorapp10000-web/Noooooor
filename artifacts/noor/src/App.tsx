@@ -298,7 +298,7 @@ function App() {
   const LoadingScreen = (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}
+      style={{ background: 'radial-gradient(120% 80% at 50% 0%, hsl(164 45% 16%) 0%, hsl(168 50% 5%) 70%)' }}
     >
       <div className="text-center flex flex-col items-center gap-4">
         <div

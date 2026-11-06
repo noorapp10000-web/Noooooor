@@ -38,7 +38,7 @@ function EventSheet({
 
   if (!item) return null;
 
-  const bg = dark ? '#1a1208' : '#fdfbf0';
+  const bg = dark ? '#0C1C17' : '#fdfbf0';
   const border = dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.25)';
 
   return (
@@ -69,7 +69,7 @@ function EventSheet({
             <Star size={13} className="text-[#C19A6B]" />
             <span
               className="text-xs text-[#8B6B3D]"
-              style={{ fontFamily: '"Tajawal", sans-serif' }}
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
             >
               قصص الأنبياء
             </span>
@@ -78,14 +78,14 @@ function EventSheet({
         <div className="overflow-y-auto px-5 py-4 flex-1">
           <h2
             className="text-lg font-bold mb-4 leading-relaxed"
-            style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}
+            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}
           >
             {item.title}
           </h2>
           <p
             className="text-sm leading-loose"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
               color: dark ? '#b0956a' : '#6D4C41',
               paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
             }}
@@ -121,14 +121,14 @@ const EventCard = ({
       <div className="flex-1 min-w-0">
         <p
           className="font-bold text-sm leading-snug mb-1.5"
-          style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}
         >
           {item.title}
         </p>
         {item.text && (
           <p
             className="text-xs mt-1 line-clamp-2"
-            style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#7a6040' : '#A08060' }}
+            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#7a6040' : '#A08060' }}
           >
             {item.text.substring(0, 120)}...
           </p>
@@ -190,10 +190,10 @@ export function ProphetStories() {
     setSearch('');
   };
 
-  const bg = dark ? '#0f0c07' : '#FDFBF0';
-  const cardBg = dark ? '#1a1208' : '#fff';
+  const bg = dark ? '#07130F' : '#FDFBF0';
+  const cardBg = dark ? '#0C1C17' : '#fff';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-  const textPrimary = dark ? '#d4b483' : '#5D4037';
+  const textPrimary = dark ? '#d4b483' : '#1F4A3D';
   const textSec = dark ? '#8B6B3D' : '#9E7B4A';
 
   return (
@@ -212,11 +212,11 @@ export function ProphetStories() {
           <div className="flex-1 min-w-0">
             <h1
               className="text-xl font-bold"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}
             >
               قصص الأنبياء
             </h1>
-            <p className="text-xs truncate" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               {metaLoading ? 'جارٍ التحميل...' : `ابن كثير • تحقيق د. مصطفى عبد الواحد`}
             </p>
           </div>
@@ -232,8 +232,8 @@ export function ProphetStories() {
             placeholder="ابحث في القصة..."
             className="w-full pr-9 pl-4 py-2.5 rounded-2xl text-sm outline-none"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
-              background: dark ? '#1a1208' : '#f5edd8',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
+              background: dark ? '#0C1C17' : '#f5edd8',
               color: textPrimary,
               border: `1px solid ${border}`,
             }}
@@ -252,7 +252,7 @@ export function ProphetStories() {
                 onClick={() => handleProphetChange(p)}
                 className="flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-bold transition-all"
                 style={{
-                  fontFamily: '"Tajawal", sans-serif',
+                  fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                   background: selectedProphet?.id === p.id
                     ? p.color
                     : (dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)'),
@@ -269,10 +269,10 @@ export function ProphetStories() {
         {/* Prophet subtitle */}
         {!loading && selectedProphet && (
           <div className="mb-3 px-1 flex items-center justify-between flex-wrap gap-1">
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               {selectedProphet.title}
             </p>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
               ذُكر في القرآن {selectedProphet.quranCount} مرة
             </p>
           </div>
@@ -295,7 +295,7 @@ export function ProphetStories() {
         {!loading && !metaLoading && filtered.length === 0 && (
           <div className="text-center py-16 opacity-50">
             <BookOpen size={32} className="text-[#C19A6B] mx-auto mb-3" />
-            <p className="text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6B3D' }}>
+            <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6B3D' }}>
               لا توجد نتائج
             </p>
           </div>

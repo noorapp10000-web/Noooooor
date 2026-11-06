@@ -41,7 +41,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     <button
       onClick={onToggle}
       className="w-12 h-6 rounded-full transition-all duration-200 relative flex-shrink-0"
-      style={{ background: on ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)' : 'rgba(150,150,150,0.25)' }}
+      style={{ background: on ? 'linear-gradient(135deg, #2F8A73, #1F6B57)' : 'rgba(150,150,150,0.25)' }}
     >
       <div
         className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200"
@@ -128,15 +128,15 @@ function NotificationSection({
       >
         <div className="flex items-center gap-2.5 mb-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(145deg, #7B5EA7, #5B3E8A)' }}>
+            style={{ background: 'linear-gradient(145deg, #2F8A73, #1F6B57)' }}>
             <Bell className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>متاحة على تطبيق الاندرويد فقط</p>
+            <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>متاحة على تطبيق الاندرويد فقط</p>
           </div>
         </div>
-        <p className="text-xs text-center py-2" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+        <p className="text-xs text-center py-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
           الاشعارات تعمل على النسخة المثبتة (APK)
         </p>
       </motion.div>
@@ -152,12 +152,12 @@ function NotificationSection({
       {/* Header */}
       <div className="flex items-center gap-2.5">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'linear-gradient(145deg, #7B5EA7, #5B3E8A)' }}>
+          style={{ background: 'linear-gradient(145deg, #2F8A73, #1F6B57)' }}>
           <Bell className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+          <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>الاشعارات</p>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
             مجدولة لمدة 35 يوم — تعمل بدون نت وبدون انترنت
           </p>
         </div>
@@ -178,10 +178,10 @@ function NotificationSection({
               : <BellOff className="w-4 h-4" style={{ color: '#ef4444' }} />}
           </div>
           <div className="text-right flex-1">
-            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>
+            <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>
               {requesting ? 'جاري طلب الاذن...' : 'اذن الاشعارات مطلوب'}
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
               اضغط هنا للسماح للتطبيق بارسال الاشعارات
             </p>
           </div>
@@ -191,7 +191,7 @@ function NotificationSection({
       {permGranted === true && (
         <div className="flex items-center gap-2 px-1">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#22c55e' }} />
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>
             الاشعارات مفعّلة ومجدولة بنجاح
           </p>
         </div>
@@ -199,7 +199,7 @@ function NotificationSection({
 
       {/* ── Prayer Notifications ── */}
       <div>
-        <p className="text-xs font-bold mb-2 px-1" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+        <p className="text-xs font-bold mb-2 px-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
           اشعارات الصلاة — قبل 20 دقيقة، قبل 10 دقائق، عند الاذان
         </p>
         <div className="space-y-2">
@@ -209,7 +209,7 @@ function NotificationSection({
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
               style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}
             >
-              <p className="font-bold text-sm flex-1" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
+              <p className="font-bold text-sm flex-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>
                 {prayer.name}
               </p>
               <Toggle
@@ -224,7 +224,7 @@ function NotificationSection({
       {/* ── Daily Notification ── */}
       <div>
         <div className="flex items-center justify-between mb-2 px-1">
-          <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+          <p className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
             الاشعار اليومي — اية او حديث او ذكر
           </p>
           <Toggle on={dailyEnabled === 'on'} onToggle={handleDailyToggle} />
@@ -232,7 +232,7 @@ function NotificationSection({
 
         {dailyEnabled === 'on' && (
           <div className="rounded-xl p-3" style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}>
-            <p className="text-xs mb-2.5 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+            <p className="text-xs mb-2.5 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
               اختر الساعة التي تريد استقبال الاشعار فيها يومياً
             </p>
             <div className="grid grid-cols-9 gap-1">
@@ -245,15 +245,15 @@ function NotificationSection({
                     className="flex items-center justify-center rounded-lg py-2 transition-all active:scale-95"
                     style={{
                       background: isSelected
-                        ? 'linear-gradient(135deg, #7B5EA7, #5B3E8A)'
+                        ? 'linear-gradient(135deg, #2F8A73, #1F6B57)'
                         : 'rgba(193,154,107,0.08)',
-                      border: `1.5px solid ${isSelected ? '#7B5EA7' : borderColor}`,
+                      border: `1.5px solid ${isSelected ? '#2F8A73' : borderColor}`,
                     }}
                   >
                     <span
                       className="text-xs font-bold"
                       style={{
-                        fontFamily: '"Tajawal", sans-serif',
+                        fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                         color: isSelected ? '#fff' : subText,
                         fontSize: '10px',
                       }}
@@ -264,14 +264,14 @@ function NotificationSection({
                 );
               })}
             </div>
-            <p className="text-xs mt-2.5 text-center font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#7B5EA7' }}>
+            <p className="text-xs mt-2.5 text-center font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#2F8A73' }}>
               سيصلك الاشعار كل يوم الساعة {DAILY_HOURS.find(h => h.hour === selectedHour)?.label} بالضبط
             </p>
           </div>
         )}
       </div>
 
-      <p className="text-xs text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+      <p className="text-xs text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
         الاشعارات مجدولة محليا — تشتغل حتى لو التطبيق مقفول
       </p>
     </motion.div>
@@ -389,8 +389,8 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
           <HardDrive className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>النسخة الاحتياطية</p>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>صدّر أو استعِد بياناتك على جهازك</p>
+          <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>النسخة الاحتياطية</p>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>صدّر أو استعِد بياناتك على جهازك</p>
         </div>
       </div>
 
@@ -403,10 +403,10 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             {saveDone ? <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} /> : <Download className="w-5 h-5" style={{ color: '#C19A6B' }} />}
           </div>
           <div className="text-right flex-1">
-            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone ? '#22c55e' : textColor }}>
+            <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: saveDone ? '#22c55e' : textColor }}>
               {saving ? 'جاري التصدير...' : saveDone ? 'تم التصدير' : (Capacitor.isNativePlatform() ? 'تصدير ومشاركة النسخة' : 'تصدير النسخة الاحتياطية')}
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: saveDone && savedPath ? '#22c55e' : subText }}>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: saveDone && savedPath ? '#22c55e' : subText }}>
               {savedPath ? `تم الحفظ في: ${savedPath}` : (Capacitor.isNativePlatform() ? 'يحفظ مباشرة في مجلد التنزيلات' : 'تنزيل ملف noor-backup.json')}
             </p>
           </div>
@@ -421,10 +421,10 @@ function BackupSection({ sectionBg, borderColor, textColor, subText }: { section
             {importing ? <RefreshCw className="w-5 h-5 animate-spin" style={{ color: '#C19A6B' }} /> : importResult?.ok ? <CheckCircle className="w-5 h-5" style={{ color: '#22c55e' }} /> : <FolderOpen className="w-5 h-5" style={{ color: '#C19A6B' }} />}
           </div>
           <div className="text-right flex-1">
-            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: importResult?.ok ? '#22c55e' : importResult?.ok === false ? '#ef4444' : textColor }}>
+            <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: importResult?.ok ? '#22c55e' : importResult?.ok === false ? '#ef4444' : textColor }}>
               {importing ? 'جاري الاستعادة...' : importResult ? importResult.msg : 'استعادة من ملف'}
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>اختر ملف نسخة احتياطية سابق</p>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>اختر ملف نسخة احتياطية سابق</p>
           </div>
         </button>
       </div>
@@ -499,8 +499,8 @@ function PrayerGuardSection({
             <ShieldCheck className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>حارس أوقات الصلاة</p>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>متاح على تطبيق الاندرويد فقط</p>
+            <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>حارس أوقات الصلاة</p>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>متاح على تطبيق الاندرويد فقط</p>
           </div>
         </div>
       </motion.div>
@@ -520,8 +520,8 @@ function PrayerGuardSection({
           <ShieldCheck className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>حارس أوقات الصلاة</p>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>يوقف التطبيقات أثناء وقت الصلاة حتى تؤدّيها</p>
+          <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>حارس أوقات الصلاة</p>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>يوقف التطبيقات أثناء وقت الصلاة حتى تؤدّيها</p>
         </div>
         {!loading && (
           <Toggle on={enabled && allGranted} onToggle={handleToggle} />
@@ -529,7 +529,7 @@ function PrayerGuardSection({
       </div>
 
       {/* Description */}
-      <p className="text-xs px-1 leading-relaxed" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+      <p className="text-xs px-1 leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
         عند دخول وقت الصلاة، تظهر شاشة فوق أي تطبيق تفتحه تذكّرك بأداء الصلاة. لا تختفي إلا بعد أن تضغط <span style={{ color: '#C19A6B', fontWeight: 700 }}>"أقسم بالله أني صليت"</span>.
       </p>
 
@@ -541,18 +541,18 @@ function PrayerGuardSection({
           <div className="w-2 h-2 rounded-full flex-shrink-0"
             style={{ background: permissions.overlay ? '#22c55e' : '#ef4444' }} />
           <div className="flex-1">
-            <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: permissions.overlay ? '#22c55e' : '#ef4444' }}>
+            <p className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: permissions.overlay ? '#22c55e' : '#ef4444' }}>
               {permissions.overlay ? 'إذن العرض فوق التطبيقات ✓' : 'إذن العرض فوق التطبيقات'}
             </p>
             {!permissions.overlay && (
-              <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>مطلوب لعرض شاشة التذكير</p>
+              <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>مطلوب لعرض شاشة التذكير</p>
             )}
           </div>
           {!permissions.overlay && (
             <button
               onClick={handleGrantOverlay}
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0"
-              style={{ background: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
+              style={{ background: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               منح
             </button>
           )}
@@ -564,18 +564,18 @@ function PrayerGuardSection({
           <div className="w-2 h-2 rounded-full flex-shrink-0"
             style={{ background: permissions.accessibility ? '#22c55e' : '#ef4444' }} />
           <div className="flex-1">
-            <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: permissions.accessibility ? '#22c55e' : '#ef4444' }}>
+            <p className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: permissions.accessibility ? '#22c55e' : '#ef4444' }}>
               {permissions.accessibility ? 'خدمة إمكانية الوصول ✓' : 'خدمة إمكانية الوصول'}
             </p>
             {!permissions.accessibility && (
-              <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>لاكتشاف التطبيق المفتوح فوراً</p>
+              <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>لاكتشاف التطبيق المفتوح فوراً</p>
             )}
           </div>
           {!permissions.accessibility && (
             <button
               onClick={handleGrantAccessibility}
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-white flex-shrink-0"
-              style={{ background: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
+              style={{ background: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               تفعيل
             </button>
           )}
@@ -585,7 +585,7 @@ function PrayerGuardSection({
       {allGranted && enabled && (
         <div className="flex items-center gap-2 px-1">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#22c55e' }} />
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>الحارس مفعّل — يبدأ العمل عند دخول وقت الصلاة</p>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>الحارس مفعّل — يبدأ العمل عند دخول وقت الصلاة</p>
         </div>
       )}
 
@@ -617,9 +617,9 @@ export function Settings() {
 
   const sectionBg = hasBg ? (dark ? 'rgba(10,8,4,0.88)' : 'rgba(253,251,245,0.92)') : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(193,154,107,0.06)');
   const borderColor = dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.3)';
-  const textColor = dark ? '#e8d9b8' : '#2C1E16';
+  const textColor = dark ? '#e8d9b8' : '#10241E';
   const subText = dark ? 'rgba(232,217,184,0.55)' : '#8B5E3C';
-  const pageBg = hasBg ? 'transparent' : (dark ? '#0f0c07' : '#FDFBF5');
+  const pageBg = hasBg ? 'transparent' : (dark ? '#07130F' : '#FDFBF5');
 
   const fontLabels = ['صغير', 'عادي', 'كبير', 'أكبر'];
   const fontValues = [0.85, 1, 1.15, 1.3];
@@ -635,7 +635,7 @@ export function Settings() {
             <ChevronLeft className="w-5 h-5" style={{ color: '#C19A6B' }} />
           </button>
         </Link>
-        <h1 className="text-xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B' }}>الخصائص</h1>
+        <h1 className="text-xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C19A6B' }}>الخصائص</h1>
       </div>
 
       <div className="px-4 pt-5 space-y-5 max-w-lg mx-auto">
@@ -654,31 +654,31 @@ export function Settings() {
               <Type className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>حجم الخط</p>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>اضبط حجم النصوص في التطبيق</p>
+              <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>حجم الخط</p>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>اضبط حجم النصوص في التطبيق</p>
             </div>
           </div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs font-bold w-8 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>أ</span>
+            <span className="text-xs font-bold w-8 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>أ</span>
             <div className="flex-1 relative">
               <input type="range" min={0} max={3} step={1}
                 value={fontValues.indexOf(appFontScale) === -1 ? 1 : fontValues.indexOf(appFontScale)}
                 onChange={e => setAppFontScale(fontValues[Number(e.target.value)])}
                 className="w-full accent-[#C19A6B]" style={{ height: 4 }} />
             </div>
-            <span className="text-lg font-bold w-8 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>أ</span>
+            <span className="text-lg font-bold w-8 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>أ</span>
           </div>
           <div className="flex justify-between px-1">
             {fontLabels.map((label, i) => (
               <button key={i} onClick={() => setAppFontScale(fontValues[i])} className="text-xs px-2 py-1 rounded-lg transition-all"
-                style={{ fontFamily: '"Tajawal", sans-serif', background: appFontScale === fontValues[i] ? '#C19A6B' : 'rgba(193,154,107,0.1)', color: appFontScale === fontValues[i] ? '#0f0c07' : subText, fontWeight: appFontScale === fontValues[i] ? 700 : 400 }}>
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: appFontScale === fontValues[i] ? '#C19A6B' : 'rgba(193,154,107,0.1)', color: appFontScale === fontValues[i] ? '#07130F' : subText, fontWeight: appFontScale === fontValues[i] ? 700 : 400 }}>
                 {label}
               </button>
             ))}
           </div>
           <div className="mt-4 p-3 rounded-xl text-center" style={{ background: 'rgba(193,154,107,0.08)', border: `1px solid ${borderColor}` }}>
-            <p style={{ fontFamily: '"Tajawal", sans-serif', color: textColor, fontSize: `${14 * appFontScale}px`, lineHeight: 1.8 }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
-            <p className="text-xs mt-1" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>معاينة الحجم</p>
+            <p style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor, fontSize: `${14 * appFontScale}px`, lineHeight: 1.8 }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+            <p className="text-xs mt-1" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>معاينة الحجم</p>
           </div>
         </motion.div>
 
@@ -686,28 +686,28 @@ export function Settings() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="rounded-2xl p-4" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(145deg, #7B5EA7, #5B3E8A)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(145deg, #2F8A73, #1F6B57)' }}>
               <Layers className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>شفافية الخانات</p>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>اضبط مستوى شفافية خانات التطبيق</p>
+              <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>شفافية الخانات</p>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>اضبط مستوى شفافية خانات التطبيق</p>
             </div>
           </div>
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs font-bold w-8 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>شفاف</span>
+            <span className="text-xs font-bold w-8 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>شفاف</span>
             <div className="flex-1 relative">
               <input type="range" min={0} max={100} step={1} value={Math.round(cardOpacity * 100)}
-                onChange={e => setCardOpacity(Number(e.target.value) / 100)} className="w-full accent-[#7B5EA7]" style={{ height: 4 }} />
+                onChange={e => setCardOpacity(Number(e.target.value) / 100)} className="w-full accent-[#2F8A73]" style={{ height: 4 }} />
             </div>
-            <span className="text-xs font-bold w-8 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>صلب</span>
+            <span className="text-xs font-bold w-8 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>صلب</span>
           </div>
           <div className="mt-3 p-3 rounded-xl text-center" style={{ background: 'rgba(123,94,167,0.08)', border: `1px solid ${borderColor}` }}>
             <div className="rounded-xl p-3 border mb-2" style={{ background: dark ? `hsl(20 18% 12% / ${cardOpacity})` : `hsl(0 0% 100% / ${cardOpacity})`, border: `1px solid ${borderColor}` }}>
-              <p className="text-sm font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>معاينة الخانة</p>
-              <p className="text-xs mt-1" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>هكذا ستبدو خانات التطبيق</p>
+              <p className="text-sm font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>معاينة الخانة</p>
+              <p className="text-xs mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>هكذا ستبدو خانات التطبيق</p>
             </div>
-            <p className="text-xs" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>الشفافية: {Math.round(cardOpacity * 100)}%</p>
+            <p className="text-xs" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>الشفافية: {Math.round(cardOpacity * 100)}%</p>
           </div>
         </motion.div>
 
@@ -719,8 +719,8 @@ export function Settings() {
               <Image className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>خلفية التطبيق</p>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>اختر خلفية تملأ شاشة التطبيق</p>
+              <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>خلفية التطبيق</p>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>اختر خلفية تملأ شاشة التطبيق</p>
             </div>
           </div>
 
@@ -730,8 +730,8 @@ export function Settings() {
               <X className="w-5 h-5" style={{ color: '#C19A6B' }} />
             </div>
             <div className="text-right">
-              <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>بدون خلفية</p>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>الوضع الافتراضي للتطبيق</p>
+              <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>بدون خلفية</p>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>الوضع الافتراضي للتطبيق</p>
             </div>
             {bgType === 'none' && (
               <div className="mr-auto w-5 h-5 rounded-full flex items-center justify-center" style={{ background: '#C19A6B' }}>
@@ -740,7 +740,7 @@ export function Settings() {
             )}
           </button>
 
-          <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>صور إسلامية مقترحة</p>
+          <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>صور إسلامية مقترحة</p>
           <div className="grid grid-cols-3 gap-2 mb-3">
             {PRESET_BACKGROUNDS.map((bg) => {
               const isSelected = bgType === 'preset' && bgPreset === bg.id;
@@ -750,7 +750,7 @@ export function Settings() {
                   style={{ aspectRatio: '9/14', border: `2.5px solid ${isSelected ? '#C19A6B' : 'transparent'}`, boxShadow: isSelected ? '0 0 0 1px #C19A6B' : 'none' }}>
                   <img src={bg.src} alt={bg.label} className="w-full h-full object-cover" />
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)' }} />
-                  <p className="absolute bottom-1 right-0 left-0 text-center text-[10px] text-white font-bold leading-tight px-0.5" style={{ fontFamily: '"Tajawal", sans-serif' }}>{bg.label}</p>
+                  <p className="absolute bottom-1 right-0 left-0 text-center text-[10px] text-white font-bold leading-tight px-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{bg.label}</p>
                   {isSelected && (
                     <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: '#C19A6B' }}>
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -761,14 +761,14 @@ export function Settings() {
             })}
           </div>
 
-          <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"Tajawal", sans-serif' }}>أو اختر من معرض صورك</p>
+          <p className="text-xs font-bold mb-2" style={{ color: subText, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>أو اختر من معرض صورك</p>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           {bgCustom && bgType === 'custom' ? (
             <div className="relative rounded-xl overflow-hidden mb-2" style={{ height: 120 }}>
               <img src={bgCustom} alt="خلفية مخصصة" className="w-full h-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.3)' }}>
                 <button onClick={() => { fileInputRef.current?.click(); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white"
-                  style={{ background: 'rgba(193,154,107,0.8)', fontFamily: '"Tajawal", sans-serif' }}>تغيير الصورة</button>
+                  style={{ background: 'rgba(193,154,107,0.8)', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تغيير الصورة</button>
               </div>
               <button onClick={() => { setBgType('none'); setBgCustom(''); }}
                 className="absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center transition-all"
@@ -786,8 +786,8 @@ export function Settings() {
                 <Upload className="w-5 h-5" style={{ color: '#C19A6B' }} />
               </div>
               <div className="text-right">
-                <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>اختر صورة من معرضك</p>
-                <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>JPG, PNG, WEBP مدعومة</p>
+                <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>اختر صورة من معرضك</p>
+                <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>JPG, PNG, WEBP مدعومة</p>
               </div>
             </button>
           )}
@@ -799,7 +799,7 @@ export function Settings() {
         {/* Note */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
           className="rounded-xl p-3 text-center" style={{ background: 'rgba(193,154,107,0.06)', border: `1px solid ${borderColor}` }}>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: subText }}>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>
             تُطبَّق التغييرات فوراً على التطبيق كله
           </p>
         </motion.div>

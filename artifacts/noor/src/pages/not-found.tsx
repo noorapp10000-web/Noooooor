@@ -22,13 +22,13 @@ export default function NotFound() {
         </div>
         <h1
           className="text-2xl font-bold mb-2"
-          style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#173A30' }}
         >
           الصفحة غير موجودة
         </h1>
         <p
           className="text-sm mb-6"
-          style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#9B7043' }}
         >
           الصفحة اللي بتدور عليها مش موجودة
         </p>
@@ -40,7 +40,7 @@ export default function NotFound() {
           style={{
             background: 'linear-gradient(135deg, #C19A6B 0%, #d4aa7d 50%, #b8894f 100%)',
             boxShadow: '0 4px 24px rgba(193,154,107,0.35)',
-            fontFamily: '"Tajawal", sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
           }}
         >
           <Home className="w-4 h-4" />

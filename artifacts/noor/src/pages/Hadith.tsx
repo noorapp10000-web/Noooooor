@@ -9,12 +9,12 @@ import { normalizeArabic } from '@/lib/arabic-utils';
 
 /* ── Book definitions ── */
 const BOOKS = [
-  { slug: 'sahih-bukhari',  name: 'صحيح البخاري',   iconBg: '#8B1A1A', count: 7580 },
-  { slug: 'sahih-muslim',   name: 'صحيح مسلم',      iconBg: '#1A3A7A', count: 7360 },
-  { slug: 'al-tirmidhi',   name: 'جامع الترمذي',    iconBg: '#1C2F6E', count: 3924 },
-  { slug: 'abu-dawood',    name: 'سنن أبي داود',    iconBg: '#6B3010', count: 5272 },
-  { slug: 'ibn-e-majah',   name: 'سنن ابن ماجه',    iconBg: '#7A5010', count: 4338 },
-  { slug: 'sunan-nasai',   name: 'سنن النسائي',     iconBg: '#9B1515', count: 5679 },
+  { slug: 'sahih-bukhari',  name: 'صحيح البخاري',   iconBg: '#1F5C4B', count: 7580 },
+  { slug: 'sahih-muslim',   name: 'صحيح مسلم',      iconBg: '#8A6A35', count: 7360 },
+  { slug: 'al-tirmidhi',   name: 'جامع الترمذي',    iconBg: '#2F7A66', count: 3924 },
+  { slug: 'abu-dawood',    name: 'سنن أبي داود',    iconBg: '#9E7B4A', count: 5272 },
+  { slug: 'ibn-e-majah',   name: 'سنن ابن ماجه',    iconBg: '#1A4D40', count: 4338 },
+  { slug: 'sunan-nasai',   name: 'سنن النسائي',     iconBg: '#B08A50', count: 5679 },
 ];
 
 type Book = typeof BOOKS[0];
@@ -128,7 +128,7 @@ function HadithCard({
               background: isDark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.12)',
               border: `1px solid rgba(193,154,107,${isDark ? '0.35' : '0.3'})`,
               color: isDark ? '#E8C98A' : '#7A4F1E',
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
             }}
           >
             حديث {hadith.n.toLocaleString('ar-EG')}
@@ -300,7 +300,7 @@ function SearchResults({
   if (loading) return (
     <div className="flex items-center justify-center gap-2 py-12">
       <div className="w-5 h-5 border-2 border-[#C19A6B]/30 border-t-[#C19A6B] rounded-full animate-spin" />
-      <span style={{ fontFamily: '"Tajawal", sans-serif', color: '#C19A6B', fontSize: 14 }}>يبحث...</span>
+      <span style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C19A6B', fontSize: 14 }}>يبحث...</span>
     </div>
   );
 
@@ -308,7 +308,7 @@ function SearchResults({
 
   if (results.length === 0) return (
     <div className="py-12 text-center">
-      <p style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)', fontSize: 14 }}>
+      <p style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)', fontSize: 14 }}>
         لا توجد نتائج لـ «{query}»
       </p>
     </div>
@@ -316,7 +316,7 @@ function SearchResults({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-right px-1" style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)' }}>
+      <p className="text-xs text-right px-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)' }}>
         {results.length}{results.length >= SEARCH_LIMIT ? '+' : ''} نتيجة
       </p>
       {results.map(({ hadith, book: b }, i) => (
@@ -328,7 +328,7 @@ function SearchResults({
           {!book && (
             <div className="flex items-center gap-2 px-1 mb-1">
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.iconBg }} />
-              <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: b.iconBg }}>{b.name}</span>
+              <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: b.iconBg }}>{b.name}</span>
             </div>
           )}
           <HadithCard hadith={hadith} book={b} snippet={query} />
@@ -394,10 +394,10 @@ function HadithReader({
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground truncate" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <p className="font-bold text-foreground truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             {book.name}
           </p>
-          <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             صفحة {page.toLocaleString('ar-EG')} من {totalPages.toLocaleString('ar-EG')} • {hadiths.length.toLocaleString('ar-EG')} حديث
           </p>
         </div>
@@ -443,7 +443,7 @@ function HadithReader({
                   searchDebounceRef.current = setTimeout(() => setSearchQuery(val), 0);
                 }}
                 className="flex-1 bg-transparent outline-none text-right"
-                style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#2C1E16' }}
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#10241E' }}
               />
               {searchQuery && (
                 <button onClick={() => {
@@ -499,7 +499,7 @@ function HadithReader({
 
           {error && (
             <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-5 text-center">
-              <p className="text-destructive text-sm font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+              <p className="text-destructive text-sm font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                 حدث خطأ: {error}
               </p>
             </div>
@@ -533,20 +533,20 @@ function HadithReader({
                 onClick={() => goToPage(page + 1)}
                 disabled={page >= totalPages}
                 className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-secondary rounded-xl font-bold text-sm disabled:opacity-30 hover-elevate"
-                style={{ fontFamily: '"Tajawal", sans-serif' }}
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
                 data-testid="button-hadith-next"
               >
                 <ChevronRight className="w-4 h-4" />
                 التالي
               </button>
-              <span className="text-xs text-muted-foreground whitespace-nowrap px-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+              <span className="text-xs text-muted-foreground whitespace-nowrap px-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                 {page} / {totalPages.toLocaleString('ar-EG')}
               </span>
               <button
                 onClick={() => goToPage(Math.max(1, page - 1))}
                 disabled={page === 1}
                 className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-secondary rounded-xl font-bold text-sm disabled:opacity-30 hover-elevate"
-                style={{ fontFamily: '"Tajawal", sans-serif' }}
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
                 data-testid="button-hadith-prev"
               >
                 السابق
@@ -578,10 +578,10 @@ function BookList({ onSelect }: { onSelect: (b: Book) => void }) {
           <div className="p-4 flex items-center gap-4">
             <ChevronLeft className="w-5 h-5 text-muted-foreground flex-shrink-0" />
             <div className="flex-1 min-w-0 text-right">
-              <p className="font-bold text-base text-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+              <p className="font-bold text-base text-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                 {book.name}
               </p>
-              <p className="text-xs font-semibold mt-0.5" style={{ color: book.iconBg, fontFamily: '"Tajawal", sans-serif', opacity: 0.9 }}>
+              <p className="text-xs font-semibold mt-0.5" style={{ color: book.iconBg, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', opacity: 0.9 }}>
                 {book.count.toLocaleString('ar-EG')} حديث
               </p>
             </div>
@@ -625,7 +625,7 @@ function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number)
             queryDebounceRef.current = setTimeout(() => setQuery(val), 0);
           }}
           className="flex-1 bg-transparent outline-none text-right"
-          style={{ fontFamily: '"Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#2C1E16' }}
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: isDark ? '#e8d9b8' : '#10241E' }}
         />
         {query && <button onClick={() => {
           if (queryInputRef.current) queryInputRef.current.value = '';
@@ -640,7 +640,7 @@ function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number)
           onClick={() => setSelectedBook(null)}
           className="text-xs px-3 py-1.5 rounded-xl font-bold transition-all"
           style={{
-            fontFamily: '"Tajawal", sans-serif',
+            fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
             background: !selectedBook ? '#C19A6B' : 'rgba(193,154,107,0.1)',
             color: !selectedBook ? '#fff' : (isDark ? '#C19A6B' : '#7A4F1E'),
           }}
@@ -653,7 +653,7 @@ function GlobalSearch({ onOpenBook }: { onOpenBook: (b: Book, hadithNum: number)
             onClick={() => setSelectedBook(sb => sb?.slug === b.slug ? null : b)}
             className="text-xs px-3 py-1.5 rounded-xl font-bold transition-all"
             style={{
-              fontFamily: '"Tajawal", sans-serif',
+              fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
               background: selectedBook?.slug === b.slug ? b.iconBg : 'rgba(193,154,107,0.1)',
               color: selectedBook?.slug === b.slug ? '#fff' : (isDark ? '#C19A6B' : '#7A4F1E'),
             }}
@@ -711,11 +711,11 @@ export function Hadith() {
           </Link>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-xl truncate" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+          <h1 className="font-bold text-xl truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
             {selected ? selected.name : 'الأحاديث الشريفة'}
           </h1>
           {!selected && (
-            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               كتب الحديث الكبرى
             </p>
           )}
@@ -734,7 +734,7 @@ export function Hadith() {
               onClick={() => setTab(t as 'books' | 'search')}
               className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold transition-all border-b-2"
               style={{
-                fontFamily: '"Tajawal", sans-serif',
+                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                 borderColor: tab === t ? '#C19A6B' : 'transparent',
                 color: tab === t ? '#C19A6B' : (isDark ? 'rgba(193,154,107,0.5)' : 'rgba(100,60,20,0.5)'),
               }}
@@ -760,7 +760,7 @@ export function Hadith() {
                   <p className="text-2xl font-black text-primary" style={{ fontFamily: '"Amiri", serif' }}>
                     الأحاديث النبوية الشريفة
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                  <p className="text-xs text-muted-foreground mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                     اختر كتاباً للقراءة
                   </p>
                 </div>

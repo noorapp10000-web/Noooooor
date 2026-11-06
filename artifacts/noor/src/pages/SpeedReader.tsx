@@ -45,15 +45,15 @@ export function SpeedReader() {
   // Theme palette
   const C = {
     pageBg: dark ? '#0a0805' : '#FDFBF5',
-    headerBg: dark ? '#0f0c07' : '#F7EDD6',
+    headerBg: dark ? '#07130F' : '#F7EDD6',
     headerBorder: dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.3)',
-    text: dark ? '#e8d9b8' : '#2C1E16',
+    text: dark ? '#e8d9b8' : '#10241E',
     textSecondary: dark ? 'rgba(232,217,184,0.4)' : 'rgba(44,30,22,0.4)',
     wordDisplay: dark ? '#C19A6B' : '#7a4e25',
     wordGlow: dark
       ? '0 0 40px rgba(193,154,107,0.6), 0 0 80px rgba(193,154,107,0.3)'
       : '0 0 20px rgba(193,154,107,0.3)',
-    prevNextWord: dark ? '#e8d9b8' : '#2C1E16',
+    prevNextWord: dark ? '#e8d9b8' : '#10241E',
     btnBg: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.12)',
     btnBorder: dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.35)',
     progressBg: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.15)',
@@ -138,8 +138,8 @@ export function SpeedReader() {
             </button>
           </Link>
           <div>
-            <h1 className="font-bold text-lg" style={{ color: C.text, fontFamily: '"Tajawal", sans-serif' }}>قارئ التدبر الذكي</h1>
-            <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>قراءة كلمة بكلمة مع التدبر</p>
+            <h1 className="font-bold text-lg" style={{ color: C.text, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>قارئ التدبر الذكي</h1>
+            <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>قراءة كلمة بكلمة مع التدبر</p>
           </div>
         </div>
 
@@ -155,8 +155,8 @@ export function SpeedReader() {
           >
             <Bookmark className="w-5 h-5" style={{ color: '#C19A6B' }} />
             <div className="text-right">
-              <p className="font-bold text-sm" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>متابعة من آخر توقف</p>
-              <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>
+              <p className="font-bold text-sm" style={{ color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>متابعة من آخر توقف</p>
+              <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                 سورة {savedProgress.surahName} - الكلمة {savedProgress.wordIndex + 1}
               </p>
             </div>
@@ -164,7 +164,7 @@ export function SpeedReader() {
         )}
 
         <div className="flex-1 overflow-y-auto p-4">
-          <p className="text-sm mb-3" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>اختر سورة للبدء:</p>
+          <p className="text-sm mb-3" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>اختر سورة للبدء:</p>
           <div className="space-y-2 pb-6">
             {Array.from({ length: 114 }, (_, i) => i + 1).map(num => (
               <button
@@ -177,7 +177,7 @@ export function SpeedReader() {
                 }}
               >
                 <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ background: 'rgba(193,154,107,0.2)', color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>
+                  style={{ background: 'rgba(193,154,107,0.2)', color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                   {num}
                 </span>
                 <span className="font-bold" style={{ color: C.text, fontFamily: '"Amiri", serif' }}>
@@ -203,7 +203,7 @@ export function SpeedReader() {
         </button>
         <div className="text-center">
           <p className="font-bold" style={{ color: C.text, fontFamily: '"Amiri", serif' }}>سورة {SURAH_NAMES[selectedSurah]}</p>
-          <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>آية {currentWord?.ayah ?? 1}</p>
+          <p className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>آية {currentWord?.ayah ?? 1}</p>
         </div>
         <button onClick={saveBookmark} title="حفظ مكاني">
           <Bookmark
@@ -244,7 +244,7 @@ export function SpeedReader() {
               {currentWord.word}
             </span>
           ) : (
-            <span style={{ color: C.textSecondary, fontSize: '1.5rem', fontFamily: '"Tajawal", sans-serif' }}>
+            <span style={{ color: C.textSecondary, fontSize: '1.5rem', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               جاري التحميل...
             </span>
           )}
@@ -263,16 +263,16 @@ export function SpeedReader() {
       {/* Status bar */}
       <div className="px-4 py-3 grid grid-cols-3 gap-2 border-t" style={{ borderColor: C.headerBorder, background: C.statBg }}>
         <div className="text-center">
-          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>الكلمة</p>
-          <p className="font-bold text-sm" style={{ color: C.text, fontFamily: '"Tajawal", sans-serif' }}>{wordIndex + 1} / {words.length}</p>
+          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>الكلمة</p>
+          <p className="font-bold text-sm" style={{ color: C.text, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{wordIndex + 1} / {words.length}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>باقي للسورة</p>
-          <p className="font-bold text-sm" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif' }}>{fmtTime(minsToFinishSurah)}</p>
+          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>باقي للسورة</p>
+          <p className="font-bold text-sm" style={{ color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{fmtTime(minsToFinishSurah)}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>باقي للختمة</p>
-          <p className="font-bold text-sm" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>{fmtTime(minsToFinishQuran)}</p>
+          <p className="text-[10px]" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>باقي للختمة</p>
+          <p className="font-bold text-sm" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{fmtTime(minsToFinishQuran)}</p>
         </div>
       </div>
 
@@ -290,7 +290,7 @@ export function SpeedReader() {
       {/* WPM Slider */}
       <div className="px-4 pt-3 pb-2" style={{ background: C.headerBg }}>
         <div className="flex items-center gap-3">
-          <span className="text-xs" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>20</span>
+          <span className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>20</span>
           <input
             type="range"
             min={20}
@@ -301,9 +301,9 @@ export function SpeedReader() {
             className="flex-1 h-1 rounded-full"
             style={{ accentColor: '#C19A6B' }}
           />
-          <span className="text-xs" style={{ color: C.textSecondary, fontFamily: '"Tajawal", sans-serif' }}>500</span>
+          <span className="text-xs" style={{ color: C.textSecondary, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>500</span>
         </div>
-        <p className="text-center font-bold mt-1" style={{ color: '#C19A6B', fontFamily: '"Tajawal", sans-serif', fontSize: '0.9rem' }}>
+        <p className="text-center font-bold mt-1" style={{ color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', fontSize: '0.9rem' }}>
           {wpm} كلمة/دقيقة
         </p>
       </div>
@@ -332,8 +332,8 @@ export function SpeedReader() {
           style={{ background: 'linear-gradient(135deg, #C19A6B, #7a5020)', boxShadow: '0 4px 20px rgba(193,154,107,0.4)' }}
         >
           {isPlaying
-            ? <Pause className="w-7 h-7" style={{ color: '#0f0c07' }} />
-            : <Play className="w-7 h-7 translate-x-0.5" style={{ color: '#0f0c07' }} />
+            ? <Pause className="w-7 h-7" style={{ color: '#07130F' }} />
+            : <Play className="w-7 h-7 translate-x-0.5" style={{ color: '#07130F' }} />
           }
         </button>
 

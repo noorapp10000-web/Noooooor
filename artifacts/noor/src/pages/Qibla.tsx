@@ -19,17 +19,17 @@ function IslamicBg() {
         <pattern id="islamicTile" x="0" y="0" width="90" height="90" patternUnits="userSpaceOnUse">
           <path
             d="M45 6 L50 22 L66 18 L61 34 L77 39 L61 44 L66 60 L50 56 L45 72 L40 56 L24 60 L29 44 L13 39 L29 34 L24 18 L40 22 Z"
-            fill="none" stroke="#C8991A" strokeWidth="0.9"
+            fill="none" stroke="#C9A05A" strokeWidth="0.9"
           />
-          <circle cx="45" cy="45" r="10" fill="none" stroke="#C8991A" strokeWidth="0.5"/>
-          <rect x="38" y="38" width="14" height="14" transform="rotate(45 45 45)" fill="none" stroke="#C8991A" strokeWidth="0.5"/>
-          <circle cx="45" cy="45" r="2.5" fill="#C8991A" opacity="0.4"/>
-          <line x1="45" y1="0"  x2="45" y2="90" stroke="#C8991A" strokeWidth="0.3" opacity="0.3"/>
-          <line x1="0"  y1="45" x2="90" y2="45" stroke="#C8991A" strokeWidth="0.3" opacity="0.3"/>
-          <circle cx="0"  cy="0"  r="5" fill="none" stroke="#C8991A" strokeWidth="0.5"/>
-          <circle cx="90" cy="0"  r="5" fill="none" stroke="#C8991A" strokeWidth="0.5"/>
-          <circle cx="0"  cy="90" r="5" fill="none" stroke="#C8991A" strokeWidth="0.5"/>
-          <circle cx="90" cy="90" r="5" fill="none" stroke="#C8991A" strokeWidth="0.5"/>
+          <circle cx="45" cy="45" r="10" fill="none" stroke="#C9A05A" strokeWidth="0.5"/>
+          <rect x="38" y="38" width="14" height="14" transform="rotate(45 45 45)" fill="none" stroke="#C9A05A" strokeWidth="0.5"/>
+          <circle cx="45" cy="45" r="2.5" fill="#C9A05A" opacity="0.4"/>
+          <line x1="45" y1="0"  x2="45" y2="90" stroke="#C9A05A" strokeWidth="0.3" opacity="0.3"/>
+          <line x1="0"  y1="45" x2="90" y2="45" stroke="#C9A05A" strokeWidth="0.3" opacity="0.3"/>
+          <circle cx="0"  cy="0"  r="5" fill="none" stroke="#C9A05A" strokeWidth="0.5"/>
+          <circle cx="90" cy="0"  r="5" fill="none" stroke="#C9A05A" strokeWidth="0.5"/>
+          <circle cx="0"  cy="90" r="5" fill="none" stroke="#C9A05A" strokeWidth="0.5"/>
+          <circle cx="90" cy="90" r="5" fill="none" stroke="#C9A05A" strokeWidth="0.5"/>
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#islamicTile)"/>
@@ -91,8 +91,8 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
 
       <circle cx={cx} cy={cy} r={outerR} fill="url(#cBg)"/>
       <circle cx={cx} cy={cy} r={outerR}       fill="none" stroke="#B8860B" strokeWidth="24" opacity="0.22"/>
-      <circle cx={cx} cy={cy} r={outerR}       fill="none" stroke="#C8991A" strokeWidth="1.8" opacity="0.95"/>
-      <circle cx={cx} cy={cy} r={outerR - 24}  fill="none" stroke="#C8991A" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx={cx} cy={cy} r={outerR}       fill="none" stroke="#C9A05A" strokeWidth="1.8" opacity="0.95"/>
+      <circle cx={cx} cy={cy} r={outerR - 24}  fill="none" stroke="#C9A05A" strokeWidth="1.2" opacity="0.7"/>
       <circle cx={cx} cy={cy} r={decorBandR}   fill="none" stroke="#E8C060" strokeWidth="0.6" opacity="0.35"/>
 
       {Array.from({ length: 24 }, (_, i) => {
@@ -104,7 +104,7 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
           <rect key={i}
             x={x - 4} y={y - 4} width="8" height="8"
             transform={`rotate(${i * 15 + 45}, ${x}, ${y})`}
-            fill="#C8991A" opacity="0.85"
+            fill="#C9A05A" opacity="0.85"
           />
         ) : (
           <circle key={i} cx={x} cy={y} r="2.8" fill="#8B6010" opacity="0.7"/>
@@ -118,7 +118,7 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
           <circle key={i}
             cx={cx + r * Math.sin(ang)}
             cy={cy - r * Math.cos(ang)}
-            r="1.4" fill="#C8991A" opacity="0.5"
+            r="1.4" fill="#C9A05A" opacity="0.5"
           />
         );
       })}
@@ -138,7 +138,7 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
         return (
           <text key={deg} x={x} y={y}
             textAnchor="middle" dominantBaseline="middle"
-            fill="#C8991A"
+            fill="#C9A05A"
             fontSize="8.5"
             fontFamily="monospace"
             opacity="0.95"
@@ -150,7 +150,7 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
       })}
 
       <circle cx={cx} cy={cy} r={98} fill="url(#cInner)"/>
-      <circle cx={cx} cy={cy} r={98} fill="none" stroke="#C8991A" strokeWidth="1.3" opacity="0.6"/>
+      <circle cx={cx} cy={cy} r={98} fill="none" stroke="#C9A05A" strokeWidth="1.3" opacity="0.6"/>
       <circle cx={cx} cy={cy} r={96} fill="none" stroke="#E8C060" strokeWidth="0.4" opacity="0.2"/>
 
       <polygon points={starPts(cx, cy, 88, 24, 4)}
@@ -164,15 +164,15 @@ function PremiumCompassFace({ isAligned }: { isAligned: boolean }) {
         fill={isAligned ? '#4ade80' : '#E8C060'} fontSize="11" fontWeight="bold"
         fontFamily="Tajawal,sans-serif" style={{ transition: 'fill 0.5s' }}>ش</text>
       <text x={cx + 68} y={cy}     textAnchor="middle" dominantBaseline="middle"
-        fill="#C8991A" fontSize="9" fontFamily="Tajawal,sans-serif" opacity="0.9">ق</text>
+        fill="#C9A05A" fontSize="9" fontFamily="Tajawal,sans-serif" opacity="0.9">ق</text>
       <text x={cx}     y={cy + 68} textAnchor="middle" dominantBaseline="middle"
-        fill="#C8991A" fontSize="9" fontFamily="Tajawal,sans-serif" opacity="0.9">ج</text>
+        fill="#C9A05A" fontSize="9" fontFamily="Tajawal,sans-serif" opacity="0.9">ج</text>
       <text x={cx - 68} y={cy}     textAnchor="middle" dominantBaseline="middle"
-        fill="#C8991A" fontSize="9" fontFamily="Tajawal,sans-serif" opacity="0.9">غ</text>
+        fill="#C9A05A" fontSize="9" fontFamily="Tajawal,sans-serif" opacity="0.9">غ</text>
 
-      <circle cx={cx} cy={cy} r={25} fill="#141e12" stroke="#C8991A" strokeWidth="0.9" opacity="0.8"/>
+      <circle cx={cx} cy={cy} r={25} fill="#141e12" stroke="#C9A05A" strokeWidth="0.9" opacity="0.8"/>
       <circle cx={cx} cy={cy} r={19} fill="#0e160c" stroke="#8B6010" strokeWidth="0.6" opacity="0.7"/>
-      <polygon points={starPts(cx, cy, 15, 7, 8)} fill="#1d2e1a" stroke="#C8991A" strokeWidth="0.5" opacity="0.6"/>
+      <polygon points={starPts(cx, cy, 15, 7, 8)} fill="#1d2e1a" stroke="#C9A05A" strokeWidth="0.5" opacity="0.6"/>
 
       {isAligned && (
         <>
@@ -304,8 +304,8 @@ export function Qibla() {
       return (
         <div className="flex flex-col items-center gap-6">
           <div className="w-20 h-20 rounded-full border-4 animate-spin"
-            style={{ borderColor: 'rgba(200,153,26,0.3)', borderTopColor: '#C8991A' }}/>
-          <p className="font-bold text-lg" style={{ fontFamily: '"Tajawal", sans-serif', color: '#C8991A' }}>
+            style={{ borderColor: 'rgba(201,160,90,0.3)', borderTopColor: '#C9A05A' }}/>
+          <p className="font-bold text-lg" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C9A05A' }}>
             جاري تحديد موقعك...
           </p>
         </div>
@@ -317,22 +317,22 @@ export function Qibla() {
         <div className="flex flex-col items-center gap-6 text-center max-w-xs w-full">
           <KaabaImage/>
           <div className="rounded-3xl p-5 w-full border"
-            style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(200,153,26,0.3)' }}>
+            style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(201,160,90,0.3)' }}>
             <p className="font-bold text-base mb-2"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: '#E8C060' }}>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#E8C060' }}>
               تحديد اتجاه القبلة
             </p>
             {geoError && (
               <p className="text-sm mb-3"
-                style={{ fontFamily: '"Tajawal", sans-serif', color: '#f87171' }}>{geoError}</p>
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#f87171' }}>{geoError}</p>
             )}
             <p className="text-sm mb-4"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: '#8B9070' }}>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8B9070' }}>
               يحتاج التطبيق إلى موقعك لحساب اتجاه القبلة
             </p>
             <button onClick={requestLocation}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm"
-              style={{ fontFamily: '"Tajawal", sans-serif', background: '#C8991A', color: '#0d0d0d' }}>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: '#C9A05A', color: '#0d0d0d' }}>
               <MapPin className="w-4 h-4"/>
               تحديد موقعي
             </button>
@@ -346,13 +346,13 @@ export function Qibla() {
         <div className="flex flex-col items-center gap-5 text-center max-w-xs">
           <KaabaImage/>
           <div className="rounded-3xl p-5 w-full border"
-            style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(200,153,26,0.3)' }}>
+            style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(201,160,90,0.3)' }}>
             <p className="font-bold text-base mb-1"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: '#E8C060' }}>البوصلة غير مدعومة</p>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#E8C060' }}>البوصلة غير مدعومة</p>
             <p className="text-sm mb-3"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: '#8B9070' }}>اتجاه القبلة من موقعك</p>
-            <p className="text-5xl font-black" style={{ color: '#C8991A' }}>{Math.round(qiblaAngle)}°</p>
-            <p className="text-sm mt-1" style={{ fontFamily: '"Tajawal", sans-serif', color: '#8B9070' }}>شمالاً</p>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8B9070' }}>اتجاه القبلة من موقعك</p>
+            <p className="text-5xl font-black" style={{ color: '#C9A05A' }}>{Math.round(qiblaAngle)}°</p>
+            <p className="text-sm mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8B9070' }}>شمالاً</p>
           </div>
         </div>
       );
@@ -366,17 +366,17 @@ export function Qibla() {
         <div className="flex flex-col items-center gap-5 w-full max-w-xs text-center">
           <KaabaImage/>
           <div className="rounded-3xl p-5 w-full border"
-            style={{ background: 'rgba(200,153,26,0.08)', borderColor: 'rgba(200,153,26,0.3)' }}>
+            style={{ background: 'rgba(201,160,90,0.08)', borderColor: 'rgba(201,160,90,0.3)' }}>
             <p className="font-bold mb-2"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: '#E8C060' }}>تفعيل البوصلة</p>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#E8C060' }}>تفعيل البوصلة</p>
             <p className="text-sm"
-              style={{ fontFamily: '"Tajawal", sans-serif', color: '#8B9070' }}>
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8B9070' }}>
               اضغط للسماح بالوصول لحساس الاتجاه
             </p>
           </div>
           <button onClick={requestPermission}
             className="w-full py-3.5 rounded-2xl font-bold text-sm"
-            style={{ fontFamily: '"Tajawal", sans-serif', background: '#C8991A', color: '#0d0d0d' }}>
+            style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: '#C9A05A', color: '#0d0d0d' }}>
             تفعيل البوصلة
           </button>
         </div>
@@ -399,19 +399,19 @@ export function Qibla() {
           }}
         >
           {isAligned ? (
-            <p className="font-bold text-base text-white" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+            <p className="font-bold text-base text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
               أنت في اتجاه القبلة ✓
             </p>
           ) : isSearching ? (
-            <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#4ade80' }}>
+            <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#4ade80' }}>
               جاري البحث عن اتجاه القبلة...
             </p>
           ) : (
             <div>
-              <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: '#86efac' }}>
+              <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#86efac' }}>
                 وجّه هاتفك نحو الكعبة المشرفة
               </p>
-              <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#4ade80', opacity: 0.7 }}>
+              <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#4ade80', opacity: 0.7 }}>
                 القبلة على بُعد {Math.round(qiblaAngle)}° من الشمال
               </p>
             </div>
@@ -447,10 +447,10 @@ export function Qibla() {
         {mode === 'relative' && (
           <div className="px-4 py-2.5 rounded-2xl text-center w-full max-w-xs"
             style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.35)' }}>
-            <p className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#FACC15' }}>
+            <p className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#FACC15' }}>
               ⚠️ البوصلة تحتاج معايرة
             </p>
-            <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#CA8A04' }}>
+            <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#CA8A04' }}>
               حرّك هاتفك على شكل 8 في الهواء لتحسين الدقة
             </p>
           </div>
@@ -460,12 +460,12 @@ export function Qibla() {
           <div className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3" style={{ color: '#6B5030' }}/>
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: '#6B5030' }}>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#6B5030' }}>
                 موقعك: {coords.lat.toFixed(4)}°، {coords.lng.toFixed(4)}°
               </p>
             </div>
             {usingProfileCoords && (
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(200,153,26,0.55)' }}>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: 'rgba(201,160,90,0.55)' }}>
                 (من إعدادات ملفك — يُنصح بالسماح بالموقع للدقة)
               </p>
             )}
@@ -488,25 +488,25 @@ export function Qibla() {
         className="relative z-10 px-4 py-4 flex items-center gap-4 flex-shrink-0 border-b"
         style={{
           background: 'rgba(0,0,0,0.35)',
-          borderColor: 'rgba(200,153,26,0.2)',
+          borderColor: 'rgba(201,160,90,0.2)',
         }}
       >
         <Link href="/more">
-          <button className="p-2 rounded-full" style={{ background: 'rgba(200,153,26,0.15)' }}>
-            <ArrowLeft className="w-5 h-5" style={{ color: '#C8991A' }}/>
+          <button className="p-2 rounded-full" style={{ background: 'rgba(201,160,90,0.15)' }}>
+            <ArrowLeft className="w-5 h-5" style={{ color: '#C9A05A' }}/>
           </button>
         </Link>
         <h1 className="font-bold text-xl"
-          style={{ fontFamily: '"Tajawal", sans-serif', color: '#E8C060' }}>
+          style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#E8C060' }}>
           تحديد القبلة
         </h1>
         {(geoError || (!geoLoading && !coords)) && (
           <button
             onClick={requestLocation}
             className="mr-auto p-2 rounded-full"
-            style={{ background: 'rgba(200,153,26,0.15)' }}
+            style={{ background: 'rgba(201,160,90,0.15)' }}
           >
-            <RotateCcw className="w-4 h-4" style={{ color: '#C8991A' }}/>
+            <RotateCcw className="w-4 h-4" style={{ color: '#C9A05A' }}/>
           </button>
         )}
       </div>

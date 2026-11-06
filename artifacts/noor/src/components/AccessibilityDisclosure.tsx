@@ -24,7 +24,7 @@ export function AccessibilityDisclosure({
     >
       <div
         className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
-        style={{ color: '#1a1a1a', fontFamily: '"Tajawal", sans-serif' }}
+        style={{ color: '#1a1a1a', fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
       >
         <div className="mb-4 flex justify-center">
           <div

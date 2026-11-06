@@ -37,7 +37,7 @@ const CAT_CONTENT_KEY: Record<string, string> = {
 function SunnahCard({ item, dark }: { item: SunnahItem; dark: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-  const cardBg = dark ? '#1a1208' : '#fff';
+  const cardBg = dark ? '#0C1C17' : '#fff';
 
   return (
     <motion.div layout className="rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${border}` }}>
@@ -46,11 +46,11 @@ function SunnahCard({ item, dark }: { item: SunnahItem; dark: boolean }) {
         className="w-full text-right p-4 flex items-start gap-3"
       >
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm leading-snug" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}>
+          <p className="font-bold text-sm leading-snug" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}>
             {item.title}
           </p>
           {!expanded && (
-            <p className="text-xs mt-1 line-clamp-1" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#7a6040' : '#9E7B4A' }}>
+            <p className="text-xs mt-1 line-clamp-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#7a6040' : '#9E7B4A' }}>
               {item.description}
             </p>
           )}
@@ -70,22 +70,22 @@ function SunnahCard({ item, dark }: { item: SunnahItem; dark: boolean }) {
             <div className="px-4 pb-4 space-y-3" style={{ borderTop: `1px solid ${border}` }}>
               {/* Hadith */}
               <div className="mt-3 p-3 rounded-xl" style={{ background: dark ? 'rgba(193,154,107,0.07)' : 'rgba(193,154,107,0.08)' }}>
-                <p className="text-sm leading-relaxed italic" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6B3D' }}>
+                <p className="text-sm leading-relaxed italic" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6B3D' }}>
                   «{item.hadith}»
                 </p>
-                <p className="text-xs mt-2 text-right" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>
+                <p className="text-xs mt-2 text-right" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>
                   — {item.source}
                 </p>
               </div>
               {/* Description */}
               <div>
-                <p className="text-xs font-bold mb-1" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>كيف تطبّقها</p>
-                <p className="text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#b0956a' : '#6D4C41' }}>{item.description}</p>
+                <p className="text-xs font-bold mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>كيف تطبّقها</p>
+                <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#b0956a' : '#6D4C41' }}>{item.description}</p>
               </div>
               {/* Reward */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(193,154,107,0.1)' }}>
                 <Star size={14} className="text-[#C19A6B] flex-shrink-0" />
-                <p className="text-sm font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#8B6340' }}>{item.reward}</p>
+                <p className="text-sm font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#8B6340' }}>{item.reward}</p>
               </div>
             </div>
           </motion.div>
@@ -112,7 +112,7 @@ export function Sunnah() {
       .catch(() => setLoading(false));
   }, []);
 
-  const bg = dark ? '#0f0c07' : '#FDFBF0';
+  const bg = dark ? '#07130F' : '#FDFBF0';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
 
   const contentKey = CAT_CONTENT_KEY[activeCat] ?? '';
@@ -134,8 +134,8 @@ export function Sunnah() {
             <ChevronLeft size={20} className="text-[#C19A6B]" style={{ transform: 'rotate(180deg)' }} />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}>سنن النبي ﷺ</h1>
-            <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>اقتداءً بهدي المصطفى ﷺ</p>
+            <h1 className="text-xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}>سنن النبي ﷺ</h1>
+            <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>اقتداءً بهدي المصطفى ﷺ</p>
           </div>
           <BookOpen size={22} className="text-[#C19A6B]" />
         </div>
@@ -148,7 +148,7 @@ export function Sunnah() {
               onClick={() => handleCatChange(cat.id)}
               className="flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-bold transition-all"
               style={{
-                fontFamily: '"Tajawal", sans-serif',
+                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                 background: activeCat === cat.id ? CAT_GRADIENTS[cat.id] : (dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)'),
                 color: activeCat === cat.id ? '#fff' : (dark ? '#C19A6B' : '#8B6B3D'),
                 border: activeCat === cat.id ? 'none' : `1px solid ${border}`,
@@ -177,11 +177,11 @@ export function Sunnah() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setActiveSubcat(sub)}
                   className="w-full text-right p-4 rounded-2xl flex items-center justify-between"
-                  style={{ background: dark ? '#1a1208' : '#fff', border: `1px solid ${border}` }}
+                  style={{ background: dark ? '#0C1C17' : '#fff', border: `1px solid ${border}` }}
                 >
                   <div>
-                    <p className="font-bold text-base" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}>{sub}</p>
-                    <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>{count} سنة</p>
+                    <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}>{sub}</p>
+                    <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A' }}>{count} سنة</p>
                   </div>
                   <ChevronLeft size={18} className="text-[#C19A6B]/60" />
                 </motion.button>
@@ -197,7 +197,7 @@ export function Sunnah() {
               className="flex items-center gap-2 mb-4"
             >
               <ChevronLeft size={16} className="text-[#C19A6B]" style={{ transform: 'rotate(180deg)' }} />
-              <span className="text-sm font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#d4b483' : '#5D4037' }}>{activeSubcat}</span>
+              <span className="text-sm font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#d4b483' : '#1F4A3D' }}>{activeSubcat}</span>
             </button>
             <div className="flex flex-col gap-2.5">
               {items.map(item => (

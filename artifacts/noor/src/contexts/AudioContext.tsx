@@ -74,9 +74,9 @@ function buildArtwork(surahName: string, reciterName: string): string {
 
     /* ── background gradient ── */
     const bg = c.createLinearGradient(0, 0, SIZE, SIZE);
-    bg.addColorStop(0,   '#0d0b07');
+    bg.addColorStop(0,   '#061210');
     bg.addColorStop(0.5, '#1a1308');
-    bg.addColorStop(1,   '#0d0b07');
+    bg.addColorStop(1,   '#061210');
     c.fillStyle = bg;
     c.fillRect(0, 0, SIZE, SIZE);
 

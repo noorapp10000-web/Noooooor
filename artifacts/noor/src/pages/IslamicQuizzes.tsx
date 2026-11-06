@@ -19,7 +19,7 @@ const CAT_GRADS: Record<number, string> = {
   2: 'linear-gradient(135deg,#1e3a6e,#0f2040)',
   3: 'linear-gradient(135deg,#4a2040,#2a1030)',
   4: 'linear-gradient(135deg,#6b3a0f,#3d2008)',
-  5: 'linear-gradient(135deg,#3a1a5c,#1e0d30)',
+  5: 'linear-gradient(135deg,#0F3D32,#1e0d30)',
   6: 'linear-gradient(135deg,#1a4a3a,#0d2b1e)',
 };
 
@@ -92,10 +92,10 @@ export function IslamicQuizzes() {
       .catch(() => setLoading(false));
   }, []);
 
-  const bg = dark ? '#0f0c07' : '#FDFBF0';
-  const cardBg = dark ? '#1a1208' : '#fff';
+  const bg = dark ? '#07130F' : '#FDFBF0';
+  const cardBg = dark ? '#0C1C17' : '#fff';
   const border = dark ? 'rgba(193,154,107,0.15)' : 'rgba(193,154,107,0.2)';
-  const textPrimary = dark ? '#d4b483' : '#5D4037';
+  const textPrimary = dark ? '#d4b483' : '#1F4A3D';
   const textSec = dark ? '#8B6B3D' : '#9E7B4A';
 
   const startQuiz = (level: string) => {
@@ -154,9 +154,9 @@ export function IslamicQuizzes() {
             <ChevronLeft size={20} className="text-[#C19A6B]" style={{ transform: 'rotate(180deg)' }} />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold truncate" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>{headerTitle}</h1>
+            <h1 className="text-xl font-bold truncate" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>{headerTitle}</h1>
             {screen === 'quiz' && (
-              <p className="text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+              <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                 السؤال {qIndex + 1} من {questions.length}
               </p>
             )}
@@ -189,7 +189,7 @@ export function IslamicQuizzes() {
           {/* Categories */}
           {screen === 'categories' && !loading && (
             <motion.div key="cats" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <p className="text-xs mb-4 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+              <p className="text-xs mb-4 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                 اختر التخصص الذي تريد اختبار معلوماتك فيه
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -201,8 +201,8 @@ export function IslamicQuizzes() {
                     className="rounded-2xl p-4 text-right flex flex-col justify-between min-h-[120px]"
                     style={{ background: CAT_GRADS[cat.id] }}
                   >
-                    <span className="text-lg font-bold text-white" style={{ fontFamily: '"Tajawal", sans-serif' }}>{cat.arabicName}</span>
-                    <span className="text-xs text-white/70 leading-snug mt-2" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <span className="text-lg font-bold text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{cat.arabicName}</span>
+                    <span className="text-xs text-white/70 leading-snug mt-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       {cat.topics.length} موضوع
                     </span>
                   </motion.button>
@@ -215,7 +215,7 @@ export function IslamicQuizzes() {
           {screen === 'topics' && selectedCat && (
             <motion.div key="topics" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
               <div className="mb-3 p-3 rounded-2xl" style={{ background: CAT_GRADS[selectedCat.id] }}>
-                <p className="text-xs text-white/80 leading-relaxed" style={{ fontFamily: '"Tajawal", sans-serif' }}>{selectedCat.description}</p>
+                <p className="text-xs text-white/80 leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{selectedCat.description}</p>
               </div>
               <div className="flex flex-col gap-2.5">
                 {selectedCat.topics.map((topic, i) => (
@@ -227,8 +227,8 @@ export function IslamicQuizzes() {
                     style={{ background: cardBg, border: `1px solid ${border}` }}
                   >
                     <div>
-                      <p className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>{topic.name}</p>
-                      <p className="text-xs mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>3 مستويات</p>
+                      <p className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>{topic.name}</p>
+                      <p className="text-xs mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>3 مستويات</p>
                     </div>
                     <ChevronLeft size={16} className="text-[#C19A6B]/60" />
                   </motion.button>
@@ -240,7 +240,7 @@ export function IslamicQuizzes() {
           {/* Levels */}
           {screen === 'levels' && selectedTopic && (
             <motion.div key="levels" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <p className="text-sm font-bold mb-4 text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>اختر مستوى الاختبار</p>
+              <p className="text-sm font-bold mb-4 text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>اختر مستوى الاختبار</p>
               <div className="flex flex-col gap-3">
                 {(['level1', 'level2', 'level3'] as const).map(lvl => {
                   const count = (selectedTopic.levelsData[lvl] ?? []).length;
@@ -252,8 +252,8 @@ export function IslamicQuizzes() {
                       className="w-full text-right p-5 rounded-2xl"
                       style={{ background: LEVEL_COLORS[lvl] }}
                     >
-                      <p className="font-bold text-lg text-white" style={{ fontFamily: '"Tajawal", sans-serif' }}>{LEVEL_NAMES[lvl]}</p>
-                      <p className="text-sm text-white/70 mt-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                      <p className="font-bold text-lg text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{LEVEL_NAMES[lvl]}</p>
+                      <p className="text-sm text-white/70 mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                         {Math.min(count, 20)} سؤال • الإجابات من موقع الدرر السنية
                       </p>
                     </motion.button>
@@ -268,7 +268,7 @@ export function IslamicQuizzes() {
             <motion.div key={`quiz-${qIndex}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {/* Question */}
               <div className="p-5 rounded-2xl mb-5" style={{ background: cardBg, border: `1px solid ${border}` }}>
-                <p className="text-base font-bold leading-relaxed" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+                <p className="text-base font-bold leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
                   {questions[qIndex].q}
                 </p>
               </div>
@@ -292,7 +292,7 @@ export function IslamicQuizzes() {
                       className="w-full text-right p-4 rounded-2xl flex items-center justify-between transition-all"
                       style={{ background: bg2, border: `1.5px solid ${border2}`, cursor: selected !== null ? 'default' : 'pointer' }}
                     >
-                      <p className="text-sm font-medium flex-1" style={{ fontFamily: '"Tajawal", sans-serif', color: textColor }}>
+                      <p className="text-sm font-medium flex-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>
                         {ans.answer}
                       </p>
                       {selected !== null && isCorrect && <CheckCircle size={18} className="text-green-500 flex-shrink-0" />}
@@ -312,7 +312,7 @@ export function IslamicQuizzes() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 py-2"
-                        style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A', fontSize: 12 }}
+                        style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#8B6B3D' : '#9E7B4A', fontSize: 12 }}
                       >
                         <ExternalLink size={12} />
                         <span>مصدر الإجابة - الدرر السنية</span>
@@ -321,7 +321,7 @@ export function IslamicQuizzes() {
                     <button
                       onClick={handleNext}
                       className="w-full py-4 rounded-2xl font-bold text-white text-base"
-                      style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
+                      style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
                     >
                       {qIndex + 1 >= questions.length ? 'عرض النتيجة' : 'السؤال التالي'}
                     </button>
@@ -339,25 +339,25 @@ export function IslamicQuizzes() {
               <div className="flex gap-3 mb-5 mt-2">
                 <div className="flex-1 rounded-2xl py-4 flex flex-col items-center gap-1"
                   style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
-                  <span className="text-2xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>{score}</span>
-                  <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#22c55e' }}>إجابات صحيحة</span>
+                  <span className="text-2xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>{score}</span>
+                  <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#22c55e' }}>إجابات صحيحة</span>
                 </div>
                 <div className="flex-1 rounded-2xl py-4 flex flex-col items-center gap-1"
                   style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
-                  <span className="text-2xl font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>{questions.length - score}</span>
-                  <span className="text-xs font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#ef4444' }}>إجابات خاطئة</span>
+                  <span className="text-2xl font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>{questions.length - score}</span>
+                  <span className="text-xs font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#ef4444' }}>إجابات خاطئة</span>
                 </div>
               </div>
 
               <div className="mb-6">
                 <Trophy size={56} className="text-[#C19A6B] mx-auto mb-3" />
-                <p className="text-3xl font-bold mb-2" style={{ fontFamily: '"Tajawal", sans-serif', color: textPrimary }}>
+                <p className="text-3xl font-bold mb-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textPrimary }}>
                   {score} / {questions.length}
                 </p>
-                <p className="text-lg font-bold mb-1" style={{ fontFamily: '"Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6340' }}>
+                <p className="text-lg font-bold mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: dark ? '#C19A6B' : '#8B6340' }}>
                   {score === questions.length ? 'ممتاز! أحسنت' : score >= questions.length * 0.7 ? 'جيد جداً' : score >= questions.length * 0.5 ? 'جيد، استمر في التعلم' : 'لا بأس، حاول مجدداً'}
                 </p>
-                <p className="text-sm" style={{ fontFamily: '"Tajawal", sans-serif', color: textSec }}>
+                <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textSec }}>
                   نسبة النجاح: {Math.round((score / questions.length) * 100)}٪
                 </p>
               </div>
@@ -379,7 +379,7 @@ export function IslamicQuizzes() {
                 <button
                   onClick={restartQuiz}
                   className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: 'linear-gradient(135deg,#8B6340,#C19A6B)' }}
                 >
                   <RotateCcw size={18} />
                   أعد الاختبار
@@ -387,7 +387,7 @@ export function IslamicQuizzes() {
                 <button
                   onClick={() => setScreen('levels')}
                   className="w-full py-4 rounded-2xl font-bold"
-                  style={{ fontFamily: '"Tajawal", sans-serif', background: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.12)', color: dark ? '#C19A6B' : '#8B6340', border: `1px solid ${border}` }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', background: dark ? 'rgba(193,154,107,0.1)' : 'rgba(193,154,107,0.12)', color: dark ? '#C19A6B' : '#8B6340', border: `1px solid ${border}` }}
                 >
                   اختر مستوى آخر
                 </button>

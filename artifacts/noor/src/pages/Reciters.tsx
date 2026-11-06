@@ -566,8 +566,8 @@ export function Reciters() {
             </button>
           </Link>
           <div className="flex-1">
-            <h1 className="font-bold text-xl" style={{ fontFamily: '"Tajawal", sans-serif' }}>القراء والاستماع</h1>
-            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{reciters?.length ?? 0} قارئ</p>
+            <h1 className="font-bold text-xl" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>القراء والاستماع</h1>
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{reciters?.length ?? 0} قارئ</p>
           </div>
         </div>
 
@@ -580,7 +580,7 @@ export function Reciters() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full bg-secondary border border-border rounded-2xl py-3 pr-10 pl-4 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              style={{ fontFamily: '"Tajawal", sans-serif' }}
+              style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}
             />
           </div>
         </div>
@@ -589,7 +589,7 @@ export function Reciters() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <div className="w-12 h-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
-              <p className="text-muted-foreground font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>جاري تحميل القراء...</p>
+              <p className="text-muted-foreground font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>جاري تحميل القراء...</p>
             </div>
           ) : isError ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -597,8 +597,8 @@ export function Reciters() {
                 <WifiOff className="w-8 h-8 text-destructive" />
               </div>
               <div className="text-center">
-                <p className="font-bold text-lg" style={{ fontFamily: '"Tajawal", sans-serif' }}>لا يوجد اتصال بالإنترنت</p>
-                <p className="text-muted-foreground text-sm mt-1" style={{ fontFamily: '"Tajawal", sans-serif' }}>تحقق من اتصالك وأعد تحميل الصفحة</p>
+                <p className="font-bold text-lg" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>لا يوجد اتصال بالإنترنت</p>
+                <p className="text-muted-foreground text-sm mt-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>تحقق من اتصالك وأعد تحميل الصفحة</p>
               </div>
             </div>
           ) : (
@@ -608,10 +608,10 @@ export function Reciters() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2 px-1">
                     <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-                    <h2 className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <h2 className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       السور المفضلة
                     </h2>
-                    <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <span className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       ({favoriteSurahsList.length})
                     </span>
                   </div>
@@ -637,12 +637,12 @@ export function Reciters() {
                           }}
                           className="flex-1 flex items-center gap-3 text-right"
                         >
-                          <div className="w-9 h-9 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                          <div className="w-9 h-9 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                             {fs.surahNum}
                           </div>
                           <div>
                             <p className="font-bold" style={{ fontFamily: '"Amiri", serif' }}>{fs.surahName}</p>
-                            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{fs.reciterName}</p>
+                            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{fs.reciterName}</p>
                           </div>
                         </button>
                         <button
@@ -671,10 +671,10 @@ export function Reciters() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2 px-1">
                     <Star className="w-4 h-4 fill-primary text-primary" />
-                    <h2 className="font-bold text-sm" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <h2 className="font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       القراء المفضلين
                     </h2>
-                    <span className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <span className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       ({favoritesList.length})
                     </span>
                   </div>
@@ -699,8 +699,8 @@ export function Reciters() {
                           className="flex-1 flex items-center gap-3 text-right"
                         >
                           <div>
-                            <p className="font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>{fav.name}</p>
-                            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                            <p className="font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{fav.name}</p>
+                            <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                               {fav.moshafName}
                             </p>
                           </div>
@@ -725,7 +725,7 @@ export function Reciters() {
                     ))}
                   </div>
                   <div className="flex items-center gap-2 mb-2 px-1">
-                    <h2 className="font-bold text-sm text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                    <h2 className="font-bold text-sm text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                       كل القراء
                     </h2>
                   </div>
@@ -746,8 +746,8 @@ export function Reciters() {
                         data-testid={`button-reciter-${r.id}-${mi}`}
                       >
                         <div>
-                          <p className="font-bold" style={{ fontFamily: '"Tajawal", sans-serif' }}>{r.name}</p>
-                          <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                          <p className="font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{r.name}</p>
+                          <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                             {moshaf.name}
                           </p>
                         </div>
@@ -792,8 +792,8 @@ export function Reciters() {
           </button>
           <div className="flex items-center gap-3 flex-1">
             <div>
-              <h1 className="font-bold text-lg leading-tight" style={{ fontFamily: '"Tajawal", sans-serif' }}>{selectedReciter?.name}</h1>
-              <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{selectedReciter?.moshafName}</p>
+              <h1 className="font-bold text-lg leading-tight" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{selectedReciter?.name}</h1>
+              <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{selectedReciter?.moshafName}</p>
             </div>
           </div>
         </div>
@@ -811,12 +811,12 @@ export function Reciters() {
                     : 'bg-card border-border hover:bg-secondary/50'
                 )}
               >
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ fontFamily: '"Tajawal", sans-serif' }}>
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                   {num}
                 </div>
                 <div className="flex-1">
                   <p className="font-bold" style={{ fontFamily: '"Amiri", serif' }}>{SURAH_NAMES[num]}</p>
-                  <p className="text-xs text-muted-foreground" style={{ fontFamily: '"Tajawal", sans-serif' }}>{SURAH_AYAHS[num] ?? '?'} آية</p>
+                  <p className="text-xs text-muted-foreground" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>{SURAH_AYAHS[num] ?? '?'} آية</p>
                 </div>
                 {audio.surahNum === num && audio.reciterId === selectedReciter?.id && (
                   <div className="flex gap-0.5">
@@ -837,7 +837,7 @@ export function Reciters() {
   const progress = audio.duration ? audio.currentTime / audio.duration : 0;
 
   const playerBg = isDark
-    ? 'linear-gradient(160deg, #0d0b07 0%, #1a1308 50%, #0d0b07 100%)'
+    ? 'linear-gradient(160deg, #061210 0%, #1a1308 50%, #061210 100%)'
     : 'linear-gradient(160deg, #f5ede0 0%, #ede0cc 50%, #f5ede0 100%)';
   const playerTextMain  = isDark ? '#e8d9b8' : '#2d1f08';
   const playerTextSub   = isDark ? 'rgba(193,154,107,0.7)' : 'rgba(120,80,30,0.85)';
@@ -863,7 +863,7 @@ export function Reciters() {
           <ArrowLeft className="w-5 h-5" style={{ color: '#C19A6B' }} />
         </button>
 
-        <p className="text-sm font-bold" style={{ color: playerTextSub, fontFamily: '"Tajawal", sans-serif' }}>قيد التشغيل</p>
+        <p className="text-sm font-bold" style={{ color: playerTextSub, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>قيد التشغيل</p>
 
         {/* زر الإغلاق الكامل (يوقف الصوت ويخفي الشريط) */}
         <button
@@ -890,7 +890,7 @@ export function Reciters() {
         <div className="text-center w-full">
           <h2 className="text-2xl font-bold" style={{ fontFamily: '"Amiri", serif', color: playerTextMain }}>سورة {audio.surahName}</h2>
           <div className="flex items-center justify-center gap-2 mt-2">
-            <p style={{ fontFamily: '"Tajawal", sans-serif', color: playerTextSub }}>{audio.reciterName}</p>
+            <p style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: playerTextSub }}>{audio.reciterName}</p>
           </div>
 
           {/* أزرار التحميل والقلب تحت اسم القارئ */}
@@ -942,7 +942,7 @@ export function Reciters() {
                   style={{ width: `${downloadProgress}%`, background: 'linear-gradient(to right, #C19A6B, #8a6a3a)' }}
                 />
               </div>
-              <p className="text-xs mt-1" style={{ color: playerTextTime, fontFamily: '"Tajawal", sans-serif' }}>
+              <p className="text-xs mt-1" style={{ color: playerTextTime, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
                 {downloadProgress < 100 ? `جاري التحميل ${downloadProgress}%...` : 'اكتمل التحميل ✓'}
               </p>
             </div>
@@ -973,7 +973,7 @@ export function Reciters() {
         </div>
 
         {/* Time labels */}
-        <div className="flex justify-between text-xs mb-6" style={{ color: playerTextTime, fontFamily: '"Tajawal", sans-serif' }}>
+        <div className="flex justify-between text-xs mb-6" style={{ color: playerTextTime, fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif' }}>
           <span>{fmtTime(audio.duration)}</span>
           <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtTime(audio.currentTime)}</span>
         </div>
@@ -1036,7 +1036,7 @@ export function Reciters() {
             <span
               className="text-xs font-bold"
               style={{
-                fontFamily: '"Tajawal", sans-serif',
+                fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                 color: audio.autoPlay ? '#C19A6B' : playerTextTime,
               }}
             >

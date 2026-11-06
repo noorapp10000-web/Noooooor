@@ -67,14 +67,13 @@ const ROUTE_MESSAGES: Record<string, string> = {
   🔥 سلسلة الأذكار المتواصلة
 • اضغط على "عرض الكل" لرؤية كل الأيام`,
 
-  '/more': `قائمة المزيد ✨
-
-اضغط على أي خانة للدخول إليها:
-• 📖 القراء — 📻 الإذاعات — 📺 التلفزيون
-• 💎 أسماء الله — 📜 الأحاديث — ☀️ السنة
-• 🕌 التاريخ — 🌟 الأنبياء — 🎯 الاختبارات
-• 🧭 القبلة — 🎤 مقارنة التلاوة — 🧠 اختبار الحفظ
-• زر المشاركة 📤 لنشر التطبيق على مواقع التواصل`,
+  '/more': `صفحة اكتشف ✨
+كل مميزات نور مقسّمة لأربعة أقسام:
+• 🕌 العبادة — الصلاة، الوضوء، القبلة، السنن
+• 📖 القرآن — القرّاء، اختبار الحفظ، التدبّر، الأسماء الحسنى
+• 📚 العلم — الأحاديث، قصص الأنبياء، التاريخ، المسابقات
+• 📻 استمع وشاهد — الإذاعات والقنوات المباشرة
+🔎 استخدم خانة البحث لتصل لأي ميزة فورًا`,
 
   '/settings': `إعدادات التطبيق ⚙️
 
@@ -261,7 +260,7 @@ export function TutorialMascot() {
               alt="مرشد نور"
               className="flex-shrink-0 select-none"
               style={{
-                width: 138,
+                width: 112,
                 height: 'auto',
                 filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.28))',
               }}
@@ -327,7 +326,7 @@ export function TutorialMascot() {
                 <p
                   className="font-black text-[13px] leading-snug mb-1.5 relative"
                   style={{
-                    fontFamily: '"Tajawal", sans-serif',
+                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                     color: '#3d2a0e',
                     direction: 'rtl',
                     textAlign: 'right',
@@ -341,7 +340,7 @@ export function TutorialMascot() {
                   <p
                     className="text-[11px] leading-[1.8] whitespace-pre-line relative"
                     style={{
-                      fontFamily: '"Tajawal", sans-serif',
+                      fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                       color: '#6b4d22',
                       direction: 'rtl',
                       textAlign: 'right',
@@ -354,7 +353,7 @@ export function TutorialMascot() {
                 {/* dismiss hint */}
                 <p
                   className="text-[9px] mt-2 opacity-40 text-center relative"
-                  style={{ fontFamily: '"Tajawal", sans-serif', color: '#8a6030' }}
+                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#8a6030' }}
                 >
                   اضغط في أي مكان للمتابعة
                 </p>

@@ -138,7 +138,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Allāhu Akbar',
     meaning: 'الله أكبر',
     note: 'يرفع يديه حذو منكبيه أو شحمتي أذنيه عند التكبير',
-    img: '/images/prayer/step-02-takbir.webp', color: '#1e4d7b',
+    img: '/images/prayer/step-02-takbir.webp', color: '#1F4A5A',
   },
   {
     id: 3, title: 'دعاء الاستفتاح', position: 'قيام — سنة',
@@ -146,7 +146,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Subḥānaka Allāhumma wa biḥamdik, wa tabāraka ismuk, wa taʿālā jadduk, wa lā ilāha ghayruk',
     meaning: 'سبحانك اللهم وبحمدك، وتبارك اسمك، وتعالى جدك، ولا إله غيرك',
     note: 'دعاء مستحب في أول كل صلاة — يُقرأ في السر',
-    img: '/images/prayer/step-03-istiftah.webp', color: '#4a2a7a',
+    img: '/images/prayer/step-03-istiftah.webp', color: '#1F6B57',
   },
   {
     id: 4, title: 'التعوذ والبسملة', position: 'قيام',
@@ -170,7 +170,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'Qul huwa Allāhu aḥad...',
     meaning: 'سورة الإخلاص — مثال على السورة القصيرة',
     note: 'في الركعة الأولى والثانية فقط — يمكن قراءة أي سورة',
-    img: '/images/prayer/step-06-surah.webp', color: '#5c3a7a',
+    img: '/images/prayer/step-06-surah.webp', color: '#1a5c5c',
   },
   {
     id: 7, title: 'الركوع', position: 'ركوع — ركن',
@@ -196,7 +196,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي الأعلى',
     note: 'يسجد على سبعة أعضاء: الجبهة+الأنف، الكفّان، الركبتان، أطراف القدمين',
     repetitions: 3,
-    img: '/images/prayer/step-09-sujood1.webp', color: '#3a1a5c',
+    img: '/images/prayer/step-09-sujood1.webp', color: '#0F3D32',
   },
   {
     id: 10, title: 'الجلوس بين السجدتين', position: 'جلوس',
@@ -213,7 +213,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     meaning: 'سبحان ربي الأعلى',
     note: 'ثم يقوم للركعة التالية مكبِّراً، ويفعل مثل ذلك في كل ركعة',
     repetitions: 3,
-    img: '/images/prayer/step-11-sujood2.webp', color: '#3a1a5c',
+    img: '/images/prayer/step-11-sujood2.webp', color: '#0F3D32',
   },
   {
     id: 12, title: 'التشهد الأخير', position: 'جلوس — ركن',
@@ -237,7 +237,7 @@ const PRAYER_STEPS: PrayerStep[] = [
     transliteration: 'As-salāmu ʿalaykum wa raḥmatullāh',
     meaning: 'السلام عليكم ورحمة الله',
     note: 'يلتفت يميناً ثم يساراً — وبهذا تنتهي الصلاة',
-    img: '/images/prayer/step-14-tasleem.webp', color: '#4a1e2a',
+    img: '/images/prayer/step-14-tasleem.webp', color: '#5C3518',
   },
 ];
 
@@ -249,11 +249,11 @@ interface Prayer {
 }
 
 const PRAYERS: Prayer[] = [
-  { name: 'الفجر',  rakaas: 2, color: '#1e3a5c', Icon: FajrIcon },
+  { name: 'الفجر',  rakaas: 2, color: '#1F4A5A', Icon: FajrIcon },
   { name: 'الظهر',  rakaas: 4, color: '#8B6340', Icon: DuhrIcon },
   { name: 'العصر',  rakaas: 4, color: '#7a3a1e', Icon: AsrIcon },
-  { name: 'المغرب', rakaas: 3, color: '#5c2d6e', Icon: MaghribIcon },
-  { name: 'العشاء', rakaas: 4, color: '#0f2d4d', Icon: IshaIcon },
+  { name: 'المغرب', rakaas: 3, color: '#6B3A2A', Icon: MaghribIcon },
+  { name: 'العشاء', rakaas: 4, color: '#0C1C17', Icon: IshaIcon },
 ];
 
 export function LearnPrayer() {
@@ -267,8 +267,8 @@ export function LearnPrayer() {
   const current = PRAYER_STEPS[step];
   const progress = ((step + 1) / total) * 100;
 
-  const bg        = dark ? '#0f0c07' : '#fdfaf5';
-  const cardBg    = dark ? '#1a1208' : '#ffffff';
+  const bg        = dark ? '#07130F' : '#fdfaf5';
+  const cardBg    = dark ? '#0C1C17' : '#ffffff';
   const border    = dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.25)';
   const textColor  = dark ? '#e8d8b0' : '#3d2a0e';
   const mutedColor = dark ? 'rgba(232,216,176,0.5)' : 'rgba(61,42,14,0.45)';
@@ -283,7 +283,7 @@ export function LearnPrayer() {
             style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
             <ChevronRight size={20} />
           </button>
-          <h1 className="text-xl font-black" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+          <h1 className="text-xl font-black" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
             تعلم الصلاة
           </h1>
         </div>
@@ -296,17 +296,17 @@ export function LearnPrayer() {
               <MosqueIcon size={44} color="white" />
             </div>
             <div>
-              <p className="text-white font-black text-lg mb-1" style={{ fontFamily: '"Tajawal",sans-serif' }}>
+              <p className="text-white font-black text-lg mb-1" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
                 خطوات الصلاة كاملة
               </p>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(255,255,255,0.75)' }}>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(255,255,255,0.75)' }}>
                 دليل مفصل لكل خطوة في الصلاة مع النص العربي والتشكيل والشرح — مناسب للمسلم الجديد والمراجع
               </p>
             </div>
           </div>
 
           {/* Prayer selector */}
-          <p className="font-bold mb-3 text-sm" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+          <p className="font-bold mb-3 text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
             اختار الصلاة لمعرفة عدد ركعاتها — الخطوات واحدة لكل الصلوات
           </p>
           <div className="flex flex-col gap-3 mb-6">
@@ -319,10 +319,10 @@ export function LearnPrayer() {
                   <p.Icon size={32} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-black text-lg text-white" style={{ fontFamily: '"Tajawal",sans-serif' }}>
+                  <p className="font-black text-lg text-white" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
                     صلاة {p.name}
                   </p>
-                  <p className="text-sm" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(255,255,255,0.65)' }}>
+                  <p className="text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(255,255,255,0.65)' }}>
                     {p.rakaas} ركعات
                   </p>
                 </div>
@@ -332,7 +332,7 @@ export function LearnPrayer() {
           </div>
 
           {/* Steps overview */}
-          <p className="font-bold mb-3 text-sm" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+          <p className="font-bold mb-3 text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
             الخطوات ({total} خطوة)
           </p>
           <div className="flex flex-col gap-2">
@@ -344,10 +344,10 @@ export function LearnPrayer() {
                   style={{ background: s.color + '22', minWidth: 40 }}>
                   <img src={s.img} alt={s.title} className="w-full h-full object-cover object-top" />
                 </div>
-                <p className="flex-1 font-bold text-sm" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+                <p className="flex-1 font-bold text-sm" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
                   {s.title}
                 </p>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ fontFamily: '"Tajawal",sans-serif', background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', background: 'rgba(193,154,107,0.12)', color: '#C19A6B' }}>
                   {s.position.split(' — ')[0]}
                 </span>
               </button>
@@ -376,16 +376,16 @@ export function LearnPrayer() {
               style={{ background: prayer.color }}>
               <prayer.Icon size={18} />
             </div>
-            <p className="font-black text-base" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+            <p className="font-black text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
               صلاة {prayer.name}
             </p>
           </div>
-          <p className="text-xs" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+          <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
             خطوة {step + 1} من {total}
           </p>
         </div>
         <div className="text-xs font-bold px-3 py-1 rounded-full"
-          style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B', fontFamily: '"Tajawal",sans-serif' }}>
+          style={{ background: 'rgba(193,154,107,0.12)', color: '#C19A6B', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
           {prayer.rakaas} ركعات
         </div>
       </div>
@@ -428,7 +428,7 @@ export function LearnPrayer() {
               style={{
                 height: 240,
                 background: dark
-                  ? `linear-gradient(160deg, ${current.color}55 0%, #0f0c07 100%)`
+                  ? `linear-gradient(160deg, ${current.color}55 0%, #07130F 100%)`
                   : `linear-gradient(160deg, ${current.color}22 0%, #fdfaf5 100%)`,
               }}>
               <div className="absolute inset-0 flex items-center justify-center opacity-15">
@@ -454,7 +454,7 @@ export function LearnPrayer() {
               </div>
               {/* Position badge */}
               <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full text-xs font-bold text-white"
-                style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', fontFamily: '"Tajawal",sans-serif' }}>
+                style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
                 {current.position.split(' — ')[0]}
               </div>
             </div>
@@ -462,18 +462,18 @@ export function LearnPrayer() {
             {/* Title block */}
             <div className="px-5 pt-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-2xl font-black" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+                <h2 className="text-2xl font-black" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
                   {current.title}
                 </h2>
                 {current.position.includes('ركن') && (
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: '#ef444422', color: '#ef4444', border: '1px solid #ef444444', fontFamily: '"Tajawal",sans-serif' }}>
+                    style={{ background: '#ef444422', color: '#ef4444', border: '1px solid #ef444444', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
                     ركن
                   </span>
                 )}
                 {current.position.includes('سنة') && (
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: '#C19A6B22', color: '#C19A6B', border: '1px solid #C19A6B44', fontFamily: '"Tajawal",sans-serif' }}>
+                    style={{ background: '#C19A6B22', color: '#C19A6B', border: '1px solid #C19A6B44', fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
                     سنة
                   </span>
                 )}
@@ -484,7 +484,7 @@ export function LearnPrayer() {
                 style={{ background: dark ? 'rgba(193,154,107,0.07)' : 'rgba(193,154,107,0.07)', border: `1px solid ${border}` }}>
                 {current.repetitions && (
                   <p className="text-xs font-bold mb-2 text-center"
-                    style={{ fontFamily: '"Tajawal",sans-serif', color: '#C19A6B' }}>
+                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#C19A6B' }}>
                     × {current.repetitions} مرات
                   </p>
                 )}
@@ -500,7 +500,7 @@ export function LearnPrayer() {
                 <p className="text-center text-xs italic mb-1" style={{ color: mutedColor, fontFamily: 'sans-serif' }}>
                   {current.transliteration}
                 </p>
-                <p className="text-center text-xs" style={{ fontFamily: '"Tajawal",sans-serif', color: mutedColor }}>
+                <p className="text-center text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: mutedColor }}>
                   {current.meaning}
                 </p>
               </div>
@@ -510,7 +510,7 @@ export function LearnPrayer() {
                 <div className="rounded-2xl p-4 mb-3"
                   style={{ background: dark ? 'rgba(30,77,43,0.18)' : 'rgba(30,77,43,0.07)', border: '1px solid rgba(30,77,43,0.25)' }}>
                   <p className="text-xs font-bold text-center mb-3"
-                    style={{ fontFamily: '"Tajawal",sans-serif', color: '#1e4d2b' }}>
+                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#1e4d2b' }}>
                     وضع اليدين في التشهد
                   </p>
                   <div className="flex items-end justify-center gap-6">
@@ -533,10 +533,10 @@ export function LearnPrayer() {
                         {/* Fingertip */}
                         <circle cx="13" cy="17" r="4.5" fill="#E8C9A0" stroke="#C8A070" strokeWidth="1.5"/>
                       </svg>
-                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: '#1e4d2b' }}>
+                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#1e4d2b' }}>
                         اليد اليمنى
                       </p>
-                      <p className="text-[9px] text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
+                      <p className="text-[9px] text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
                         قبضة + سبابة ممتدة
                       </p>
                     </div>
@@ -555,15 +555,15 @@ export function LearnPrayer() {
                         {/* Thumb */}
                         <path d="M18 35 Q10 32 10 26 Q10 20 16 20" stroke="#C8A070" strokeWidth="4" strokeLinecap="round" fill="none"/>
                       </svg>
-                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: '#1e4d2b' }}>
+                      <p className="text-[10px] font-bold text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: '#1e4d2b' }}>
                         اليد اليسرى
                       </p>
-                      <p className="text-[9px] text-center" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
+                      <p className="text-[9px] text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(30,77,43,0.6)' }}>
                         مفتوحة مبسوطة
                       </p>
                     </div>
                   </div>
-                  <p className="text-[10px] text-center mt-2" style={{ fontFamily: '"Tajawal",sans-serif', color: 'rgba(30,77,43,0.65)' }}>
+                  <p className="text-[10px] text-center mt-2" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: 'rgba(30,77,43,0.65)' }}>
                     كلتا اليدين على الركبتين — السبابة اليمنى ترفع عند قول «إلا الله»
                   </p>
                 </div>
@@ -574,7 +574,7 @@ export function LearnPrayer() {
                 <div className="flex items-start gap-2.5 rounded-xl p-3 mb-4"
                   style={{ background: 'rgba(193,154,107,0.08)', border: `1px solid rgba(193,154,107,0.18)` }}>
                   <TipIcon size={16} color="#C19A6B" />
-                  <p className="text-xs leading-relaxed" style={{ fontFamily: '"Tajawal",sans-serif', color: textColor }}>
+                  <p className="text-xs leading-relaxed" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif', color: textColor }}>
                     {current.note}
                   </p>
                 </div>
@@ -596,7 +596,7 @@ export function LearnPrayer() {
         <button
           onClick={() => { if (step < total - 1) setStep(s => s + 1); else setSelectedPrayer(null); }}
           className="flex-1 h-14 rounded-2xl font-bold text-base text-white"
-          style={{ background: `linear-gradient(135deg, ${current.color}, #C19A6B)`, fontFamily: '"Tajawal",sans-serif' }}>
+          style={{ background: `linear-gradient(135deg, ${current.color}, #C19A6B)`, fontFamily: '"IBM Plex Sans Arabic", "Tajawal",sans-serif' }}>
           {step === total - 1 ? 'انتهت الصلاة ✓' : `التالي — ${PRAYER_STEPS[step + 1]?.title} →`}
         </button>
 

@@ -30,7 +30,7 @@ function CityPicker({ govId, onSelect }: { govId: string; onSelect: (id: string)
                 <div className="w-11 h-8 rounded-md overflow-hidden flex items-center justify-center" style={{ background: 'rgba(139,99,64,0.08)' }}>
                   <img src={gov.flag} alt={gov.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 </div>
-                <span className="text-[10px] font-bold leading-tight text-center" style={{ fontFamily: '"Tajawal", sans-serif', color: selected ? '#8B6340' : '#7A4F28' }}>
+                <span className="text-[10px] font-bold leading-tight text-center" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: selected ? '#8B6340' : '#7A4F28' }}>
                   {gov.name}
                 </span>
                 {selected && (
@@ -103,7 +103,7 @@ export function Login({ onComplete }: LoginProps) {
   const BTN_GOLD = {
     background: 'linear-gradient(135deg, #C19A6B 0%, #d4aa7d 50%, #b8894f 100%)',
     color: '#1a0e00',
-    fontFamily: '"Tajawal", sans-serif',
+    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
     boxShadow: '0 4px 24px rgba(193,154,107,0.35), 0 1px 0 rgba(255,255,255,0.15) inset',
     fontWeight: 700,
     fontSize: '1rem',
@@ -138,7 +138,7 @@ export function Login({ onComplete }: LoginProps) {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-5 overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #F8EDD8 0%, #EAD9B5 50%, #F5ECD0 100%)' }}
+      style={{ background: 'linear-gradient(180deg, hsl(168 50% 6% / 0.25) 0%, hsl(42 45% 97% / 0.55) 30%, hsl(42 45% 97%) 48%), url(/images/art/hero-mosque.webp) center 75% / cover no-repeat, hsl(42 45% 97%)' }}
       dir="rtl"
     >
       {/* Background glows */}
@@ -178,7 +178,7 @@ export function Login({ onComplete }: LoginProps) {
           <h1 className="text-3xl font-bold" style={{ fontFamily: '"Amiri", serif', background: 'linear-gradient(135deg, #e8c98a, #C19A6B, #a07840)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             نُور
           </h1>
-          <p className="text-xs tracking-[0.25em] mt-0.5" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+          <p className="text-xs tracking-[0.25em] mt-0.5" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#9B7043' }}>
             رفيقك الإسلامي الشامل
           </p>
         </motion.div>
@@ -190,7 +190,7 @@ export function Login({ onComplete }: LoginProps) {
             <motion.div key="name" {...slide} className="flex flex-col gap-4">
               <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.7)', border: '1.5px solid rgba(139,99,64,0.2)', boxShadow: '0 2px 12px rgba(93,48,16,0.08)' }}>
 
-                <h2 className="text-lg font-bold text-center mb-4" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>
+                <h2 className="text-lg font-bold text-center mb-4" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#173A30' }}>
                   أهلاً بك في نور
                 </h2>
 
@@ -205,7 +205,7 @@ export function Login({ onComplete }: LoginProps) {
                         onClick={() => setGender(g)}
                         className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-all duration-200"
                         style={{
-                          fontFamily: '"Tajawal", sans-serif',
+                          fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                           background: selected
                             ? 'linear-gradient(135deg, #C19A6B, #a07840)'
                             : 'rgba(139,99,64,0.07)',
@@ -223,7 +223,7 @@ export function Login({ onComplete }: LoginProps) {
                 </div>
 
                 {/* Name input */}
-                <p className="text-xs text-center mb-3" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+                <p className="text-xs text-center mb-3" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#9B7043' }}>
                   اكتب اسمك للبدء
                 </p>
                 <div
@@ -244,7 +244,7 @@ export function Login({ onComplete }: LoginProps) {
                     placeholder="اسمك..."
                     maxLength={30}
                     className="w-full bg-transparent outline-none py-4"
-                    style={{ fontFamily: '"Tajawal", sans-serif', fontSize: '1rem', color: '#3D2007', paddingRight: '3rem', paddingLeft: '1.25rem' }}
+                    style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', fontSize: '1rem', color: '#173A30', paddingRight: '3rem', paddingLeft: '1.25rem' }}
                     onFocus={() => setFocused(true)}
                     onBlur={() => { setFocused(false); syncNameFromInput(); }}
                     onChange={e => setNameValue(e.target.value)}
@@ -275,7 +275,7 @@ export function Login({ onComplete }: LoginProps) {
                   background: importResult?.ok ? 'rgba(34,197,94,0.1)' : importResult?.ok === false ? 'rgba(239,68,68,0.08)' : 'rgba(193,154,107,0.1)',
                   border: `1.5px solid ${importResult?.ok ? 'rgba(34,197,94,0.35)' : importResult?.ok === false ? 'rgba(239,68,68,0.3)' : 'rgba(193,154,107,0.3)'}`,
                   color: importResult?.ok ? '#16a34a' : importResult?.ok === false ? '#ef4444' : '#8B6340',
-                  fontFamily: '"Tajawal", sans-serif',
+                  fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
                   fontWeight: 600,
                   fontSize: '0.9rem',
                 }}
@@ -284,7 +284,7 @@ export function Login({ onComplete }: LoginProps) {
                 {importing ? 'جاري الاستعادة...' : importResult ? importResult.msg : 'استعادة من نسخة احتياطية'}
               </button>
 
-              <p className="text-center text-xs" style={{ fontFamily: '"Tajawal", sans-serif', color: 'rgba(155,112,67,0.6)' }}>
+              <p className="text-center text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: 'rgba(155,112,67,0.6)' }}>
                 بياناتك محفوظة على جهازك فقط — لا حاجة لإنترنت
               </p>
             </motion.div>
@@ -296,7 +296,7 @@ export function Login({ onComplete }: LoginProps) {
               <button
                 onClick={() => setStep('name')}
                 className="flex items-center gap-1.5 text-sm"
-                style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}
+                style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#9B7043' }}
               >
                 <ChevronRight className="w-4 h-4" /> رجوع
               </button>
@@ -304,11 +304,11 @@ export function Login({ onComplete }: LoginProps) {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="w-4 h-4" style={{ color: '#C19A6B' }} />
-                  <h2 className="text-lg font-bold" style={{ fontFamily: '"Tajawal", sans-serif', color: '#3D2007' }}>
+                  <h2 className="text-lg font-bold" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#173A30' }}>
                     اختر محافظتك
                   </h2>
                 </div>
-                <p className="text-xs mb-4 mr-6" style={{ fontFamily: '"Tajawal", sans-serif', color: '#9B7043' }}>
+                <p className="text-xs mb-4 mr-6" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#9B7043' }}>
                   لضبط مواقيت الصلاة بدقة — تقدر تغيرها لاحقاً
                 </p>
                 <CityPicker govId={govId} onSelect={handleCitySelect} />

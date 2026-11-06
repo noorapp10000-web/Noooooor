@@ -7,8 +7,10 @@
 }
 
 @theme inline {
-  --font-sans: 'Tajawal', sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, sans-serif;
   --font-serif: 'Amiri', serif;
+  --font-display: 'Reem Kufi', 'IBM Plex Sans Arabic', sans-serif;
+  --font-quran: 'Amiri Quran', 'Scheherazade New', 'Amiri', serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -28,54 +30,91 @@
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--card) / var(--app-card-opacity, 0.92));
   --color-popover-foreground: hsl(var(--card-foreground));
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+  --color-gold: hsl(var(--gold));
+  --color-gold-soft: hsl(var(--gold-soft));
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 14px);
+
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 3.2s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
 }
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 @layer base {
   :root {
-    --background: 51 71% 97%; /* #FDFBF0 */
-    --foreground: 20 28% 13%; /* #2C1E16 */
+    /* Noor — ivory, ink-emerald & burnished gold */
+    --background: 42 45% 97%;
+    --foreground: 165 28% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 20 28% 13%;
+    --card-foreground: 165 28% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 28% 13%;
-    --primary: 33 42% 59%; /* #C19A6B Golden */
+    --popover-foreground: 165 28% 11%;
+    --primary: 35 50% 54%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 33 20% 90%;
-    --secondary-foreground: 20 28% 13%;
-    --muted: 40 30% 92%;
-    --muted-foreground: 25 15% 40%;
-    --accent: 33 42% 59%;
+    --secondary: 40 32% 93%;
+    --secondary-foreground: 165 28% 11%;
+    --muted: 40 28% 93%;
+    --muted-foreground: 165 8% 40%;
+    --accent: 35 50% 54%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 20% 85%;
-    --ring: 33 42% 59%;
-    --radius: 1rem;
+    --border: 38 26% 87%;
+    --ring: 35 50% 54%;
+    --radius: 1.125rem;
+
+    --brand: 164 48% 16%;
+    --brand-foreground: 42 60% 95%;
+    --gold: 38 62% 60%;
+    --gold-soft: 40 70% 82%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(40 72% 70%) 0%, hsl(35 52% 54%) 50%, hsl(28 45% 40%) 100%);
+    --gradient-brand: linear-gradient(160deg, hsl(164 45% 20%) 0%, hsl(168 52% 10%) 100%);
+    --gradient-hero-fade: linear-gradient(180deg, hsl(168 50% 6% / 0.1) 0%, hsl(168 50% 6% / 0.35) 45%, hsl(168 55% 5% / 0.92) 100%);
+    --shadow-soft: 0 1px 2px hsl(165 30% 10% / 0.04), 0 8px 24px -12px hsl(165 30% 10% / 0.14);
+    --shadow-lift: 0 2px 4px hsl(165 30% 10% / 0.05), 0 22px 44px -18px hsl(165 40% 10% / 0.35);
+    --shadow-gold: 0 12px 32px -12px hsl(35 60% 45% / 0.55);
+    --glass-bg: hsl(42 40% 99% / 0.9);
+    --glass-border: hsl(38 30% 80% / 0.55);
   }
 
   .dark {
-    --background: 20 18% 8%; /* #16120F */
-    --foreground: 51 71% 97%; /* #FDFBF0 */
-    --card: 20 18% 12%;
-    --card-foreground: 51 71% 97%;
-    --popover: 20 18% 12%;
-    --popover-foreground: 51 71% 97%;
-    --primary: 33 42% 59%; /* #C19A6B */
-    --primary-foreground: 20 28% 13%;
-    --secondary: 20 15% 15%;
-    --secondary-foreground: 51 71% 97%;
-    --muted: 20 15% 15%;
-    --muted-foreground: 40 10% 60%;
-    --accent: 33 42% 59%;
-    --accent-foreground: 20 28% 13%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 51 71% 97%;
-    --border: 20 15% 20%;
-    --ring: 33 42% 59%;
+    --background: 168 32% 5%;
+    --foreground: 42 40% 94%;
+    --card: 165 24% 9%;
+    --card-foreground: 42 40% 94%;
+    --popover: 165 24% 9%;
+    --popover-foreground: 42 40% 94%;
+    --primary: 37 56% 60%;
+    --primary-foreground: 168 40% 7%;
+    --secondary: 165 18% 13%;
+    --secondary-foreground: 42 40% 94%;
+    --muted: 165 18% 13%;
+    --muted-foreground: 40 12% 64%;
+    --accent: 37 56% 60%;
+    --accent-foreground: 168 40% 7%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 42 40% 94%;
+    --border: 162 16% 17%;
+    --ring: 37 56% 60%;
+
+    --brand: 164 40% 12%;
+    --brand-foreground: 42 60% 94%;
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.3), 0 10px 28px -14px hsl(0 0% 0% / 0.6);
+    --shadow-lift: 0 2px 6px hsl(0 0% 0% / 0.35), 0 24px 48px -20px hsl(0 0% 0% / 0.75);
+    --glass-bg: hsl(166 26% 8% / 0.88);
+    --glass-border: hsl(40 40% 70% / 0.12);
   }
 
   * {
@@ -85,16 +124,21 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     direction: rtl;
-    background-image: url('../public/images/islamic-pattern.webp');
-    background-blend-mode: multiply;
-    background-size: 300px;
+    background-image:
+      radial-gradient(120% 60% at 100% 0%, hsl(var(--primary) / 0.10), transparent 60%),
+      radial-gradient(90% 50% at 0% 100%, hsl(var(--brand) / 0.06), transparent 60%),
+      url('../public/images/islamic-pattern.webp');
+    background-blend-mode: normal, normal, multiply;
+    background-size: auto, auto, 320px;
     background-attachment: fixed;
+    font-feature-settings: "kern", "liga";
+    -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
   }
 
   .dark body {
-    background-blend-mode: screen;
-    background-color: hsl(20 18% 8%);
+    background-blend-mode: normal, normal, soft-light;
+    background-color: hsl(var(--background));
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -110,11 +154,46 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+    @apply font-bold;
+    letter-spacing: 0;
   }
+  /* Unified identity: every screen title uses the Kufi display face */
+  h1 {
+    font-family: var(--font-display) !important;
+    font-weight: 600 !important;
+    line-height: 1.25;
+  }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: hsl(var(--primary) / 0.3); }
 }
 
 @layer utilities {
+  .font-display { font-family: var(--font-display); }
+  .font-quran { font-family: var(--font-quran); }
+  .bg-gradient-gold { background-image: var(--gradient-gold); }
+  .bg-gradient-brand { background-image: var(--gradient-brand); }
+  .bg-hero-fade { background-image: var(--gradient-hero-fade); }
+  .text-gold-gradient {
+    background-image: var(--gradient-gold);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-lift { box-shadow: var(--shadow-lift); }
+  .shadow-gold { box-shadow: var(--shadow-gold); }
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+  }
+  .surface {
+    background: hsl(var(--card) / var(--app-card-opacity, 0.92));
+    border: 1px solid hsl(var(--border) / 0.7);
+    box-shadow: var(--shadow-soft);
+  }
+  .press { transition: transform .18s cubic-bezier(.22,1,.36,1), box-shadow .2s; }
+  .press:active { transform: scale(0.97); }
+  .hairline-gold { background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.5), transparent); height: 1px; }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
