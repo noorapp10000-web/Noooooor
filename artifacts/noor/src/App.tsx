@@ -28,6 +28,7 @@ import { Tasbih } from "@/pages/Tasbih";
 import { Rankings } from "@/pages/Rankings";
 import { MoreMenu } from "@/pages/MoreMenu";
 import { Settings } from "@/pages/Settings";
+import { About } from "@/pages/About";
 import { Asma } from "@/pages/Asma";
 import { Reciters } from "@/pages/Reciters";
 import { SpeedReader } from "@/pages/SpeedReader";
@@ -174,6 +175,7 @@ function Router() {
       <Route path="/ranking"><AppShell><Rankings /></AppShell></Route>
       <Route path="/more"><AppShell><MoreMenu /></AppShell></Route>
       <Route path="/settings"><AppShell><Settings /></AppShell></Route>
+      <Route path="/about"><AppShell><About /></AppShell></Route>
       <Route path="/asma"><FullScreenShell><Asma /></FullScreenShell></Route>
       <Route path="/reciters"><FullScreenShell><Reciters /></FullScreenShell></Route>
       <Route path="/speed-reader"><FullScreenShell><SpeedReader /></FullScreenShell></Route>

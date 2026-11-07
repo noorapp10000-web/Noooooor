@@ -12,6 +12,14 @@ import { padZero, cn } from '@/lib/utils';
 import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { normalizeArabic } from '@/lib/arabic-utils';
+import { EightStar } from '@/components/noor/kit';
+
+type NightTone = 'emerald' | 'amoled' | 'sepia';
+const NIGHT_TONES: Record<NightTone, { label: string; page: string; mushaf: string; text: string }> = {
+  emerald: { label: 'زمردي', page: '#07130F', mushaf: 'linear-gradient(180deg, #0C1C17 0%, #07130F 100%)', text: '#E8DCC0' },
+  amoled: { label: 'أسود', page: '#000000', mushaf: 'linear-gradient(180deg, #050505 0%, #000000 100%)', text: '#D9CBA8' },
+  sepia: { label: 'كهرماني', page: '#140E06', mushaf: 'linear-gradient(180deg, #1c1408 0%, #160f06 100%)', text: '#E6D2A6' },
+};
 
 type MoshafType = { id: number; name: string; description: string; img_src: string; download_link: string };
 
@@ -282,19 +290,8 @@ function getWordAudioUrl(surah: number, ayah: number, wordIdx: number): string {
   return `https://audio.qurancdn.com/wbw/${padZero(surah, 3)}_${padZero(ayah, 3)}_${padZero(wordIdx, 3)}.mp3`;
 }
 
-function AyahMarker({ num, bookmarked, dark }: { num: number; bookmarked?: boolean; dark: boolean }) {
-  return (
-    <span className="inline-block align-middle mx-1" style={{ direction: 'ltr', unicodeBidi: 'embed' }}>
-      <svg width="28" height="28" viewBox="0 0 100 100" style={{ display: 'inline', verticalAlign: 'middle' }}>
-        <circle cx="50" cy="50" r="46" fill="none" stroke={bookmarked ? '#C19A6B' : dark ? '#7a5c2a' : '#C19A6B'} strokeWidth="2.5" />
-        <circle cx="50" cy="50" r="38" fill={bookmarked ? 'rgba(193,154,107,0.25)' : 'rgba(193,154,107,0.08)'} stroke={bookmarked ? '#C19A6B' : dark ? '#1F4A3D' : 'rgba(193,154,107,0.5)'} strokeWidth="1.5" />
-        <text x="50" y="56" textAnchor="middle" dominantBaseline="middle"
-          style={{ fontSize: num > 99 ? '28px' : '32px', fill: bookmarked ? '#C19A6B' : dark ? '#c9a96e' : '#8B5E3C', fontFamily: 'serif', fontWeight: 'bold' }}>
-          {num}
-        </text>
-      </svg>
-    </span>
-  );
+function AyahMarker({ num, bookmarked }: { num: number; bookmarked?: boolean; dark?: boolean }) {
+  return <EightStar n={num} size={30} active={bookmarked} className="mx-1" />;
 }
 
 const READING_RECITERS = [
@@ -335,6 +332,9 @@ export function Quran() {
   const { data: surahs, isLoading: loadingList } = useQuranSurahs();
   const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
+  const [nightTone, setNightTone] = useState<NightTone>(() => (localStorage.getItem('noor_quran_tone') as NightTone) || 'emerald');
+  const tone = NIGHT_TONES[nightTone] ?? NIGHT_TONES.emerald;
+  const cycleTone = () => { const keys = Object.keys(NIGHT_TONES) as NightTone[]; const next = keys[(keys.indexOf(nightTone) + 1) % keys.length]; setNightTone(next); localStorage.setItem('noor_quran_tone', next); };
 
   const { showTutorial } = useTutorial();
 
@@ -447,18 +447,16 @@ export function Quran() {
   const lineHeight = (fontSize * 2.0).toFixed(2) + 'rem';
 
   const C = useMemo(() => ({
-    pageBg: dark ? '#07130F' : '#FDFBF5',
+    pageBg: tone.page,
     headerBg: dark ? '#130f08' : '#F7EDD6',
     headerBorder: dark ? 'rgba(193,154,107,0.2)' : 'rgba(193,154,107,0.35)',
     headerShadow: dark ? '0 2px 12px rgba(0,0,0,0.4)' : '0 2px 12px rgba(193,154,107,0.15)',
-    mushafBg: dark
-      ? 'linear-gradient(180deg, #1c1408 0%, #160f06 100%)'
-      : 'linear-gradient(180deg, #FFFDF4 0%, #F8EFDB 100%)',
+    mushafBg: tone.mushaf,
     mushafBorder: dark ? 'rgba(193,154,107,0.3)' : 'rgba(193,154,107,0.45)',
     mushafShadow: dark
       ? '0 0 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(193,154,107,0.15)'
       : '0 0 20px rgba(193,154,107,0.2), inset 0 1px 0 rgba(193,154,107,0.3)',
-    ayahText: dark ? '#ddd0b0' : '#10241E',
+    ayahText: tone.text,
     surahTitle: dark ? '#d4b483' : '#7a4e25',
     bismillah: dark ? '#b89050' : '#8B5E3C',
     searchBg: dark ? 'rgba(193,154,107,0.08)' : 'rgba(193,154,107,0.1)',
@@ -477,7 +475,7 @@ export function Quran() {
     btnBorder: dark ? 'rgba(193,154,107,0.25)' : 'rgba(193,154,107,0.4)',
     bookmarkBg: dark ? 'rgba(193,154,107,0.12)' : 'rgba(193,154,107,0.12)',
     bookmarkBorder: dark ? 'rgba(193,154,107,0.35)' : 'rgba(193,154,107,0.5)',
-  }), [dark]);
+  }), [dark, tone]);
 
   useEffect(() => {
     if (!wordAudioRef.current) {
@@ -978,6 +976,9 @@ export function Quran() {
           </button>
 
           <div className="flex gap-1.5 items-center">
+            <button onClick={cycleTone} title="وضع القراءة الليلية" className="px-2.5 py-1.5 rounded-full text-[11px] font-bold" style={{ background: C.btnBg, border: `1px solid ${C.btnBorder}`, color: '#C19A6B' }}>
+              {tone.label}
+            </button>
             <button
               onClick={() => { setShowJumpInput(v => !v); setJumpInput(''); setTimeout(() => jumpInputRef.current?.focus(), 80); }}
               className="flex items-center justify-center rounded-full transition-all"

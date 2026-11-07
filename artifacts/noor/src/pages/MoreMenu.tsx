@@ -658,6 +658,7 @@ export function MoreMenu() {
               </svg>
               <div className="h-px flex-1 max-w-12" style={{ background: 'rgba(193,154,107,0.25)' }} />
             </div>
+            <Link href="/about" className="block mt-2 text-primary text-xs font-bold underline underline-offset-2">عن تطبيق نُور</Link>
             <a
               href="https://noorapp10000-web.github.io/Noooooor/"
               target="_blank"
