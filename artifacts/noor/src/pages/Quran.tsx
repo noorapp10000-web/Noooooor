@@ -353,6 +353,15 @@ export function Quran() {
       );
     }
   }, [selectedSurah, showTutorial]);
+  // Noor 2.0: reading happens in the page-by-page Mushaf
+  useEffect(() => {
+    if (selectedSurah) {
+      const ay = scrollToAyah ? `&ayah=${scrollToAyah}` : '';
+      navigate(`/mushaf?surah=${selectedSurah}${ay}`);
+      setSelectedSurah(null);
+      setScrollToAyah(null);
+    }
+  }, [selectedSurah, scrollToAyah, navigate]);
   const { data: surahData, isLoading: loadingSurah } = useSurah(selectedSurah ?? 0);
 
   const [mode, setMode] = useState<Mode>('normal');

@@ -600,6 +600,28 @@ function PrayerGuardSection({
 }
 
 
+
+function TipsSection({ sectionBg, borderColor, textColor, subText }: { sectionBg: string; borderColor: string; textColor: string; subText: string }) {
+  const [on, setOn] = useState(() => localStorage.getItem('noor_tips_enabled') !== '0');
+  const toggle = () => {
+    const n = !on;
+    setOn(n);
+    localStorage.setItem('noor_tips_enabled', n ? '1' : '0');
+    if (n) Object.keys(localStorage).filter(k => k.startsWith('noor_guide_v4_')).forEach(k => localStorage.removeItem(k));
+  };
+  return (
+    <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: sectionBg, border: `1px solid ${borderColor}` }}>
+      <div className="flex-1">
+        <p className="font-bold text-base" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: textColor }}>نصائح المرشد</p>
+        <p className="text-xs" style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: subText }}>تلميحات صغيرة تظهر في أسفل الشاشة</p>
+      </div>
+      <button onClick={toggle} aria-pressed={on} className="relative w-12 h-7 rounded-full transition-colors" style={{ background: on ? 'linear-gradient(180deg,#f1d28b,#b98a3e)' : 'rgba(255,255,255,.12)' }}>
+        <span className="absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all" style={{ right: on ? 2 : 22 }} />
+      </button>
+    </div>
+  );
+}
+
 export function Settings() {
   const theme = 'dark' as 'light' | 'dark';
   const dark = theme === 'dark';
@@ -645,6 +667,8 @@ export function Settings() {
 
         {/* Prayer Guard Section */}
         <PrayerGuardSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
+
+        <TipsSection sectionBg={sectionBg} borderColor={borderColor} textColor={textColor} subText={subText} />
 
         {/* Font Size */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}

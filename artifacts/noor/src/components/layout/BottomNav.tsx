@@ -230,12 +230,11 @@ function MoreNav3D({ color }: { color: string }) {
 /* ── Nav items configuration ─────────────────────────────── */
 type NavIconComp = React.ComponentType<{ color: string }>;
 
-const NAV_ITEMS: { id: string; path: string; Icon: NavIconComp; label: string }[] = [
+const NAV_ITEMS: { id: string; path: string; Icon: NavIconComp; label: string; center?: boolean }[] = [
   { id: "home",    path: "/",        Icon: HomeNav3D,    label: "الرئيسية" },
-  { id: "quran",   path: "/quran",   Icon: QuranNav3D,   label: "القرآن"   },
   { id: "azkar",   path: "/azkar",   Icon: AzkarNav3D,   label: "الأذكار"  },
+  { id: "quran",   path: "/quran",   Icon: QuranNav3D,   label: "القرآن", center: true },
   { id: "tasbih",  path: "/tasbih",  Icon: TasbihNav3D,  label: "التسبيح"  },
-  { id: "ranking", path: "/ranking", Icon: RankingNav3D, label: "إنجازاتي" },
   { id: "more",    path: "/more",    Icon: MoreNav3D,    label: "اكتشف"   },
 ];
 
@@ -244,28 +243,53 @@ const INACTIVE_COLOR = "hsl(var(--muted-foreground))";
 
 export function BottomNav() {
   const [location] = useLocation();
+  const inMore = ["/ranking", "/settings", "/about"].some(p => location.startsWith(p));
 
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 px-3 pointer-events-none"
       style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
     >
-      <div className="glass shadow-lift pointer-events-auto mx-auto max-w-lg rounded-[26px] flex items-stretch justify-around px-1.5 h-[64px]">
+      <div className="nr-glass pointer-events-auto mx-auto max-w-lg rounded-[30px] flex items-end justify-around px-2 h-[66px] relative">
         {NAV_ITEMS.map((item) => {
-          const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+          const isActive = item.id === "more"
+            ? (location.startsWith("/more") || inMore)
+            : (location === item.path || (item.path !== "/" && location.startsWith(item.path)));
           const Icon = item.Icon;
           const color = isActive ? ACTIVE_COLOR : INACTIVE_COLOR;
+
+          if (item.center) {
+            return (
+              <Link key={item.id} href={item.path} className="flex-1 press" aria-label={item.label}>
+                <div className="relative flex flex-col items-center" style={{ height: 66 }}>
+                  <div
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      top: -22, width: 62, height: 74,
+                      borderRadius: "999px 999px 18px 18px / 36px 36px 18px 18px",
+                      background: isActive ? "linear-gradient(180deg,#f6dd9c,#b98a3e)" : "linear-gradient(180deg,hsl(165 30% 16%),hsl(168 36% 9%))",
+                      border: "1px solid hsl(38 62% 60% / .5)",
+                      boxShadow: isActive ? "0 0 0 4px hsl(168 40% 6%), 0 12px 30px -6px hsl(38 70% 55% / .7)" : "0 0 0 4px hsl(168 40% 6%), 0 10px 24px -8px #000",
+                    }}
+                  >
+                    <Icon color={isActive ? "#1b1408" : "hsl(var(--primary))"} />
+                  </div>
+                  <span className="absolute bottom-2 text-[10px] font-bold" style={{ color: isActive ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))" }}>{item.label}</span>
+                </div>
+              </Link>
+            );
+          }
 
           return (
             <Link key={item.id} href={item.path} className="flex-1 h-full press" aria-label={item.label}>
               <div className="relative flex flex-col items-center justify-center h-full gap-1">
                 {isActive && (
                   <span
-                    className="absolute top-1.5 inset-x-1.5 bottom-1.5 rounded-[18px]"
-                    style={{ background: "hsl(var(--primary) / 0.12)", border: "1px solid hsl(var(--primary) / 0.18)" }}
+                    className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-8 rounded-b-full"
+                    style={{ background: "hsl(var(--primary))", boxShadow: "0 0 12px hsl(var(--primary))" }}
                   />
                 )}
-                <div className="relative transition-transform duration-300" style={{ transform: isActive ? "translateY(-1px) scale(1.06)" : "none" }}>
+                <div className="relative transition-transform duration-300" style={{ transform: isActive ? "translateY(-1px) scale(1.1)" : "none" }}>
                   <Icon color={color} />
                 </div>
                 <span
