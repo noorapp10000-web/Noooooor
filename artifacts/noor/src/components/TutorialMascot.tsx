@@ -227,140 +227,56 @@ export function TutorialMascot() {
   }, [location, showTutorial]);
 
   const lines   = message.split('\n');
-  const title   = lines[0] ?? '';
+  const title   = (lines[0] ?? '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\uFE0F]/gu, '').trim();
   const body    = lines.slice(1).join('\n').trim();
+  const [open, setOpen] = useState(false);
+  const enabled = typeof localStorage !== 'undefined' && localStorage.getItem('noor_tips_enabled') !== '0';
 
+  // Tip auto-hides after 7s unless the user opened it
+  useEffect(() => {
+    setOpen(false);
+    if (!visible) return;
+    const t = setTimeout(() => { if (!open) hide(); }, 7000);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, message]);
+
+  if (!enabled) return null;
+
+  const ff = '"IBM Plex Sans Arabic", "Tajawal", sans-serif';
   return (
     <AnimatePresence>
       {visible && (
-        <>
-          {/* tap-anywhere overlay */}
-          <motion.div
-            key="overlay"
-            className="fixed inset-0 z-[9997]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={hide}
-          />
-
-          {/* mascot (left) + bubble (right) */}
-          <motion.div
-            key="mascot-wrap"
-            className="fixed z-[9998] flex flex-row items-end pointer-events-none"
-            style={{ bottom: 72, left: 0 }}
-            initial={{ opacity: 0, x: -80 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -80 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-          >
-            {/* ── Mascot ── */}
-            <motion.img
-              src={mascotSrc}
-              alt="مرشد نور"
-              className="flex-shrink-0 select-none"
-              style={{
-                width: 112,
-                height: 'auto',
-                filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.28))',
-              }}
-              animate={{ y: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
-            />
-
-            {/* ── Bubble ── */}
-            <motion.div
-              className="relative pointer-events-auto"
-              style={{ marginBottom: 52, marginLeft: -2, maxWidth: 248 }}
-              initial={{ scale: 0.82, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.82, opacity: 0 }}
-              transition={{ delay: 0.1, type: 'spring', stiffness: 340, damping: 26 }}
-              onClick={e => e.stopPropagation()}
-            >
-              {/* left-pointing tail (toward mascot hand) */}
-              <div
-                className="absolute"
-                style={{
-                  left: -11,
-                  bottom: 34,
-                  width: 0,
-                  height: 0,
-                  borderTop: '10px solid transparent',
-                  borderBottom: '10px solid transparent',
-                  borderRight: '12px solid rgba(193,154,107,0.5)',
-                }}
-              />
-              <div
-                className="absolute"
-                style={{
-                  left: -9,
-                  bottom: 35,
-                  width: 0,
-                  height: 0,
-                  borderTop: '9px solid transparent',
-                  borderBottom: '9px solid transparent',
-                  borderRight: '11px solid hsl(165 26% 11%)',
-                }}
-              />
-
-              {/* bubble body */}
-              <div
-                className="rounded-2xl px-4 pt-3 pb-3 relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(150deg, hsl(165 26% 11%) 0%, hsl(166 30% 7%) 100%)',
-                  border: '1.5px solid rgba(193,154,107,0.45)',
-                  boxShadow: '0 12px 40px rgba(193,154,107,0.22), 0 2px 8px rgba(0,0,0,0.07)',
-                }}
-              >
-                {/* shimmer accent */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse at top left, rgba(255,235,150,0.2) 0%, transparent 60%)',
-                  }}
-                />
-
-                {/* title */}
-                <p
-                  className="font-black text-[13px] leading-snug mb-1.5 relative"
-                  style={{
-                    fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-                    color: '#F2E3C2',
-                    direction: 'rtl',
-                    textAlign: 'right',
-                  }}
-                >
-                  {title}
-                </p>
-
-                {/* body */}
-                {body && (
-                  <p
-                    className="text-[11px] leading-[1.8] whitespace-pre-line relative"
-                    style={{
-                      fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif',
-                      color: 'rgba(242,234,216,0.82)',
-                      direction: 'rtl',
-                      textAlign: 'right',
-                    }}
-                  >
-                    {body}
-                  </p>
-                )}
-
-                {/* dismiss hint */}
-                <p
-                  className="text-[9px] mt-2 opacity-40 text-center relative"
-                  style={{ fontFamily: '"IBM Plex Sans Arabic", "Tajawal", sans-serif', color: '#C9A979' }}
-                >
-                  اضغط في أي مكان للمتابعة
-                </p>
+        <motion.div
+          key="tip"
+          className="fixed z-[9998] pointer-events-auto"
+          style={{ bottom: 96, left: 12, right: 12, maxWidth: 480, marginInline: 'auto' }}
+          initial={{ opacity: 0, y: 24, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 24, scale: 0.96 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+          dir="rtl"
+        >
+          <div className="nr-glass rounded-3xl overflow-hidden" style={{ border: '1px solid hsl(38 62% 60% / .35)' }}>
+            <div className="flex items-center gap-3 p-2.5 pe-3" onClick={() => body && setOpen(o => !o)}>
+              <div className="flex-shrink-0 w-11 h-11 overflow-hidden" style={{ borderRadius: '999px 999px 12px 12px / 22px 22px 12px 12px', background: 'linear-gradient(180deg,#1d6b56,#0b2a24)', border: '1px solid hsl(38 62% 60% / .4)' }}>
+                <img src={mascotSrc} alt="مرشد نور" className="w-full h-full object-cover object-top" draggable={false} />
               </div>
-            </motion.div>
-          </motion.div>
-        </>
+              <p className="flex-1 min-w-0 text-[12.5px] font-bold truncate" style={{ fontFamily: ff, color: '#F2E3C2' }}>{title}</p>
+              {body && <span className="text-[11px] text-primary font-semibold">{open ? 'إخفاء' : 'التفاصيل'}</span>}
+              <button aria-label="إغلاق" onClick={e => { e.stopPropagation(); hide(); }} className="w-7 h-7 rounded-full flex items-center justify-center text-[13px]" style={{ background: 'hsl(0 0% 100% / .08)', color: '#C9A979' }}>✕</button>
+            </div>
+            {open && body && (
+              <div className="px-4 pb-3 max-h-[38vh] overflow-y-auto">
+                <p className="text-[11.5px] leading-[1.9] whitespace-pre-line" style={{ fontFamily: ff, color: 'rgba(242,234,216,.85)' }}>{body}</p>
+                <button
+                  onClick={() => { localStorage.setItem('noor_tips_enabled', '0'); hide(); }}
+                  className="mt-2 text-[11px] underline" style={{ color: '#C9A979', fontFamily: ff }}
+                >إيقاف النصائح نهائيًا (يمكن تفعيلها من الإعدادات)</button>
+              </div>
+            )}
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

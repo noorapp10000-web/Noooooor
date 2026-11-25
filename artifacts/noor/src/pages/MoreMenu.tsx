@@ -406,11 +406,11 @@ const CATEGORIES = [
 function FeatureTile({ item }: { item: MenuItem }) {
   const Icon = item.Icon;
   return (
-    <Link href={item.path} className="press surface rounded-[22px] p-3.5 flex flex-col gap-3 min-h-[118px]">
-      <span className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-brand shadow-soft">
-        <Icon className="text-white" size={22} />
+    <Link href={item.path} className="press surface rounded-[26px] p-3.5 flex flex-col gap-3 min-h-[124px] relative overflow-hidden lattice">
+      <span className="w-11 h-[52px] arch-sm flex items-center justify-center shadow-soft" style={{ background: "linear-gradient(180deg,#1d6b56,#0b2a24)", border: "1px solid hsl(38 62% 60% / .4)" }}>
+        <Icon className="text-primary" size={22} />
       </span>
-      <span>
+      <span className="relative">
         <span className="block font-bold text-[14px] leading-snug">{item.label}</span>
         <span className="block text-[11px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</span>
       </span>
@@ -441,6 +441,7 @@ export function MoreMenu() {
   const userProfile = getProfileCache();
 
   const MENU_ITEMS: MenuItem[] = [
+    { Icon: IslamicStarIcon,   label: 'إنجازاتي',             path: '/ranking',      desc: 'إحصائياتك وسلسلة عبادتك',     cat: 'worship' },
     { Icon: PrayerStepsIcon,   label: 'تعلم الصلاة',         path: '/learn-prayer', desc: '14 خطوة بالشرح والتشكيل',   cat: 'worship' },
     { Icon: WuduIcon,          label: 'الوضوء',               path: '/wudu',         desc: 'الأركان والسنن خطوة بخطوة', cat: 'worship' },
     { Icon: QiblaCompassIcon,  label: 'اتجاه القبلة',        path: '/qibla',        desc: 'بوصلة ذكية نحو الكعبة',      cat: 'worship' },

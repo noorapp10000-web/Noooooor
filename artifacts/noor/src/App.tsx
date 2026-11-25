@@ -43,6 +43,7 @@ import { IslamicTV } from "@/pages/IslamicTV";
 import { HifzTest } from "@/pages/HifzTest";
 import { WuduGuide } from "@/pages/WuduGuide";
 import { LearnPrayer } from "@/pages/LearnPrayer";
+import { Mushaf } from "@/pages/Mushaf";
 
 import {
   initUserSyncFast,
@@ -170,6 +171,7 @@ function Router() {
     <Switch>
       <Route path="/"><AppShell><Home /></AppShell></Route>
       <Route path="/quran"><AppShell><Quran /></AppShell></Route>
+      <Route path="/mushaf"><Mushaf /></Route>
       <Route path="/azkar"><AppShell><Azkar /></AppShell></Route>
       <Route path="/tasbih"><AppShell><Tasbih /></AppShell></Route>
       <Route path="/ranking"><AppShell><Rankings /></AppShell></Route>

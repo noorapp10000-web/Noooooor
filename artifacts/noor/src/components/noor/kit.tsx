@@ -53,28 +53,33 @@ export function PageHeader({
   };
   return (
     <header
-      className={cn('sticky top-0 z-40 px-4 pb-3 border-b border-primary/10', className)}
+      className={cn('sticky top-0 z-40 px-4 pb-4 relative', className)}
       style={{
         paddingTop: 'max(0.9rem, env(safe-area-inset-top))',
-        background: 'hsl(168 32% 5% / .72)',
-        WebkitBackdropFilter: 'blur(18px) saturate(150%)',
-        backdropFilter: 'blur(18px) saturate(150%)',
+        background: 'linear-gradient(180deg, hsl(168 40% 5% / .94) 0%, hsl(168 40% 5% / .72) 100%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+        backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
       <div className="flex items-center gap-3 max-w-lg mx-auto">
         {back !== null && (
-          <button onClick={onBack} aria-label="رجوع" className="press w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 noor-btn-ghost">
-            <ArrowRight className="w-5 h-5" />
+          <button onClick={onBack} aria-label="رجوع" className="press w-11 h-11 flex items-center justify-center flex-shrink-0 nr-glass" style={{ borderRadius: '999px 999px 14px 14px / 22px 22px 14px 14px' }}>
+            <ArrowRight className="w-5 h-5 text-primary" />
           </button>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="text-[1.35rem] leading-tight truncate text-gold-gradient">{title}</h1>
+          <h1 className="text-[1.5rem] leading-tight truncate nr-gold-text">{title}</h1>
           {subtitle && <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>}
         </div>
         {right}
         {icon && <NoorImg name={icon} size={40} className="flex-shrink-0" />}
       </div>
       {children && <div className="max-w-lg mx-auto mt-3">{children}</div>}
+      <div className="absolute bottom-0 inset-x-6 flex items-center gap-2" aria-hidden>
+        <span className="flex-1 hairline-gold" />
+        <span className="w-1.5 h-1.5 rotate-45 bg-primary" style={{ boxShadow: '0 0 8px hsl(var(--primary))' }} />
+        <span className="flex-1 hairline-gold" />
+      </div>
     </header>
   );
 }

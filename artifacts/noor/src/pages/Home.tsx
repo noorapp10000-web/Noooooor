@@ -379,115 +379,124 @@ export function Home() {
 
   return (
     <div className="pb-32 max-w-lg mx-auto" dir="rtl">
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden rounded-b-[36px] shadow-lift" style={{ minHeight: 470 }}>
-        <img src="/images/art/hero-mosque.webp" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: 'center 70%' }} />
-        <div className="absolute inset-0 bg-hero-fade" />
-
-        <div className="relative z-10 px-5 flex flex-col" style={{ minHeight: 470, paddingTop: 'max(1.25rem, env(safe-area-inset-top))', color: 'hsl(var(--brand-foreground))' }}>
-          {/* Top bar */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] opacity-75">السلام عليكم{userProfile?.name ? `، ${userProfile.name}` : ''}</p>
-              <h1 className="font-display text-[1.9rem] leading-tight text-gold-gradient">نُور</h1>
-            </div>
-            {userProfile?.governorateName && (
-              <button
-                onClick={() => setShowGovPicker(true)}
-                className="press flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold"
-                style={{ background: 'hsl(0 0% 100% / 0.12)', border: '1px solid hsl(0 0% 100% / 0.18)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' }}
-              >
-                <MapPin className="w-3.5 h-3.5" />
-                {userProfile.governorateName}
-              </button>
-            )}
-          </div>
-
-          {/* Date strip */}
-          <div className="mt-5 flex items-center gap-2">
-            <button onClick={() => setDateOffset(d => d - 1)} aria-label="اليوم السابق" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'hsl(0 0% 100% / 0.12)' }}>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <div className="flex-1 text-center">
-              <p className="font-bold text-[15px]">{displayHijriLabel}</p>
-              <p className="text-[11px] opacity-65">{displayGregorianLabel}</p>
-            </div>
-            <button onClick={() => setDateOffset(d => d + 1)} aria-label="اليوم التالي" className="press w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'hsl(0 0% 100% / 0.12)' }}>
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="mt-2 flex items-center justify-center gap-1">
-            <span className="text-[10px] opacity-60 me-1">ضبط الهجري</span>
-            {[-1, +1].map(d => (
-              <button key={d} onClick={() => changeHijriAdjust(d)} className="text-[10px] font-bold w-7 h-5 rounded-md" style={{ background: 'hsl(0 0% 0% / 0.25)' }}>
-                {d > 0 ? '+1' : '−1'}
-              </button>
-            ))}
-            {hijriAdjust !== 0 && (
-              <button onClick={() => { setHijriAdjust(0); try { localStorage.setItem(HIJRI_ADJUST_KEY, '0'); } catch {} }} className="text-[10px] font-bold px-2 h-5 rounded-md" style={{ background: 'hsl(var(--primary) / 0.5)' }}>
-                {hijriAdjust > 0 ? `+${hijriAdjust}` : hijriAdjust} ✕
-              </button>
-            )}
-          </div>
-          {dateOffset !== 0 && (
-            <button onClick={() => setDateOffset(0)} className="text-[11px] underline opacity-70 mt-1 self-center">العودة لليوم</button>
-          )}
-
-          <div className="flex-1" />
-
-          {/* Next prayer */}
-          {dateOffset === 0 && nextPrayer ? (
-            <div className="pb-6 animate-fade-up">
-              <p className="text-[12px] font-semibold tracking-wide" style={{ color: 'hsl(var(--gold-soft))' }}>الصلاة القادمة · {fmt12(nextPrayer.time24)}</p>
-              <div className="flex items-end justify-between gap-3 mt-1">
-                <h2 className="font-display text-[3.2rem] leading-none">{nextPrayer.name}</h2>
-                <div className="text-left" style={{ direction: 'ltr' }}>
-                  <p className="text-[10px] opacity-60 text-right mb-0.5">متبقٍ</p>
-                  <p className="font-bold tabular-nums text-[2rem] leading-none tracking-tight">{countdown || '00:00:00'}</p>
+      {/* ── Hero: Mihrab sky ── */}
+      {(() => {
+        // progress between previous prayer and the next one
+        const order = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        const toSecs = (t?: string) => { if (!t) return 0; const [h, m] = t.substring(0, 5).split(':').map(Number); return h * 3600 + m * 60; };
+        let pct = 0;
+        if (times && nextPrayer && dateOffset === 0 && countdown) {
+          const [ch, cm, cs] = countdown.split(':').map(Number);
+          const remain = ch * 3600 + cm * 60 + cs;
+          const idx = order.findIndex(id => (times[id] ?? '').substring(0, 5) === nextPrayer.time24);
+          const prevId = idx <= 0 ? 'Isha' : order[idx - 1];
+          let gap = toSecs(times[order[idx < 0 ? 0 : idx]]) - toSecs(times[prevId]);
+          if (gap <= 0) gap += 86400;
+          pct = Math.max(0, Math.min(1, 1 - remain / gap));
+        }
+        const R = 118, C = 2 * Math.PI * R;
+        return (
+          <section className="nr-sky relative rounded-b-[40px] shadow-lift" style={{ paddingBottom: 28 }}>
+            <div className="relative z-10 px-5" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))', color: 'hsl(var(--brand-foreground))' }}>
+              {/* Top bar */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[12px] opacity-75">السلام عليكم{userProfile?.name ? `، ${userProfile.name}` : ''}</p>
+                  <h1 className="font-display text-[2rem] leading-tight nr-gold-text">نُور</h1>
                 </div>
+                {userProfile?.governorateName && (
+                  <button onClick={() => setShowGovPicker(true)} className="press nr-glass flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    {userProfile.governorateName}
+                  </button>
+                )}
               </div>
+
+              {/* Date strip */}
+              <div className="mt-4 flex items-center gap-2">
+                <button onClick={() => setDateOffset(d => d - 1)} aria-label="اليوم السابق" className="press w-8 h-8 rounded-full flex items-center justify-center nr-glass">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <div className="flex-1 text-center">
+                  <p className="font-bold text-[15px]">{displayHijriLabel}</p>
+                  <p className="text-[11px] opacity-65">{displayGregorianLabel}</p>
+                </div>
+                <button onClick={() => setDateOffset(d => d + 1)} aria-label="اليوم التالي" className="press w-8 h-8 rounded-full flex items-center justify-center nr-glass">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-1">
+                <span className="text-[10px] opacity-60 me-1">ضبط الهجري</span>
+                {[-1, +1].map(d => (
+                  <button key={d} onClick={() => changeHijriAdjust(d)} className="text-[10px] font-bold w-7 h-5 rounded-md" style={{ background: 'hsl(0 0% 0% / 0.25)' }}>
+                    {d > 0 ? '+1' : '−1'}
+                  </button>
+                ))}
+                {hijriAdjust !== 0 && (
+                  <button onClick={() => { setHijriAdjust(0); try { localStorage.setItem(HIJRI_ADJUST_KEY, '0'); } catch {} }} className="text-[10px] font-bold px-2 h-5 rounded-md" style={{ background: 'hsl(var(--primary) / 0.5)' }}>
+                    {hijriAdjust > 0 ? `+${hijriAdjust}` : hijriAdjust} ✕
+                  </button>
+                )}
+              </div>
+              {dateOffset !== 0 && (
+                <button onClick={() => setDateOffset(0)} className="block mx-auto text-[11px] underline opacity-70 mt-1">العودة لليوم</button>
+              )}
+
+              {/* Next prayer orb */}
+              {dateOffset === 0 && nextPrayer ? (
+                <div className="mt-5 flex flex-col items-center animate-fade-up">
+                  <div className="relative" style={{ width: 260, height: 260 }}>
+                    <div className="absolute inset-3 rounded-full nr-breathe" style={{ background: 'radial-gradient(circle, hsl(38 80% 60% / .28), transparent 68%)' }} />
+                    <svg viewBox="0 0 260 260" className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
+                      <defs>
+                        <linearGradient id="nrGold" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#fbe7ae" /><stop offset="100%" stopColor="#b98a3e" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="130" cy="130" r={R} fill="none" strokeWidth="6" className="nr-ring-track" />
+                      <circle cx="130" cy="130" r={R + 10} fill="none" strokeWidth="1" stroke="hsl(38 62% 60% / .25)" strokeDasharray="2 7" />
+                      <circle cx="130" cy="130" r={R} fill="none" strokeWidth="6" strokeLinecap="round" className="nr-ring-fill" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <p className="text-[11px] font-semibold tracking-wide" style={{ color: 'hsl(var(--gold-soft))' }}>الصلاة القادمة</p>
+                      <h2 className="font-display text-[3.6rem] leading-[1.05] nr-gold-text">{nextPrayer.name}</h2>
+                      <p className="font-bold tabular-nums text-[1.7rem] leading-none mt-1" style={{ direction: 'ltr' }}>{countdown || '00:00:00'}</p>
+                      <p className="text-[11px] opacity-70 mt-1.5">{fmt12(nextPrayer.time24)}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : dateOffset !== 0 ? (
+                <div className="mt-6 text-center">
+                  <h2 className="font-display text-2xl">
+                    {dateOffset > 0 ? `مواقيت بعد ${dateOffset} ${dateOffset === 1 ? 'يوم' : 'أيام'}` : `مواقيت قبل ${Math.abs(dateOffset)} ${Math.abs(dateOffset) === 1 ? 'يوم' : 'أيام'}`}
+                  </h2>
+                </div>
+              ) : (
+                <div className="mt-6"><div className="animate-pulse rounded-full h-52 w-52 mx-auto" style={{ background: 'hsl(0 0% 100% / 0.06)' }} /></div>
+              )}
             </div>
-          ) : dateOffset !== 0 ? (
-            <div className="pb-6">
-              <h2 className="font-display text-2xl">
-                {dateOffset > 0 ? `مواقيت بعد ${dateOffset} ${dateOffset === 1 ? 'يوم' : 'أيام'}` : `مواقيت قبل ${Math.abs(dateOffset)} ${Math.abs(dateOffset) === 1 ? 'يوم' : 'أيام'}`}
-              </h2>
-            </div>
-          ) : (
-            <div className="pb-6"><div className="animate-pulse rounded-2xl h-20" style={{ background: 'hsl(0 0% 100% / 0.08)' }} /></div>
-          )}
-        </div>
-      </section>
+          </section>
+        );
+      })()}
 
       <div className="px-4 space-y-6 -mt-2">
-      {/* ── Prayer times ── */}
-      <section className="surface rounded-[26px] p-4 relative z-10 -mt-6 animate-fade-up">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="font-bold text-[15px] flex items-center gap-2">
-            <span className="text-primary"><Clock3DIcon size={20} /></span>
-            مواقيت الصلاة
-          </h2>
-          <span className="text-[11px] text-muted-foreground">حسب الهيئة المصرية</span>
-        </div>
+      {/* ── Prayer times: arch tiles ── */}
+      <section className="relative z-10 -mt-5 animate-fade-up">
         {times ? (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-6 gap-1.5">
             {PRAYERS.map(p => {
               const t24 = (times[p.id] ?? '').substring(0, 5);
               const isNext = dateOffset === 0 && nextPrayer?.name === p.name;
               return (
-                <div
-                  key={p.id}
-                  className={`rounded-2xl px-2 py-3 text-center transition-all ${isNext ? 'bg-gradient-gold shadow-gold' : ''}`}
-                  style={isNext ? { color: 'hsl(var(--primary-foreground))' } : { background: 'hsl(var(--secondary) / 0.7)' }}
-                >
-                  <p className={`text-[12px] ${isNext ? 'font-bold opacity-95' : 'text-muted-foreground font-medium'}`}>{p.name}</p>
-                  <p className="font-bold text-[15px] tabular-nums mt-0.5">{fmt12(t24)}</p>
+                <div key={p.id} className={`nr-tile text-center pt-3.5 pb-2.5 px-0.5 ${isNext ? 'on' : ''}`}>
+                  <p className={`text-[10.5px] ${isNext ? 'font-bold' : 'text-muted-foreground font-medium'}`}>{p.name}</p>
+                  <p className="font-bold text-[11.5px] tabular-nums mt-1 leading-tight">{fmt12(t24)}</p>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground text-sm">
+          <div className="nr-glass rounded-3xl text-center py-8 text-muted-foreground text-sm">
             {!lat ? (
               <div>
                 <p>لم يتم تحديد الموقع</p>
@@ -498,18 +507,19 @@ export function Home() {
             )}
           </div>
         )}
+        <p className="text-[10px] text-muted-foreground text-center mt-2">حسب الهيئة المصرية العامة للمساحة</p>
       </section>
 
       {/* ── Quick access ── */}
       <section className="animate-fade-up" style={{ animationDelay: '80ms' }}>
         <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="font-display text-xl">وصول سريع</h2>
+          <h2 className="nr-section-title">وصول سريع</h2>
           <Link href="/more" className="text-xs font-semibold text-primary">عرض الكل</Link>
         </div>
         <div className="grid grid-cols-4 gap-2.5">
           {QUICK_LINKS.map(({ path, label, Icon }) => (
             <Link key={path} href={path} className="press flex flex-col items-center gap-2">
-              <span className="w-full aspect-square rounded-[22px] surface flex items-center justify-center text-primary">
+              <span className="w-full aspect-[4/5] arch-sm surface flex items-center justify-center text-primary">
                 <Icon size={28} className="text-primary" />
               </span>
               <span className="text-[11px] font-semibold text-center leading-tight">{label}</span>
